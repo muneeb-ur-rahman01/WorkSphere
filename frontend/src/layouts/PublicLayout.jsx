@@ -346,7 +346,7 @@ const PublicLayout = ({ children }) => {
 
           <div className="border-t border-gray-200 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-sm text-gray-600 text-center md:text-left">
-              © 2026 CampOS SaaS. All Rights Reserved.
+              © 2026 WorkSphere. All Rights Reserved.
             </p>
 
             <span className="text-sm text-indigo-600 font-medium">
