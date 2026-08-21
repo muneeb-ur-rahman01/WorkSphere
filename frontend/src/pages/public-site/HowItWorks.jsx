@@ -132,7 +132,7 @@ export default function HowItWorks() {
 
               <p className="text-gray-600 text-sm mt-1">
                 Apply directly to your preferred organization and get
-                assigned to active medical camps.
+                assigned to active.
               </p>
 
             </div>
