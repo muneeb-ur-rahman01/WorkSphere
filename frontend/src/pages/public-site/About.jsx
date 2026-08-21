@@ -28,20 +28,17 @@ const About = () => {
       <section className="relative overflow-hidden bg-white px-[5%] pt-16 pb-14 sm:pt-20 md:pt-24 lg:pt-[100px] lg:pb-20">
         <div className="mx-auto max-w-4xl text-center">
 
-          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 mb-8">
+          {/* <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 mb-8">
             <Heart size={16} />
             About WorkSphere
-          </div>
+          </div> */}
 
           <h1 className="font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3rem] font-extrabold leading-[1.15] text-gray-900 max-w-3xl mx-auto mb-6">
-            One Operating System For Every Medical Relief Camp
+           Multi-Tenant Workforce & Operations Management Platform
           </h1>
 
           <p className="font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-2xl mx-auto leading-8">
-            WorkSphere is a multi-tenant SaaS platform built to help
-            medical NGOs, clinics, and humanitarian organizations plan,
-            staff, and run relief camps without the chaos of spreadsheets,
-            phone trees, and paper records.
+           WorkSphere is a scalable, multi-tenant workforce and operations management platform designed to help organizations manage people, tasks, events, communication and day-to-day operations through a secure digital environment.
           </p>
 
         </div>

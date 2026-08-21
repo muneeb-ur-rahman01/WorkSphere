@@ -48,6 +48,7 @@ const PublicLayout = ({ children }) => {
 
             <h2 className="text-2xl font-extrabold text-black">
               Worksphere
+              ()
             </h2>
           </Link>
 

@@ -54,7 +54,7 @@ const Home = () => {
             The Ultimate  Management Operating System
 
           </h1>
-
+              <h5 className='animate-slide-up font-[var(--font-title)] text-[1.5rem]'>One Platform. Every Team. Every Operation.</h5>
           <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
 
             A universal platform empowering medical NGOs to coordinate
