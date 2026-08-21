@@ -35,22 +35,26 @@ const PublicLayout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-5 lg:px-10 h-20 flex items-center justify-between">
 
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-3"
-            onClick={() => setMenuOpen(false)}
-          >
-            <img
-              src={image}
-              alt="WorkSphere Logo"
-              className="h-14 w-auto object-contain"
-            />
+      <Link
+  to="/"
+  className="flex items-center gap-3"
+  onClick={() => setMenuOpen(false)}
+>
+  <img
+    src={image}
+    alt="WorkSphere Logo"
+    className="h-14 w-auto object-contain"
+  />
 
-            <h2 className="text-2xl font-extrabold text-black">
-              Worksphere
-              ()
-            </h2>
-          </Link>
+  <div className="flex flex-col">
+    <h2 className="text-2xl font-extrabold text-black leading-tight">
+      Worksphere
+    </h2>
+    <span className="text-xs text-gray-500 font-medium tracking-wide">
+      (Hopefelt Foundation's Flagship Management Platform)
+    </span>
+  </div>
+</Link>
 
           {/* Desktop Menu */}
           <nav className="hidden lg:flex items-center gap-8">

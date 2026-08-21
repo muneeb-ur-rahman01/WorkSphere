@@ -50,18 +50,18 @@ const Home = () => {
           </div> */}
 
           <h1 className="animate-slide-up font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[3.6rem] font-extrabold leading-[1.15] text-gray-900 max-w-5xl mx-auto mb-6">
+  The Ultimate Management Operating System
+</h1>
 
-            The Ultimate  Management Operating System
+<h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-gray-700 max-w-3xl mx-auto mb-4'>
+  One Platform. Every Team. Every Operation.
+</h2>
 
-          </h1>
-              <h5 className='animate-slide-up font-[var(--font-title)] text-[1.5rem]'>One Platform. Every Team. Every Operation.</h5>
-          <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
-
-            A universal platform empowering medical NGOs to coordinate
-            emergencies, track availability, assign tasks, and capture
-            AI voice-prescriptions in real-time.
-
-          </p>
+<p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
+  A universal platform empowering medical NGOs to coordinate
+  emergencies, track availability, assign tasks, and capture
+  AI voice-prescriptions in real-time.
+</p>
 
           <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
 
