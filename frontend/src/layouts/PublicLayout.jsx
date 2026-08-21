@@ -14,17 +14,19 @@ const PublicLayout = ({ children }) => {
   // Smoothly scrolls to a section on the home page. If we're on a
   // different page, navigate to home first and let Home.jsx scroll
   // to the section once it mounts — no full page/section "jump".
-  const handleSectionLink = (e, sectionId) => {
-    e.preventDefault();
-    setMenuOpen(false);
+const handleSectionLink = (e, sectionId) => {
+  e.preventDefault();
+  setMenuOpen(false);
 
-    if (location.pathname === "/") {
-      const el = document.getElementById(sectionId);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    } else {
-      navigate("/", { state: { scrollTo: sectionId } });
-    }
-  };
+  const el = document.getElementById(sectionId);
+
+  if (el) {
+    el.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }
+};
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -50,7 +52,7 @@ const PublicLayout = ({ children }) => {
     <h2 className="text-2xl font-extrabold text-black leading-tight">
       Worksphere
     </h2>
-    <span className="text-xs text-gray-500 font-medium tracking-wide">
+    <span className="text-xs text-gray-500 font-medium tracking-wide italic">
       (Hopefelt Foundation's Flagship Management Platform)
     </span>
   </div>
@@ -72,6 +74,13 @@ const PublicLayout = ({ children }) => {
             >
               Features
             </a>
+<a
+  href="#how-it-works"
+  onClick={(e) => handleSectionLink(e, "how-it-works")}
+  className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+>
+  How It Works
+</a>
 
             <a
               href="#about"

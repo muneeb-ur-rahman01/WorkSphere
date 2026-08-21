@@ -18,7 +18,7 @@ import PublicLayout from '../../layouts/PublicLayout';
 import Button from '../../shared/Button/Button';
 import Card from '../../shared/Card/Card';
 import Team from './Team';
-
+import HowItWorks from './HowItWorks';
 const Home = () => {
   const location = useLocation();
 
@@ -58,9 +58,7 @@ const Home = () => {
 </h2>
 
 <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
-  A universal platform empowering medical NGOs to coordinate
-  emergencies, track availability, assign tasks, and capture
-  AI voice-prescriptions in real-time.
+  A universal management platform that enables organizations to coordinate teams, manage operations, assign tasks, track resources, and stay connected, while leveraging AI-powered voice capture, intelligent analytics, workflow automation, automated annual reporting, and real-time data visualization.
 </p>
 
           <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -89,44 +87,74 @@ const Home = () => {
   </Button>
 </Link>
 
-          </div>
+    </div>
 
           {/* Stats */}
 
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-3xl font-bold text-indigo-600">500+</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Medical Camps
-              </p>
-            </Card>
+  {/* Multi-Tenant */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      Multi-Tenant
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Built for Multiple Organizations
+    </p>
+  </Card>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-3xl font-bold text-indigo-600">10K+</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Volunteers
-              </p>
-            </Card>
+  {/* AI-Powered */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      AI-Powered
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Intelligent Voice & Workflow Automation
+    </p>
+  </Card>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-3xl font-bold text-indigo-600">99.9%</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Uptime
-              </p>
-            </Card>
+  {/* 24/7 */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      24/7
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Operational Access
+    </p>
+  </Card>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-              <h3 className="text-3xl font-bold text-indigo-600">24/7</h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Support
-              </p>
-            </Card>
+  {/* 100% */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      100%
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Centralized Data
+    </p>
+  </Card>
 
-          </div>
+  {/* Real-Time */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      Real-Time
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Analytics & Insights
+    </p>
+  </Card>
 
-        </div>
+  {/* Automated */}
+  <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+    <h3 className="text-2xl font-bold text-indigo-600">
+      Automated
+    </h3>
+    <p className="mt-2 text-sm text-gray-500 font-medium">
+      Reports & Visualizations
+    </p>
+  </Card>
 
+</div>
+</div>
       </section>
             {/* ================= FEATURES SECTION ================= */}
 
@@ -139,12 +167,11 @@ const Home = () => {
           <div className="text-center mb-14">
 
             <h2 className="text-[1.6rem] sm:text-[1.9rem] md:text-[2.2rem] font-bold text-gray-900 mb-4">
-              Powering Humanitarian Relief Camps
+              Built for the Way Organizations Work.
             </h2>
 
-            <p className="max-w-xl mx-auto text-gray-500 text-[0.95rem] leading-7">
-              Everything your NGO admins, doctors, interns, and volunteers
-              need to execute camp diagnostics seamlessly.
+            <p className="max-w-xl mx-auto text-gray-500 text-[0.95rem] leading-7 italic">
+              From team coordination to analytics and automation, WorkSphere connects every part of your organization.
             </p>
 
           </div>
@@ -226,6 +253,12 @@ const Home = () => {
         </div>
 
       </section>
+<section
+  id="how-it-works"
+  className="scroll-mt-24"
+>
+  <HowItWorks />
+</section>
 
       {/* ================= ABOUT SECTION ================= */}
 
@@ -233,13 +266,11 @@ const Home = () => {
         id="about"
         className="scroll-mt-24 px-[5%] py-16 md:py-20 bg-gray-50 border-t border-gray-200"
       >
+        
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 mb-6">
-              <Target size={16} />
-              About WorkSphere
-            </div>
+           
 
             <h2 className="text-[1.6rem] sm:text-[1.9rem] md:text-[2.2rem] font-bold text-gray-900 mb-5">
               Built To Help Medical NGOs Do More With Less
