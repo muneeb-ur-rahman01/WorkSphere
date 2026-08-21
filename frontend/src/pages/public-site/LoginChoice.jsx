@@ -11,7 +11,7 @@ return (
     <div className="max-w-4xl mx-auto mt-20 mb-24 px-5 text-center">
 
       <h1 className="text-4xl font-bold text-black mb-3">
-        Choose Workspace Gateway
+        Choose Workspace
       </h1>
 
       <p className="text-gray-600 mb-12">

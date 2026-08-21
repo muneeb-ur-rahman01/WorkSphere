@@ -46,9 +46,9 @@ export default function HowItWorks() {
 
         <div className="text-center max-w-3xl mx-auto mb-16">
 
-          <span className="inline-flex text-indigo-600 font-semibold text-sm tracking-wider uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+          {/* <span className="inline-flex text-indigo-600 font-semibold text-sm tracking-wider uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
             Seamless Workflow
-          </span>
+          </span> */}
 
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-4 mb-4">
             How WorkSphere Operates
@@ -76,41 +76,30 @@ export default function HowItWorks() {
               >
 
                 <div>
-
                   {/* Number + Badge */}
-
                   <div className="flex items-center justify-between mb-6">
-
                     <span className="text-4xl font-black text-gray-200 group-hover:text-indigo-500 transition-colors duration-300">
                       {item.step}
                     </span>
-
                     <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2.5 py-1 rounded-md">
                       {item.badge}
                     </span>
-
                   </div>
 
                   {/* Icon */}
-
                   <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-5 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-
                     <IconComponent className="w-6 h-6" />
-
                   </div>
 
                   {/* Title */}
-
                   <h3 className="text-xl font-bold text-gray-900 mb-3">
                     {item.title}
                   </h3>
 
                   {/* Description */}
-
                   <p className="text-gray-600 text-sm leading-relaxed">
                     {item.description}
                   </p>
-
                 </div>
 
                 {/* Bottom Accent */}
@@ -161,11 +150,25 @@ export default function HowItWorks() {
           >
             Register / Apply Now
           </button> */}
-<Link
-  to="/register-org"
-  className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-xl transition-colors text-sm shrink-0 inline-block"
+      <Link
+  to="/register-staff"
+  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden shrink-0"
 >
-  Register / Apply Now
+  {/* Subtle shine effect on hover */}
+  <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+
+  <span>Register / Apply Now</span>
+  
+  {/* Arrow icon that moves slightly on hover */}
+  <svg 
+    className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="2.5" 
+    viewBox="0 0 24 24"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+  </svg>
 </Link>
         </div>
 
