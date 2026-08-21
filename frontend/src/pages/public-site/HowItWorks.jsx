@@ -150,26 +150,26 @@ export default function HowItWorks() {
           >
             Register / Apply Now
           </button> */}
-      <Link
-  to="/register-staff"
-  className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden shrink-0"
->
-  {/* Subtle shine effect on hover */}
-  <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                <Link
+            to="/register-staff"
+            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-sm text-white bg-gradient-to-r           from-indigo-600 via-indigo-700 to-purple-600 rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all           duration-300 overflow-hidden shrink-0"
+          >
+            {/* Subtle shine effect on hover */}
+           <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300          pointer-events-none" />
 
-  <span>Register / Apply Now</span>
+           <span>Register / Apply Now</span>
   
-  {/* Arrow icon that moves slightly on hover */}
-  <svg 
-    className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
-    fill="none" 
-    stroke="currentColor" 
-    strokeWidth="2.5" 
-    viewBox="0 0 24 24"
-  >
-    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-  </svg>
-</Link>
+           {/* Arrow icon that moves slightly on hover */}
+           <svg 
+             className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+             fill="none" 
+             stroke="currentColor" 
+              strokeWidth="2.5" 
+             viewBox="0 0 24 24"
+           >
+             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+           </svg>
+          </Link>         
         </div>
 
       </div>
