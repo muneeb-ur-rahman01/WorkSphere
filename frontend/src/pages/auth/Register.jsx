@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 import { UserCheck, CheckCircle2 } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import PublicLayout from '../../layouts/PublicLayout';
-import Button from '../../shared/Button/Button';
-import Input from '../../shared/Input/Input';
-import Card from '../../shared/Card/Card';
 import api from '../../Config/apiConfig';
 import { SELF_REGISTERABLE_ROLES } from '../../Config/constant';
 import { isValidStaffPassword, STAFF_PASSWORD_MESSAGE } from '../../utils/passwordValidation';
@@ -13,10 +10,6 @@ import { isValidStaffPassword, STAFF_PASSWORD_MESSAGE } from '../../utils/passwo
 const Register = () => {
   const { registerStaff } = useContext(AppContext);
 
-  // Fetched directly from the public endpoint (no login required), so this
-  // form works for a visitor who has never signed in — the AppContext's
-  // `organizations` list is only ever populated for a logged-in user, which
-  // is why the dropdown used to always show "no active organizations".
   const [activeOrgs, setActiveOrgs] = useState([]);
   const [orgsLoading, setOrgsLoading] = useState(true);
   const [orgsError, setOrgsError] = useState('');
@@ -41,19 +34,18 @@ const Register = () => {
     fullName: '',
     email: '',
     password: '',
-    role: 'Employee', // Employee, Intern, Volunteer, Membership (see SELF_REGISTERABLE_ROLES)
+    role: 'Employee',
     orgId: ''
   });
 
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
-
-  const [submitting, setSubmitting] = useState(false);
 
   const passwordValid = isValidStaffPassword(formData.password);
 
@@ -89,169 +81,179 @@ const Register = () => {
     }
   };
 
-  // Find organization name by ID
   const selectedOrgName = activeOrgs.find(o => o.id === formData.orgId)?.name || 'the selected NGO';
 
   return (
     <PublicLayout>
-      <div style={{
-        maxWidth: '520px',
-        margin: '60px auto 100px',
-        padding: '0 20px'
-      }}>
+      <div className="max-w-xl mx-auto my-16 px-4 sm:px-6">
         {success ? (
-          <Card className="animate-scale-up" style={{ textAlign: 'center', padding: '40px 30px' }}>
-            <div style={{
-              display: 'inline-flex',
-              background: 'rgba(16, 185, 129, 0.1)',
-              padding: '16px',
-              borderRadius: '50%',
-              color: 'var(--success)',
-              marginBottom: '24px'
-            }}>
+          <div className="bg-white shadow-xl rounded-2xl p-8 sm:p-10 text-center border border-gray-100">
+            <div className="inline-flex bg-emerald-50 p-4 rounded-full text-emerald-600 mb-6 shadow-sm">
               <CheckCircle2 size={48} />
             </div>
 
-            <h2 style={{ fontSize: '1.8rem', marginBottom: '16px' }}>Application Sent!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Application Sent!</h2>
             
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '30px' }}>
-              Hi <strong>{formData.fullName}</strong>, your request to register as a <strong>{formData.role}</strong> 
-              for <strong>{selectedOrgName}</strong> has been logged. 
+            <p className="text-gray-600 text-sm leading-relaxed mb-8">
+              Hi <strong className="text-gray-900">{formData.fullName}</strong>, your request to register as a <strong className="text-gray-900">{formData.role}</strong> 
+              for <strong className="text-gray-900">{selectedOrgName}</strong> has been logged. 
               The organization administrator must review and accept your registration request. 
               Once approved, you'll receive an email and can log in to access your task dashboard and submit camp availability.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div className="flex flex-col gap-3">
               <Link to="/login-choice">
-                <Button variant="primary" fullWidth>Go to Login Page</Button>
+                <button className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all shadow-sm">
+                  Go to Login Page
+                </button>
               </Link>
               <Link to="/">
-                <Button variant="secondary" fullWidth>Back to Home</Button>
+                <button className="w-full py-3 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all">
+                  Back to Home
+                </button>
               </Link>
             </div>
-          </Card>
+          </div>
         ) : (
-          <Card
-            title="Register as NGO Staff"
-            subtitle="Register as an Employee, Intern, Volunteer, or Member for an approved NGO."
-            className="animate-slide-up"
-          >
+          <div className="bg-white shadow-xl rounded-2xl p-6 sm:p-10 border border-gray-100">
+            {/* Header */}
+            <div className="mb-6 pb-4 border-b border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">Register as NGO Staff</h2>
+              <p className="text-sm text-gray-500">
+                Register as an Employee, Intern, Volunteer, or Member for an approved NGO.
+              </p>
+            </div>
+
             {error && (
-              <div style={{
-                background: 'var(--danger-bg)',
-                border: '1px solid var(--danger)',
-                color: 'var(--danger)',
-                padding: '12px',
-                borderRadius: '8px',
-                fontSize: '0.85rem',
-                marginBottom: '20px',
-                textAlign: 'left'
-              }}>
+              <div className="bg-red-50 border border-red-200 text-red-600 p-3.5 rounded-xl text-xs mb-5 font-medium">
                 {error}
               </div>
             )}
 
             {orgsLoading ? (
-              <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px 0' }}>
+              <div className="text-gray-500 py-10 text-sm text-center animate-pulse">
                 Loading organizations…
               </div>
             ) : orgsError ? (
-              <div style={{
-                background: 'var(--danger-bg)',
-                border: '1px solid var(--danger)',
-                color: 'var(--danger)',
-                padding: '16px',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                textAlign: 'center'
-              }}>
+              <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-xl text-sm text-center font-medium">
                 {orgsError}
               </div>
             ) : activeOrgs.length === 0 ? (
-              <div style={{
-                background: 'var(--warning-bg)',
-                border: '1px solid var(--warning)',
-                color: 'var(--warning)',
-                padding: '16px',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                lineHeight: 1.5,
-                textAlign: 'center'
-              }}>
+              <div className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-xl text-sm text-center font-medium">
                 ⚠️ No active organizations found on the platform yet. 
                 Please register an organization first before staff can sign up!
               </div>
             ) : (
-              <form onSubmit={handleSubmit}>
-                <Input
-                  label="Full Name"
-                  name="fullName"
-                  placeholder="e.g. John Doe"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="fullName"
+                    placeholder="e.g. John Doe"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  />
+                </div>
 
-                <Input
-                  label="Official Email"
-                  name="email"
-                  type="email"
-                  placeholder="e.g. johndoe@gmail.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
+                {/* Official Email */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Official Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    placeholder="e.g. johndoe@gmail.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  />
+                </div>
 
-                <Input
-                  label="Password"
-                  name="password"
-                  type="password"
-                  placeholder="At least 8 characters, with a letter and a number"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onBlur={() => setPasswordTouched(true)}
-                  required
-                />
-                {passwordTouched && formData.password && !passwordValid && (
-                  <p style={{ color: 'var(--danger)', fontSize: '0.8rem', marginTop: '-12px', marginBottom: '16px' }}>
-                    {STAFF_PASSWORD_MESSAGE}
-                  </p>
-                )}
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    placeholder="At least 8 characters, with a letter and a number"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onBlur={() => setPasswordTouched(true)}
+                    required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  />
+                  {passwordTouched && formData.password && !passwordValid && (
+                    <p className="text-xs text-red-500 mt-1.5 font-medium">{STAFF_PASSWORD_MESSAGE}</p>
+                  )}
+                </div>
 
-                <Input
-                  label="Organization"
-                  name="orgId"
-                  type="select"
-                  placeholder="Choose NGO to join..."
-                  value={formData.orgId}
-                  onChange={handleChange}
-                  options={activeOrgs.map(o => ({ value: o.id, label: o.name }))}
-                  required
-                />
+                {/* Organization */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Organization <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="orgId"
+                    value={formData.orgId}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  >
+                    <option value="">Choose NGO to join...</option>
+                    {activeOrgs.map(o => (
+                      <option key={o.id} value={o.id}>{o.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-                <Input
-                  label="Position / Role"
-                  name="role"
-                  type="select"
-                  value={formData.role}
-                  onChange={handleChange}
-                  options={SELF_REGISTERABLE_ROLES.map((r) => ({
-                    value: r.value,
-                    label: `${r.label} — ${r.description}`
-                  }))}
-                  required
-                />
+                {/* Position / Role */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Position / Role <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-all"
+                  >
+                    {SELF_REGISTERABLE_ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label} — {r.description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                <Button type="submit" variant="primary" fullWidth disabled={submitting} style={{ gap: '8px', marginTop: '12px' }}>
-                  <UserCheck size={16} /> {submitting ? 'Submitting…' : 'Request Workspace Access'}
-                </Button>
+                {/* Submit Button */}
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+                  >
+                    <UserCheck size={18} /> 
+                    {submitting ? 'Submitting…' : 'Request Workspace Access'}
+                  </button>
+                </div>
               </form>
             )}
 
-            <div style={{ marginTop: '20px', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-              Already registered? <Link to="/login-choice" style={{ color: 'var(--primary)', fontWeight: 600 }}>Login here</Link>
+            <div className="mt-6 pt-4 border-t border-gray-100 text-center text-xs text-gray-500">
+              Already registered? <Link to="/login-choice" className="text-indigo-600 font-semibold hover:underline">Login here</Link>
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </PublicLayout>
