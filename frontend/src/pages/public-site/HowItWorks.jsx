@@ -12,7 +12,7 @@ export default function HowItWorks() {
     {
       step: "01",
       title: "Create Your Organization",
-      subText: "Create Your Organization",
+      subText: "Register & Set Up Your Workspace",
       description:
         "Register your organization, configure its workspace, and set up users, roles, and modules.",
       icon: Building2,
@@ -21,7 +21,7 @@ export default function HowItWorks() {
     {
       step: "02",
       title: "Connect Your People & Operations",
-      subText: "Connect Your People & Operations",
+      subText: "Build Teams & Manage Work",
       description:
         "Bring teams together, assign responsibilities, and manage tasks, projects, events, and workflows.",
       icon: Calendar,
@@ -30,7 +30,7 @@ export default function HowItWorks() {
     {
       step: "03",
       title: "Track, Analyze & Automate",
-      subText: "Track, Analyze & Automate",
+      subText: "Turn Operations Into Actionable Insights",
       description:
         "Monitor operations in real time, analyze performance, and generate automated reports and visualizations.",
       icon: BarChart3,
@@ -41,7 +41,7 @@ export default function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="scroll-mt-24 py-20 bg-gray-50 px-4 sm:px-6 lg:px-8 border-t border-gray-200"
+      className="scroll-mt-24 py-20  px-4 sm:px-6 lg:px-8 border-t border-gray-200"
     >
       <div className="max-w-7xl mx-auto">
 

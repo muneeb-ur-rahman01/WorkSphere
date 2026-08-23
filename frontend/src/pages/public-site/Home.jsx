@@ -192,7 +192,7 @@ const Home = () => {
       {/* ================= ABOUT SECTION ================= */}
       <section
         id="about"
-        className="scroll-mt-24 px-[5%] py-16 md:py-20 bg-gray-50 border-t border-gray-200"
+        className="scroll-mt-24 px-[5%] py-16 md:py-20 border-t border-gray-200"
       >
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -205,10 +205,10 @@ const Home = () => {
             <p className="text-sm sm:text-base font-medium text-gray-500 italic mb-6">
               "One Platform. Every Team. Every Operation"
             </p>
-            <p className="text-gray-600 leading-8 text-[0.98rem] mb-4">
+            <p className="text-gray-600 leading-8 text-[1rem] mb-4">
               WorkSphere is Hopefelt Foundation’s flagship management platform, connecting people, teams, workflows, operations, and data through one secure, scalable, multi-tenant workspace.
             </p>
-            <p className="text-gray-600 leading-8 text-[0.98rem] mb-8">
+            <p className="text-gray-600 leading-8 text-[1rem] mb-8">
               From managing everyday operations to enabling real-time analytics, automated reporting, workflow automation, and AI-powered tools, WorkSphere helps organizations work efficiently, make informed decisions, and create greater impact with fewer resources.
             </p>
             <Link to="/about">
@@ -313,28 +313,28 @@ const Home = () => {
                     <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
                     <span>Task & Workflow Management</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
-                    <span>Placeholder Feature</span>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 className = " text-indigo-600 flex-shrink-0" size={18} />
+                    <span>Events & Schedule Management</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
-                    <span>Placeholder Feature</span>
+                  <li className="flex items-center gap-3 ">
+                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                    <span>Core Notifications & Alerts</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
-                    <span>Placeholder Feature</span>
+                  <li className="flex items-center gap-3 ">
+                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0" />
+                    <span>Centralized Operational Data</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
-                    <span>Placeholder Feature</span>
+                  <li className="flex items-center gap-3 ">
+                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                    <span>Basic Dashboard & Activity Tracking</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
-                    <span>Placeholder Feature</span>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                    <span>Standard Support</span>
                   </li>
-                  <li className="flex items-center gap-3 text-transparent select-none pointer-events-none">
-                    <CheckCircle2 size={18} className="opacity-0" />
+                  <li className="flex items-center gap-3 ">
+                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
                     <span>Placeholder Feature</span>
                   </li>
                 </ul>

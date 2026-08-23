@@ -285,11 +285,6 @@ const PublicLayout = ({ children }) => {
                   WorkSphere
                 </h2>
               </div>
-
-              <p className="leading-7 text-gray-600 text-sm mb-4">
-                The ultimate management operating system designed for NGOs, clinics, and organizations.
-              </p>
-
               <p className="leading-6 text-gray-500 text-xs italic">
                 Built by Hopefelt Foundation’s IT & Technology Department to simplify the way organizations work, connect, and grow.
               </p>
