@@ -37,7 +37,7 @@ const handleSectionLink = (e, sectionId) => {
         <div className="max-w-7xl mx-auto px-5 lg:px-10 h-20 flex items-center justify-between">
 
           {/* Logo */}
-      <Link
+      <Link           
   to="/"
   className="flex items-center gap-3"
   onClick={() => setMenuOpen(false)}
@@ -74,13 +74,13 @@ const handleSectionLink = (e, sectionId) => {
             >
               Features
             </a>
-<a
-  href="#how-it-works"
-  onClick={(e) => handleSectionLink(e, "how-it-works")}
-  className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
->
-  How It Works
-</a>
+            <a
+              href="#how-it-works"
+              onClick={(e) => handleSectionLink(e, "how-it-works")}
+              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+            >
+              How It Works
+            </a>
 
             <a
               href="#about"
@@ -168,6 +168,13 @@ const handleSectionLink = (e, sectionId) => {
               <a
                 href="#features"
                 onClick={(e) => handleSectionLink(e, "features")}
+                className="font-medium text-gray-700 hover:text-indigo-600"
+              >
+                Features
+              </a>
+              <a
+                href="#how-it-works"
+                onClick={(e) => handleSectionLink(e, "how-it-works")}
                 className="font-medium text-gray-700 hover:text-indigo-600"
               >
                 Features

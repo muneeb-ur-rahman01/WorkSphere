@@ -50,16 +50,16 @@ const Home = () => {
           </div> */}
 
           <h1 className="animate-slide-up font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[3.6rem] font-extrabold leading-[1.15] text-gray-900 max-w-5xl mx-auto mb-6">
-  The Ultimate Management Operating System
-</h1>
+           The Ultimate Management Operating System
+          </h1>
 
-<h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-gray-700 max-w-3xl mx-auto mb-4'>
-  One Platform. Every Team. Every Operation.
-</h2>
+          <h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-gray-700 max-w-3xl mx-auto mb-4'>
+            One Platform. Every Team. Every Operation.
+          </h2>
 
-<p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
-  A universal management platform that enables organizations to coordinate teams, manage operations, assign tasks, track resources, and stay connected, while leveraging AI-powered voice capture, intelligent analytics, workflow automation, automated annual reporting, and real-time data visualization.
-</p>
+          <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
+            A universal management platform that enables organizations to coordinate teams, manage operations, assign tasks, track resources, and stay connected, while leveraging AI-powered voice capture, intelligent analytics, workflow automation, automated annual reporting, and real-time data visualization.
+          </p>
 
           <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
 
@@ -270,7 +270,7 @@ const Home = () => {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           <div>
-           
+
 
             <h2 className="text-[1.6rem] sm:text-[1.9rem] md:text-[2.2rem] font-bold text-gray-900 mb-5">
               Built To Help Medical NGOs Do More With Less
