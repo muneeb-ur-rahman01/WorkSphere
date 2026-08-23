@@ -337,14 +337,14 @@ const DashboardLayout = ({ children }) => {
               shadow-indigo-500/20
             "
           >
-            <Heart
+            {/* <Heart
               size={18}
               fill="currentColor"
-            />
+            /> */}
           </div>
 
           <span className="font-bold text-lg tracking-tight">
-            CampOS
+            WorkSphere
           </span>
 
           <span
