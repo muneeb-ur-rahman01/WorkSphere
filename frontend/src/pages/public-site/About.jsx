@@ -71,7 +71,8 @@ const About = () => {
     {
       number: '07',
       title: 'REPEAT',
-      description: 'Every cycle makes the organization more informed.',
+      description:
+        'Every cycle makes the organization more informed.',
       icon: RefreshCw,
     },
   ];
@@ -105,7 +106,8 @@ const About = () => {
     {
       icon: CheckCircle2,
       title: 'Outcomes',
-      description: 'What changed because the work happened?',
+      description:
+        'What changed because the work happened?',
     },
   ];
 
@@ -165,36 +167,43 @@ const About = () => {
 
   return (
     <PublicLayout>
+
       {/* =========================================================
           HERO
       ========================================================= */}
-      <section className="relative overflow-hidden bg-white px-[5%] pt-16 pb-20 sm:pt-20 md:pt-28 lg:pt-32 lg:pb-28">
-        <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-100/50 blur-3xl" />
 
-        <div className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-blue-100/40 blur-3xl" />
+      <section className="relative overflow-hidden bg-white px-[5%] pb-20 pt-16 sm:pt-20 md:pb-28 md:pt-28">
+        <div className="pointer-events-none absolute -right-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-blue-100/60 blur-3xl" />
+
+        <div className="pointer-events-none absolute -bottom-32 -left-40 h-[26rem] w-[26rem] rounded-full bg-indigo-100/50 blur-3xl" />
 
         <div className="relative mx-auto max-w-6xl">
           <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
+
+            {/* LEFT */}
             <div>
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
-                <Heart size={16} />
-                About WorkSphere
+              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">
+                                About WorkSphere
               </div>
 
-              <h1 className="max-w-3xl font-[var(--font-title)] text-[2.6rem] font-extrabold leading-[1.08] tracking-tight text-gray-950 sm:text-[3.5rem] lg:text-[4.25rem]">
+              <h1 className="max-w-3xl font-[var(--font-title)] text-[2.55rem] font-bold leading-[1.08] tracking-[-0.04em] text-gray-950 sm:text-[3.45rem] lg:text-[4.15rem]">
                 What Happens When an Organization Finally{' '}
-                <span className="text-indigo-600">Works as One?</span>
+                <span className="text-indigo-600">
+                  Works as One?
+                </span>
               </h1>
 
-              <p className="mt-7 max-w-2xl text-[1.05rem] leading-8 text-gray-600 sm:text-[1.15rem]">
-                Organizations rarely struggle because they lack people.
+              <p className="mt-7 max-w-2xl font-[var(--font-body)] text-[1.05rem] leading-8 text-gray-600 sm:text-[1.12rem]">
+                Organizations don't usually struggle because they
+                lack people.
                 They struggle because their people, information,
                 responsibilities, and processes are scattered.
               </p>
 
-              <p className="mt-4 max-w-2xl text-base leading-7 text-gray-500">
-                WorkSphere creates a connected environment where the work
-                itself becomes organized, visible, measurable, and actionable.
+              <p className="mt-4 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500">
+                WorkSphere creates a connected environment where the
+                work itself becomes organized, visible, measurable,
+                and actionable.
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row">
@@ -202,12 +211,12 @@ const About = () => {
                   <Button
                     size="large"
                     variant="secondary"
-                    className="group flex w-full items-center justify-center gap-2 rounded-xl px-7 py-4 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-auto"
+                    className="group flex w-full items-center justify-center gap-2 rounded-xl px-7 py-4 font-[var(--font-title)] font-semibold shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-auto"
                   >
                     Register Your Organization
                     <ArrowRight
-                      size={19}
-                      className="transition-transform group-hover:translate-x-1"
+                      size={18}
+                      className="transition-transform duration-300 group-hover:translate-x-1"
                     />
                   </Button>
                 </Link>
@@ -216,7 +225,7 @@ const About = () => {
                   <Button
                     size="large"
                     variant="secondary"
-                    className="flex w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-7 py-4 font-bold text-gray-800 shadow-sm transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50 sm:w-auto"
+                    className="flex w-full items-center justify-center rounded-xl border border-gray-200 bg-white px-7 py-4 font-[var(--font-title)] font-semibold text-gray-800 shadow-sm transition-all duration-300 hover:border-blue-200 hover:bg-blue-50 sm:w-auto"
                   >
                     Enter Workspace
                   </Button>
@@ -224,24 +233,28 @@ const About = () => {
               </div>
             </div>
 
-            {/* HERO VISUAL */}
+            {/* RIGHT VISUAL */}
             <div className="relative">
-              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-indigo-100/70 via-white to-blue-100/60 blur-2xl" />
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-blue-100/70 via-white to-indigo-100/60 blur-2xl" />
 
-              <div className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.10)] sm:p-7">
+              <div className="relative overflow-hidden rounded-[2rem] border border-blue-100 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.10)] sm:p-7">
+
                 <div className="mb-6 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
+                    <p className="font-[var(--font-body)] text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
                       Operational Picture
                     </p>
 
-                    <h3 className="mt-1 text-xl font-bold text-gray-900">
+                    <h3 className="mt-1 font-[var(--font-title)] text-xl font-bold tracking-[-0.02em] text-gray-900">
                       One Organization
                     </h3>
                   </div>
 
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-                    <Network className="text-indigo-600" size={20} />
+                    <Network
+                      className="text-indigo-600"
+                      size={20}
+                    />
                   </div>
                 </div>
 
@@ -273,18 +286,21 @@ const About = () => {
                     return (
                       <div
                         key={index}
-                        className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4"
+                        className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-gray-50 p-4 transition-all duration-300 hover:border-blue-100 hover:bg-blue-50/40"
                       >
                         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-                          <Icon className="text-indigo-600" size={20} />
+                          <Icon
+                            className="text-indigo-600"
+                            size={20}
+                          />
                         </div>
 
                         <div className="min-w-0">
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-[var(--font-title)] font-semibold text-gray-900">
                             {item.title}
                           </p>
 
-                          <p className="text-sm text-gray-500">
+                          <p className="font-[var(--font-body)] text-sm text-gray-500">
                             {item.text}
                           </p>
                         </div>
@@ -298,23 +314,27 @@ const About = () => {
                   })}
                 </div>
 
-                <div className="mt-5 rounded-2xl bg-indigo-50 p-5">
+                <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50 p-5">
                   <div className="flex items-center gap-3">
                     <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
-                      <CircleDot size={17} className="text-indigo-600" />
+                      <CircleDot
+                        size={17}
+                        className="text-indigo-600"
+                      />
                     </div>
 
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="font-[var(--font-title)] text-sm font-semibold text-gray-900">
                         Connected Operational System
                       </p>
 
-                      <p className="text-xs text-gray-500">
+                      <p className="font-[var(--font-body)] text-xs text-gray-500">
                         Activity → Information → Insight → Decision
                       </p>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -324,25 +344,29 @@ const About = () => {
       {/* =========================================================
           THE PROBLEM
       ========================================================= */}
-      <section className="border-t border-gray-200 bg-gray-50 px-[5%] py-20 md:py-24">
+
+      <section className="border-t border-blue-100 bg-[#f3f8ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+
             <div>
-              <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+              <p className="mb-3 font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                 The Problem
               </p>
 
-              <h2 className="max-w-lg text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
-                The Problem Isn't the Work. It's the Disconnect.
+              <h2 className="max-w-lg font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem] italic">
+                The Problem Isn't the Work.
+                <br />
+                It's the Disconnect.
               </h2>
             </div>
 
             <div>
-              <p className="text-lg leading-8 text-gray-600">
-                A task lives in one place. A document lives somewhere else.
-                An update gets lost in a message. A report takes hours to
-                prepare. A manager has to ask three people just to understand
-                what is happening.
+              <p className="font-[var(--font-body)] text-lg leading-8 text-gray-600 italic">
+                A task lives in one place. A document lives somewhere
+                else. An update gets lost in a message. A report takes
+                hours to prepare. A manager has to ask three people
+                just to understand what is happening.
               </p>
 
               <div className="mt-8 grid gap-4 sm:grid-cols-2">
@@ -354,17 +378,18 @@ const About = () => {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                    className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white p-4 shadow-sm"
                   >
                     <div className="h-2 w-2 rounded-full bg-indigo-500" />
 
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="font-[var(--font-body)] text-sm font-medium text-gray-700">
                       {item}
                     </span>
                   </div>
                 ))}
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -372,20 +397,24 @@ const About = () => {
       {/* =========================================================
           CONNECTED WORKFLOW
       ========================================================= */}
+
       <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="mx-auto max-w-3xl text-center">
-            <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+            <p className="mb-3 font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
               Connected Work
             </p>
 
-            <h2 className="text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
-              When Everything Is Connected, Work Moves Differently.
+            <h2 className="font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+              When Everything Is Connected,
+              <br className="hidden sm:block" />
+              Work Moves Differently.
             </h2>
 
-            <p className="mt-5 text-base leading-7 text-gray-500 sm:text-lg">
-              WorkSphere connects the everyday actions of an organization into
-              one continuous operational flow.
+            <p className="mt-5 font-[var(--font-body)] text-base leading-7 text-gray-500 sm:text-lg italic">
+              "WorkSphere connects the everyday actions of an
+              organization into one continuous operational flow"
             </p>
           </div>
 
@@ -427,16 +456,16 @@ const About = () => {
                 className="group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-xl"
               >
                 <div className="flex items-start gap-5">
-                  <span className="text-sm font-bold text-indigo-500">
+                  <span className="font-[var(--font-body)] text-sm font-bold text-indigo-500">
                     {item.number}
                   </span>
 
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className="font-[var(--font-title)] text-lg font-bold tracking-[-0.01em] text-gray-900">
                       {item.title}
                     </h3>
 
-                    <p className="mt-2 text-sm leading-6 text-gray-500">
+                    <p className="mt-2 font-[var(--font-body)] text-sm leading-6 text-gray-500">
                       {item.text}
                     </p>
                   </div>
@@ -444,28 +473,35 @@ const About = () => {
               </Card>
             ))}
           </div>
+
         </div>
       </section>
 
       {/* =========================================================
-          OPERATIONAL LAYERS - LIGHT BLUE
+          OPERATIONAL LAYERS
       ========================================================= */}
-      <section className="border-y border-blue-100 bg-[#eef6ff] px-[5%] py-20 md:py-24">
+
+      <section className="border-y border-blue-100 bg-[#eaf4ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+
             <div>
-              <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+              <p className="mb-3 font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 ">
                 The Work Behind Every Organization
               </p>
 
-              <h2 className="text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
-                Behind Every Organization Is a Workflow.
+              <h2 className="font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+                Behind Every Organization
+                <br />
+                Is a Workflow.
               </h2>
 
-              <p className="mt-5 max-w-lg leading-7 text-gray-600">
-                Every organization has an underlying cycle. WorkSphere connects
-                these layers so information doesn't disappear between people,
-                processes, and decisions.
+              <p className="mt-5 max-w-lg font-[var(--font-body)] leading-7 text-gray-600 italic">
+                Every organization has an underlying cycle.
+                WorkSphere connects these layers so information
+                doesn't disappear between people, processes, and
+                decisions.
               </p>
             </div>
 
@@ -479,24 +515,28 @@ const About = () => {
                     className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md"
                   >
                     <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-                      <Icon size={19} className="text-indigo-600" />
+                      <Icon
+                        size={19}
+                        className="text-indigo-600"
+                      />
                     </div>
 
-                    <p className="text-xs font-bold uppercase tracking-wider text-indigo-400">
+                    <p className="font-[var(--font-body)] text-[10px] font-bold uppercase tracking-[0.16em] text-indigo-400">
                       0{index + 1}
                     </p>
 
-                    <h3 className="mt-1 font-bold text-gray-900">
+                    <h3 className="mt-1 font-[var(--font-title)] font-bold text-gray-900">
                       {item.title}
                     </h3>
 
-                    <p className="mt-1 text-sm text-gray-500">
+                    <p className="mt-1 font-[var(--font-body)] text-sm text-gray-500">
                       {item.description}
                     </p>
                   </div>
                 );
               })}
             </div>
+
           </div>
         </div>
       </section>
@@ -504,35 +544,43 @@ const About = () => {
       {/* =========================================================
           MORE THAN TASK MANAGEMENT
       ========================================================= */}
+
       <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="grid items-center gap-14 lg:grid-cols-2">
+
             <div>
-              <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+              <p className="mb-3 font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                 More Than Task Management
               </p>
 
-              <h2 className="text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
-                The Work Doesn't Disappear Into the System.
-                <span className="text-indigo-600"> It Moves Through It.</span>
+              <h2 className="font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+                The Work Doesn't Disappear
+                Into the System.
+                <span className="text-indigo-600">
+                  {' '}
+                  It Moves Through It.
+                </span>
               </h2>
 
-              <p className="mt-6 leading-8 text-gray-600">
-                A manager creates an activity. WorkSphere identifies the
-                responsibility. A team member begins the task. Progress is
-                recorded. An update is required. The relevant people are
-                notified. The activity is completed.
+              <p className="mt-6 font-[var(--font-body)] leading-8 text-gray-600 italic">
+                A manager creates an activity. WorkSphere identifies
+                the responsibility. A team member begins the task.
+                Progress is recorded. An update is required. The
+                relevant people are notified. The activity is
+                completed.
               </p>
 
-              <p className="mt-4 leading-8 text-gray-600">
-                The result becomes part of the organization's operational
-                record — allowing daily work to continuously build useful
-                organizational knowledge.
+              <p className="mt-4 font-[var(--font-body)] leading-8 text-gray-600 italic">
+                The result becomes part of the organization's
+                operational record allowing daily work to
+                continuously build useful organizational knowledge.
               </p>
             </div>
 
-            <div className="relative">
-              <div className="rounded-[2rem] border border-gray-200 bg-gray-50 p-6 sm:p-8">
+            <div>
+              <div className="rounded-[2rem] border border-blue-100 bg-[#f3f8ff] p-6 sm:p-8">
                 <div className="space-y-4">
                   {[
                     ['Activity', 'Work begins'],
@@ -543,14 +591,18 @@ const About = () => {
                   ].map(([title, text], index) => (
                     <div key={title} className="relative">
                       <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-600">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-[var(--font-body)] text-xs font-bold text-indigo-600">
                           {index + 1}
                         </div>
 
                         <div>
-                          <p className="font-bold text-gray-900">{title}</p>
+                          <p className="font-[var(--font-title)] font-semibold text-gray-900">
+                            {title}
+                          </p>
 
-                          <p className="text-sm text-gray-500">{text}</p>
+                          <p className="font-[var(--font-body)] text-sm text-gray-500">
+                            {text}
+                          </p>
                         </div>
                       </div>
 
@@ -562,6 +614,7 @@ const About = () => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
@@ -569,19 +622,22 @@ const About = () => {
       {/* =========================================================
           WORKSPHERE LOOP
       ========================================================= */}
-      <section className="bg-[#eaf4ff] px-[5%] py-20 md:py-24">
+
+      <section className="border-y border-blue-100 bg-[#eaf4ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="mx-auto max-w-3xl text-center">
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
               <RefreshCw size={22} />
             </div>
 
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+            <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
               The WorkSphere Loop
             </p>
 
-            <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-gray-950 sm:text-[2.6rem]">
-              Every Cycle Makes the Organization More Informed.
+            <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+              Every Cycle Makes the Organization
+              More Informed.
             </h2>
           </div>
 
@@ -599,18 +655,21 @@ const About = () => {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-widest text-indigo-500">
+                    <span className="font-[var(--font-body)] text-xs font-bold tracking-widest text-indigo-500">
                       {step.number}
                     </span>
 
-                    <Icon size={19} className="text-indigo-600" />
+                    <Icon
+                      size={19}
+                      className="text-indigo-600"
+                    />
                   </div>
 
-                  <h3 className="mt-6 text-lg font-extrabold tracking-wide text-gray-900">
+                  <h3 className="mt-6 font-[var(--font-title)] text-lg font-bold tracking-[0.02em] text-gray-900">
                     {step.title}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                  <p className="mt-2 font-[var(--font-body)] text-sm leading-6 text-gray-500">
                     {step.description}
                   </p>
 
@@ -623,60 +682,84 @@ const About = () => {
               );
             })}
           </div>
+
         </div>
       </section>
 
       {/* =========================================================
-          AI - LIGHT BLUE
+          AI
       ========================================================= */}
-      <section className="bg-[#eef6ff] px-[5%] py-20 md:py-24">
+
+      <section className="bg-[#f3f8ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white p-7 shadow-[0_20px_60px_rgba(37,99,235,0.08)] sm:p-10 lg:p-14">
+
             <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+
               <div>
                 <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50">
-                  <Mic className="text-indigo-600" size={23} />
+                  <Mic
+                    className="text-indigo-600"
+                    size={23}
+                  />
                 </div>
 
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+                <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                   Intelligence in the Workflow
                 </p>
 
-                <h2 className="mt-3 text-[2rem] font-extrabold leading-tight text-gray-950 sm:text-[2.5rem]">
+                <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.5rem]">
                   AI Should Work in the Background.
                 </h2>
 
-                <p className="mt-5 leading-7 text-gray-600">
-                  WorkSphere doesn't need AI everywhere. It needs AI where it
-                  removes friction and allows professionals to stay focused on
-                  their actual work.
+                <p className="mt-5 font-[var(--font-body)] leading-7 text-gray-600 italic">
+                  WorkSphere doesn't need AI everywhere. It needs
+                  AI where it removes friction and allows
+                  professionals to stay focused on their actual
+                  work.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-6 sm:p-8">
-                <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
+
+                <p className="mb-6 font-[var(--font-body)] text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                   Example: Structured Prescription Workflow
                 </p>
 
                 <div className="space-y-3">
                   {[
-                    ['Voice', 'Doctor dictates the prescription'],
-                    ['AI Processing', 'Speech is interpreted and structured'],
-                    ['Structured Prescription', 'Relevant information is organized'],
-                    ['Record', 'The result becomes part of the operational record'],
+                    [
+                      'Voice',
+                      'Doctor dictates the prescription',
+                    ],
+                    [
+                      'AI Processing',
+                      'Speech is interpreted and structured',
+                    ],
+                    [
+                      'Structured Prescription',
+                      'Relevant information is organized',
+                    ],
+                    [
+                      'Record',
+                      'The result becomes part of the operational record',
+                    ],
                   ].map(([title, text], index) => (
                     <div key={title}>
                       <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-600">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 font-[var(--font-body)] text-xs font-bold text-indigo-600">
                           {index + 1}
                         </div>
 
                         <div>
-                          <p className="font-semibold text-gray-900">
+                          <p className="font-[var(--font-title)] font-semibold text-gray-900">
                             {title}
                           </p>
 
-                          <p className="text-sm text-gray-500">{text}</p>
+                          <p className="font-[var(--font-body)] text-sm text-gray-500">
+                            {text}
+                          </p>
                         </div>
                       </div>
 
@@ -686,6 +769,7 @@ const About = () => {
                     </div>
                   ))}
                 </div>
+
               </div>
             </div>
           </div>
@@ -695,20 +779,23 @@ const About = () => {
       {/* =========================================================
           DIFFERENT PERSPECTIVES
       ========================================================= */}
-      <section className="border-t border-gray-200 bg-gray-50 px-[5%] py-20 md:py-24">
+
+      <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="mx-auto max-w-3xl text-center">
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+            <p className="font-[var(--font-body)]  text-[1rem] font-bold uppercase tracking-[0.18em] text-indigo-600">
               One System. Different Perspectives.
             </p>
 
-            <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-gray-950 sm:text-[2.6rem]">
+            <h2 className="mt-3 font-[var(--font-title)]  font-bold tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
               From Daily Work to Leadership View.
             </h2>
 
-            <p className="mt-5 leading-7 text-gray-500">
-              The same operational system can present the right information to
-              the right person without losing the bigger picture.
+            <p className="mt-5 font-[var(--font-body)] leading-7 text-gray-500 italic">
+              The same operational system can present the right
+              information to the right person without losing the
+              bigger picture.
             </p>
           </div>
 
@@ -719,49 +806,59 @@ const About = () => {
               return (
                 <Card
                   key={item.label}
-                  className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                  className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-xl"
                 >
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50">
-                    <Icon size={20} className="text-indigo-600" />
+                    <Icon
+                      size={20}
+                      className="text-indigo-600"
+                    />
                   </div>
 
-                  <p className="mt-6 text-xs font-bold uppercase tracking-wider text-gray-400">
+                  <p className="mt-6 font-[var(--font-body)] text-[10px] font-bold uppercase tracking-wider text-gray-400">
                     {item.label}
                   </p>
 
-                  <h3 className="mt-1 text-xl font-bold text-gray-900">
+                  <h3 className="mt-1 font-[var(--font-title)] text-xl font-bold tracking-[-0.02em] text-gray-900">
                     {item.title}
                   </h3>
 
-                  <p className="mt-3 text-sm leading-6 text-gray-500">
+                  <p className="mt-3 font-[var(--font-body)] text-sm leading-6 text-gray-500">
                     {item.description}
                   </p>
                 </Card>
               );
             })}
           </div>
+
         </div>
       </section>
 
       {/* =========================================================
           FLEXIBLE ORGANIZATIONS
       ========================================================= */}
-      <section className="bg-white px-[5%] py-20 md:py-24">
+
+      <section className="bg-[#f3f8ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
+
           <div className="grid gap-12 lg:grid-cols-[0.75fr_1.25fr]">
+
             <div>
-              <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+              <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                 Built to Adapt
               </p>
 
-              <h2 className="mt-3 text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
-                The Same Platform. Different Ways of Working.
+              <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+                The Same Platform.
+                <br />
+                Different Ways of Working.
               </h2>
 
-              <p className="mt-5 leading-8 text-gray-600">
-                WorkSphere is designed as a flexible operational foundation.
-                The platform remains consistent while each organization can
-                shape it around the way its teams actually work.
+              <p className="mt-5 font-[var(--font-body)] leading-8 text-gray-600 italic">
+                WorkSphere is designed as a flexible operational
+                foundation. The platform remains consistent while
+                each organization can shape it around the way its
+                teams actually work.
               </p>
             </div>
 
@@ -769,18 +866,19 @@ const About = () => {
               {environments.map((item) => (
                 <div
                   key={item.title}
-                  className="rounded-2xl border border-gray-200 bg-gray-50 p-6 transition-all duration-300 hover:border-indigo-200 hover:bg-indigo-50/40"
+                  className="rounded-2xl border border-blue-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md"
                 >
-                  <h3 className="text-lg font-bold text-gray-900">
+                  <h3 className="font-[var(--font-title)] text-lg font-bold text-gray-900">
                     {item.title}
                   </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-gray-500">
+                  <p className="mt-2 font-[var(--font-body)] text-sm leading-6 text-gray-500">
                     {item.description}
                   </p>
                 </div>
               ))}
             </div>
+
           </div>
         </div>
       </section>
@@ -788,25 +886,32 @@ const About = () => {
       {/* =========================================================
           SCALE
       ========================================================= */}
-      <section className="bg-gray-50 px-[5%] py-20 md:py-24">
+
+      <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-5xl text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-            <Layers3 className="text-indigo-600" size={25} />
+
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 shadow-sm">
+            <Layers3
+              className="text-indigo-600"
+              size={25}
+            />
           </div>
 
-          <p className="mt-6 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+          <p className="mt-6 font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
             Designed to Grow
           </p>
 
-          <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-gray-950 sm:text-[2.6rem]">
-            Start Where You Are. Scale Where You Need to Go.
+          <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold tracking-[-0.03em] text-gray-950 sm:text-[2.55rem]">
+            Start Where You Are.
+            <br />
+            Scale Where You Need to Go.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl leading-8 text-gray-600">
-            An organization may begin with a small team and grow into
-            multiple departments, more users, more projects, and greater
-            reporting needs. WorkSphere is designed to evolve alongside that
-            growth.
+          <p className="mx-auto mt-5 max-w-2xl font-[var(--font-body)] leading-8 text-gray-600">
+            An organization may begin with a small team and grow
+            into multiple departments, more users, more projects,
+            and greater reporting needs. WorkSphere is designed to
+            evolve alongside that growth.
           </p>
 
           <div className="mt-10 flex flex-wrap justify-center gap-3">
@@ -820,77 +925,90 @@ const About = () => {
             ].map((item) => (
               <span
                 key={item}
-                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm"
+                className="rounded-full border border-blue-100 bg-blue-50 px-4 py-2 font-[var(--font-body)] text-sm font-medium text-gray-700"
               >
                 {item}
               </span>
             ))}
           </div>
+
         </div>
       </section>
 
       {/* =========================================================
           HOPEFELT FOUNDATION
       ========================================================= */}
-      <section className="bg-white px-[5%] py-20 md:py-24">
+
+      <section className="bg-[#f3f8ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-5xl">
-          <div className="rounded-[2rem] border border-gray-200 bg-white p-7 shadow-[0_20px_70px_rgba(15,23,42,0.07)] sm:p-10 md:p-14">
+
+          <div className="rounded-[2rem] border border-blue-100 bg-white p-7 shadow-[0_20px_70px_rgba(37,99,235,0.07)] sm:p-10 md:p-14">
+
             <div className="grid gap-10 md:grid-cols-[auto_1fr]">
+
               <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-indigo-50">
-                <Heart className="text-indigo-600" size={25} />
+                <Heart
+                  className="text-indigo-600"
+                  size={25}
+                />
               </div>
 
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+                <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
                   Why Hopefelt Foundation Built It
                 </p>
 
-                <h2 className="mt-3 text-[2rem] font-extrabold tracking-tight text-gray-950 sm:text-[2.5rem]">
+                <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold tracking-[-0.03em] text-gray-950 sm:text-[2.5rem]">
                   Meaningful Work Deserves Better Systems.
                 </h2>
 
-                <p className="mt-6 leading-8 text-gray-600">
-                  WorkSphere comes from a simple observation: organizations
-                  doing meaningful work deserve better systems to support that
-                  work.
+                <p className="mt-6 font-[var(--font-body)] leading-8 text-gray-600">
+                  WorkSphere comes from a simple observation:
+                  organizations doing meaningful work deserve better
+                  systems to support that work.
                 </p>
 
-                <p className="mt-4 leading-8 text-gray-600">
-                  Hopefelt Foundation's experience in organizational and
-                  community initiatives provided the foundation for
-                  understanding how much coordination, communication,
-                  documentation, and administration sits behind meaningful
-                  outcomes.
+                <p className="mt-4 font-[var(--font-body)] leading-8 text-gray-600">
+                  Hopefelt Foundation's experience in organizational
+                  and community initiatives provided the foundation
+                  for understanding how much coordination,
+                  communication, documentation, and administration
+                  sits behind meaningful outcomes.
                 </p>
 
-                <p className="mt-4 leading-8 text-gray-600">
-                  WorkSphere takes that understanding and translates it into
-                  digital infrastructure — not to replace people, but to give
-                  people a better system to work through.
+                <p className="mt-4 font-[var(--font-body)] leading-8 text-gray-600">
+                  WorkSphere takes that understanding and translates
+                  it into digital infrastructure — not to replace
+                  people, but to give people a better system to work
+                  through.
                 </p>
               </div>
+
             </div>
           </div>
         </div>
       </section>
 
       {/* =========================================================
-          WHAT WORKSPHERE IS REALLY ABOUT - LIGHT BLUE
+          WHAT WORKSPHERE IS REALLY ABOUT
       ========================================================= */}
+
       <section className="border-y border-blue-100 bg-[#eaf4ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-5xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+
+          <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
             What WorkSphere Is Really About
           </p>
 
-          <h2 className="mt-3 text-[2rem] font-extrabold leading-tight text-gray-950 sm:text-[2.7rem]">
+          <h2 className="mt-3 font-[var(--font-title)] text-[2rem] font-bold leading-[1.12] tracking-[-0.03em] text-gray-950 sm:text-[2.7rem]">
             It Isn't About Another Dashboard.
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl leading-8 text-gray-600">
-            It is about creating clarity across the organization — clarity
-            about what is happening, who owns it, what needs attention, what
-            the organization has accomplished, and what should happen next.
+          <p className="mx-auto mt-6 max-w-2xl font-[var(--font-body)] leading-8 text-gray-600">
+            It is about creating clarity across the organization —
+            clarity about what is happening, who owns it, what needs
+            attention, what the organization has accomplished, and
+            what should happen next.
           </p>
 
           <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -911,55 +1029,63 @@ const About = () => {
                   className="shrink-0 text-indigo-600"
                 />
 
-                <span className="text-sm font-medium text-gray-700">
+                <span className="font-[var(--font-body)] text-sm font-medium text-gray-700">
                   {item}
                 </span>
               </div>
             ))}
           </div>
+
         </div>
       </section>
 
       {/* =========================================================
           TEAM
       ========================================================= */}
+
       <Team />
 
       {/* =========================================================
           FINAL CTA
       ========================================================= */}
+
       <section className="relative overflow-hidden bg-white px-[5%] py-24 md:py-28">
-        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-indigo-100/60 blur-3xl" />
+
+        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-100/70 blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl text-center">
+
           <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
             <Sparkles size={24} />
           </div>
 
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
+          <p className="font-[var(--font-body)] text-xs font-bold uppercase tracking-[0.18em] text-indigo-600">
             Ready to See Your Organization Differently?
           </p>
 
-          <h2 className="mt-3 text-[2.2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[3.1rem]">
-            Move from scattered operations to one connected way of working.
+          <h2 className="mt-3 font-[var(--font-title)] text-[2.2rem] font-bold leading-[1.1] tracking-[-0.04em] text-gray-950 sm:text-[3.05rem]">
+            Move from scattered operations to one connected way
+            of working.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-gray-500 sm:text-lg">
-            Give your teams the structure they need while keeping their
-            attention on the work that actually matters.
+          <p className="mx-auto mt-5 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500 sm:text-lg">
+            Give your teams the structure they need while keeping
+            their attention on the work that actually matters.
           </p>
 
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
+
             <Link to="/register-org">
               <Button
                 size="large"
                 variant="secondary"
-                className="group flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 font-bold shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-auto"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl px-8 py-4 font-[var(--font-title)] font-semibold shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-auto"
               >
                 Register Your Organization
+
                 <ArrowRight
                   size={19}
-                  className="transition-transform group-hover:translate-x-1"
+                  className="transition-transform duration-300 group-hover:translate-x-1"
                 />
               </Button>
             </Link>
@@ -968,14 +1094,16 @@ const About = () => {
               <Button
                 size="large"
                 variant="secondary"
-                className="w-full rounded-xl border border-gray-300 bg-white px-8 py-4 font-bold text-gray-800 transition-all duration-300 hover:border-indigo-300 hover:bg-indigo-50 sm:w-auto"
+                className="w-full rounded-xl border border-gray-200 bg-white px-8 py-4 font-[var(--font-title)] font-semibold text-gray-800 shadow-sm transition-all duration-300 hover:border-blue-200 hover:bg-blue-50 sm:w-auto"
               >
                 Enter Workspace
               </Button>
             </Link>
+
           </div>
         </div>
       </section>
+
     </PublicLayout>
   );
 };
@@ -984,7 +1112,10 @@ const About = () => {
    CUSTOM ACTIVITY ICON
 ========================================================= */
 
-const ActivityIcon = ({ size = 20, className = '' }) => (
+const ActivityIcon = ({
+  size = 20,
+  className = '',
+}) => (
   <svg
     width={size}
     height={size}
