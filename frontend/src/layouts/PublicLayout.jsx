@@ -38,36 +38,36 @@ const PublicLayout = ({ children }) => {
 
       {/* ================= HEADER ================= */}
 
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <header className="sticky top-0 z-50 bg-indigo-600 border-b border-indigo-700 shadow-md">
         <div className="max-w-7xl mx-auto px-5 lg:px-10 h-20 flex items-center justify-between">
 
           {/* Logo */}
           <Link 
             to="/"
-            className="flex items-center gap-3"
+            className="flex items-center gap-3 font-bold"
             onClick={() => setMenuOpen(false)}
           >
             <img
               src={image}
               alt="WorkSphere Logo"
-              className="h-14 w-auto object-contain"
+              className="h-14 w-auto object-contain bg-white/10 p-1 rounded-lg"
             />
 
             <div className="flex flex-col">
-              <h2 className="text-2xl font-extrabold text-black leading-tight">
+              <h2 className="text-2xl font-black text-white leading-tight">
                 Worksphere
               </h2>
-              <span className="text-xs text-gray-500 font-medium tracking-wide italic">
+              <span className="text-xs text-indigo-100 font-semibold tracking-wide italic">
                 (Hopefelt Foundation's Flagship Management Platform)
               </span>
             </div>
           </Link>
 
           {/* Desktop Menu */}
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-8 font-bold">
             <Link
               to="/"
-              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+              className="text-white hover:text-indigo-200 transition duration-300"
             >
               Home
             </Link>
@@ -75,14 +75,14 @@ const PublicLayout = ({ children }) => {
             <a
               href="#features"
               onClick={(e) => handleSectionLink(e, "features")}
-              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+              className="text-white hover:text-indigo-200 transition duration-300"
             >
               Features
             </a>
             <a
               href="#how-it-works"
               onClick={(e) => handleSectionLink(e, "how-it-works")}
-              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+              className="text-white hover:text-indigo-200 transition duration-300"
             >
               How It Works
             </a>
@@ -90,7 +90,7 @@ const PublicLayout = ({ children }) => {
             <a
               href="#about"
               onClick={(e) => handleSectionLink(e, "about")}
-              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+              className="text-white hover:text-indigo-200 transition duration-300"
             >
               About
             </a>
@@ -98,7 +98,7 @@ const PublicLayout = ({ children }) => {
             <a
               href="#pricing"
               onClick={(e) => handleSectionLink(e, "pricing")}
-              className="text-gray-600 hover:text-indigo-600 transition duration-300 font-medium"
+              className="text-white hover:text-indigo-200 transition duration-300"
             >
               Pricing
             </a>
@@ -106,8 +106,8 @@ const PublicLayout = ({ children }) => {
 
           {/* Desktop Right */}
           {currentUser ? (
-            <div className="hidden lg:flex items-center gap-3">
-              <span className="text-sm text-gray-500">
+            <div className="hidden lg:flex items-center gap-3 font-bold">
+              <span className="text-sm text-white">
                 Hi, {currentUser.fullName}
               </span>
 
@@ -119,29 +119,29 @@ const PublicLayout = ({ children }) => {
                     navigate("/org-admin/dashboard");
                   else navigate("/staff/dashboard");
                 }}
-                className="px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
+                className="px-5 py-2.5 rounded-lg bg-white text-indigo-600 font-bold shadow hover:bg-indigo-50 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300"
               >
                 Go to Portal
               </button>
 
               <button
                 onClick={logout}
-                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition-all duration-300"
+                className="px-5 py-2.5 rounded-lg border border-white/40 text-white hover:bg-indigo-700 transition-all duration-300"
               >
                 Log Out
               </button>
             </div>
           ) : (
-            <div className="hidden lg:flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-3 font-bold">
               <Link to="/login-choice">
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 text-white font-medium shadow hover:bg-indigo-700 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-white text-indigo-600 font-bold shadow hover:bg-indigo-50 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300">
                   <LogIn size={16} />
                   Login
                 </button>
               </Link>
 
               <Link to="/register-org">
-                <button className="px-5 py-2.5 rounded-lg border border-indigo-600 text-indigo-600 font-medium hover:bg-indigo-600 hover:text-white transition-all duration-300">
+                <button className="px-5 py-2.5 rounded-lg border border-white text-white font-bold hover:bg-white hover:text-indigo-600 transition-all duration-300">
                   Register NGO
                 </button>
               </Link>
@@ -151,7 +151,7 @@ const PublicLayout = ({ children }) => {
           {/* Mobile Toggle */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+            className="lg:hidden p-2 rounded-lg text-white hover:bg-indigo-700 transition"
           >
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -160,12 +160,12 @@ const PublicLayout = ({ children }) => {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="lg:hidden border-t bg-white">
+          <div className="lg:hidden border-t border-indigo-700 bg-indigo-600 font-bold">
             <div className="px-5 py-5 flex flex-col gap-4">
               <Link
                 to="/"
                 onClick={() => setMenuOpen(false)}
-                className="font-medium text-gray-700 hover:text-indigo-600"
+                className="text-white hover:text-indigo-200"
               >
                 Home
               </Link>
@@ -173,14 +173,14 @@ const PublicLayout = ({ children }) => {
               <a
                 href="#features"
                 onClick={(e) => handleSectionLink(e, "features")}
-                className="font-medium text-gray-700 hover:text-indigo-600"
+                className="text-white hover:text-indigo-200"
               >
                 Features
               </a>
               <a
                 href="#how-it-works"
                 onClick={(e) => handleSectionLink(e, "how-it-works")}
-                className="font-medium text-gray-700 hover:text-indigo-600"
+                className="text-white hover:text-indigo-200"
               >
                 How it works
               </a>
@@ -188,7 +188,7 @@ const PublicLayout = ({ children }) => {
               <a
                 href="#about"
                 onClick={(e) => handleSectionLink(e, "about")}
-                className="font-medium text-gray-700 hover:text-indigo-600"
+                className="text-white hover:text-indigo-200"
               >
                 About
               </a>
@@ -196,7 +196,7 @@ const PublicLayout = ({ children }) => {
               <a
                 href="#pricing"
                 onClick={(e) => handleSectionLink(e, "pricing")}
-                className="font-medium text-gray-700 hover:text-indigo-600"
+                className="text-white hover:text-indigo-200"
               >
                 Pricing
               </a>
@@ -207,7 +207,7 @@ const PublicLayout = ({ children }) => {
                     to="/login-choice"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all duration-300">
+                    <button className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-white text-indigo-600 font-bold hover:bg-indigo-50 transition-all duration-300">
                       <LogIn size={16} />
                       Login
                     </button>
@@ -217,14 +217,14 @@ const PublicLayout = ({ children }) => {
                     to="/register-org"
                     onClick={() => setMenuOpen(false)}
                   >
-                    <button className="w-full mt-3 px-5 py-3 rounded-lg border border-indigo-600 text-indigo-600 font-medium hover:bg-indigo-600 hover:text-white transition-all duration-300">
+                    <button className="w-full mt-3 px-5 py-3 rounded-lg border border-white text-white font-bold hover:bg-white hover:text-indigo-600 transition-all duration-300">
                       Register NGO
                     </button>
                   </Link>
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-white">
                     Hi, {currentUser.fullName}
                   </p>
 
@@ -239,7 +239,7 @@ const PublicLayout = ({ children }) => {
                       else
                         navigate("/staff/dashboard");
                     }}
-                    className="w-full px-5 py-3 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-all duration-300"
+                    className="w-full px-5 py-3 rounded-lg bg-white text-indigo-600 font-bold hover:bg-indigo-50 transition-all duration-300"
                   >
                     Go to Portal
                   </button>
@@ -249,7 +249,7 @@ const PublicLayout = ({ children }) => {
                       setMenuOpen(false);
                       logout();
                     }}
-                    className="w-full px-5 py-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition-all duration-300"
+                    className="w-full px-5 py-3 rounded-lg border border-white/40 text-white hover:bg-indigo-700 transition-all duration-300"
                   >
                     Log Out
                   </button>
@@ -269,9 +269,9 @@ const PublicLayout = ({ children }) => {
       </main>
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-white text-gray-800 border-t border-gray-200">
+      <footer className="bg-indigo-600 text-white border-t border-indigo-700">
         <div className="max-w-7xl mx-auto px-5 lg:px-10 py-14">
-          <div className="grid gap-10 md:grid-cols-4">
+          <div className="grid gap-10 md:grid-cols-4 font-bold">
 
             {/* Brand / Info */}
             <div className="md:col-span-1">
@@ -279,20 +279,20 @@ const PublicLayout = ({ children }) => {
                 <img
                   src={image}
                   alt="WorkSphere Logo"
-                  className="h-14 w-auto object-contain"
+                  className="h-14 w-auto object-contain bg-white/10 p-1 rounded-lg"
                 />
-                <h2 className="text-2xl font-bold text-black">
+                <h2 className="text-2xl font-black text-white">
                   WorkSphere
                 </h2>
               </div>
-              <p className="leading-6 text-gray-500 text-xs italic">
+              <p className="leading-6 text-white text-xs italic font-semibold">
                 Built by Hopefelt Foundation’s IT & Technology Department to simplify the way organizations work, connect, and grow.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h3 className="text-lg font-semibold text-black mb-5">
+              <h3 className="text-lg font-black text-white mb-5">
                 Product
               </h3>
 
@@ -301,7 +301,7 @@ const PublicLayout = ({ children }) => {
                   <a
                     href="#features"
                     onClick={(e) => handleSectionLink(e, "features")}
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     Features
                   </a>
@@ -311,7 +311,7 @@ const PublicLayout = ({ children }) => {
                   <a
                     href="#about"
                     onClick={(e) => handleSectionLink(e, "about")}
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     About WorkSphere
                   </a>
@@ -321,7 +321,7 @@ const PublicLayout = ({ children }) => {
                   <a
                     href="#how-it-works"
                     onClick={(e) => handleSectionLink(e, "how-it-works")}
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     How It Works
                   </a>
@@ -331,7 +331,7 @@ const PublicLayout = ({ children }) => {
                   <a
                     href="#pricing"
                     onClick={(e) => handleSectionLink(e, "pricing")}
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     Pricing
                   </a>
@@ -340,7 +340,7 @@ const PublicLayout = ({ children }) => {
                 <li>
                   <Link
                     to="/register-org"
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     Register Organization
                   </Link>
@@ -349,7 +349,7 @@ const PublicLayout = ({ children }) => {
                 <li>
                   <Link
                     to="/login-choice"
-                    className="text-gray-700 hover:text-indigo-600 transition"
+                    className="text-white hover:text-indigo-200 transition"
                   >
                     Enter Workspace
                   </Link>
@@ -359,25 +359,25 @@ const PublicLayout = ({ children }) => {
 
             {/* Resources */}
             <div>
-              <h3 className="text-lg font-semibold text-black mb-5">
+              <h3 className="text-lg font-black text-white mb-5">
                 Resources
               </h3>
 
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     Documentation
                   </a>
                 </li>
 
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     FAQs
                   </a>
                 </li>
 
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     Help & Support
                   </a>
                 </li>
@@ -386,25 +386,25 @@ const PublicLayout = ({ children }) => {
 
             {/* Legal */}
             <div>
-              <h3 className="text-lg font-semibold text-black mb-5">
+              <h3 className="text-lg font-black text-white mb-5">
                 Legal
               </h3>
 
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     Privacy Policy
                   </a>
                 </li>
 
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     Terms & Conditions
                   </a>
                 </li>
 
                 <li>
-                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                  <a href="#" className="text-white hover:text-indigo-200 transition">
                     Security
                   </a>
                 </li>
@@ -412,9 +412,12 @@ const PublicLayout = ({ children }) => {
             </div>
 
           </div>
+        </div>
 
-          <div className="border-t border-gray-200 mt-12 pt-6 flex justify-center items-center">
-            <p className="text-sm text-gray-600 text-center">
+        {/* Bottom Bar with White Background */}
+        <div className="bg-white border-t border-gray-200 py-6">
+          <div className="max-w-7xl mx-auto px-5 lg:px-10 flex justify-center items-center">
+            <p className="text-sm font-bold text-gray-800 text-center">
               © 2026 WorkSphere. All Rights Reserved. · A Flagship Digital Product of Hopefelt Foundation
             </p>
           </div>

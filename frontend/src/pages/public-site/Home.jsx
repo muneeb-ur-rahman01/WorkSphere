@@ -13,8 +13,6 @@ import {
 } from 'lucide-react';
 
 import PublicLayout from '../../layouts/PublicLayout';
-import Button from '../../shared/Button/Button';
-import Card from '../../shared/Card/Card';
 import Team from './Team';
 import HowItWorks from './HowItWorks';
 
@@ -56,61 +54,59 @@ const Home = () => {
 
           <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register-org">
-              <Button
-                size="large"
-                variant="secondary"
-                className="group flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
+              <button
+                type="button"
+                className="group flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
               >
                 Register Your NGO Now
                 <ArrowRight
                   size={20}
                   className="transition-transform duration-300 group-hover:translate-x-1"
                 />
-              </Button>
+              </button>
             </Link>
 
             <Link to="/login-choice">
-              <Button
-                size="large"
-                variant="secondary"
-                className="group flex items-center justify-center px-8 py-4 font-bold text-lg rounded-xl border-2 border-primary hover:bg-primary shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300"
+              <button
+                type="button"
+                className="group flex items-center justify-center px-8 py-4 font-bold text-lg text-gray-900 bg-white border-2 border-indigo-600 hover:bg-indigo-50 shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl"
               >
                 Enter Workspace
-              </Button>
+              </button>
             </Link>
           </div>
 
           {/* Stats */}
           <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">Multi-Tenant</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Built for Multiple Organizations</p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">AI-Powered</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Intelligent Voice & Workflow Automation</p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">24/7</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Operational Access</p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">100%</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Centralized Data</p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">Real-Time</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Analytics & Insights</p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
               <h3 className="text-2xl font-bold text-indigo-600">Automated</h3>
               <p className="mt-2 text-sm text-gray-500 font-medium">Reports & Visualizations</p>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
@@ -169,9 +165,9 @@ const Home = () => {
                 description: "Track organizational performance, analyze activities, monitor key metrics, and automatically generate reports, dashboards, and visualizations to support data-driven decision-making.",
               },
             ].map((item, index) => (
-              <Card
+              <div
                 key={index}
-                className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-2 text-left"
               >
                 <div className="w-14 h-14 rounded-xl bg-indigo-50 flex items-center justify-center mb-6">
                   {item.icon}
@@ -179,7 +175,7 @@ const Home = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
                 <p className="text-indigo-600 font-semibold mb-4">{item.subtitle}</p>
                 <p className="text-gray-500 leading-7 text-[0.92rem]">{item.description}</p>
-              </Card>
+              </div>
             ))}
           </div>
         </div>
@@ -194,7 +190,7 @@ const Home = () => {
         id="about"
         className="scroll-mt-24 px-[5%] py-16 md:py-20 border-t border-gray-200"
       >
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center text-left">
           <div>
             <h1 className="text-[1.6rem] sm:text-[1.9rem] md:text-[2.2rem] font-bold text-gray-900 mb-3">
               About WorkSphere
@@ -226,37 +222,37 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-6">
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left">
               <Heart className="text-indigo-600 mb-3" size={28} />
               <h3 className="text-lg font-bold text-gray-900 mb-1">Our Mission</h3>
               <p className="text-sm text-gray-500 leading-6">
                 Empowering organizations to work smarter, optimize resources, and create greater impact.
               </p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left">
               <Users2 className="text-indigo-600 mb-3" size={28} />
               <h3 className="text-lg font-bold text-gray-900 mb-1">Our Team</h3>
               <p className="text-sm text-gray-500 leading-6">
                 Building technology around the people who manage, coordinate, and deliver meaningful work.
               </p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left">
               <Shield className="text-indigo-600 mb-3" size={28} />
               <h3 className="text-lg font-bold text-gray-900 mb-1">Our Promise</h3>
               <p className="text-sm text-gray-500 leading-6">
                 Providing secure, scalable, and reliable technology organizations can trust.
               </p>
-            </Card>
+            </div>
 
-            <Card className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm text-left">
               <Sparkles className="text-indigo-600 mb-3" size={28} />
               <h3 className="text-lg font-bold text-gray-900 mb-1">Our Vision</h3>
               <p className="text-sm text-gray-500 leading-6">
                 A world where every organization can manage its people, operations, and data through one intelligent platform.
               </p>
-            </Card>
+            </div>
           </div>
         </div>
       </section>
@@ -266,7 +262,7 @@ const Home = () => {
       {/* ================= PRICING SECTION ================= */}
       <section
         id="pricing"
-        className="scroll-mt-24 px-[5%] py-20 md:py-24 border-t border-gray-200 bg-gradient-to-b from-gray-50/50 to-white"
+        className="scroll-mt-24 px-[5%] py-20 md:py-24 border-t border-sky-100 bg-gradient-to-b from-sky-100/60 via-sky-50/40 to-white"
       >
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -284,7 +280,7 @@ const Home = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             
             {/* Basic Plan */}
-            <Card className="rounded-3xl border border-gray-200/80 bg-white p-8 shadow-xl shadow-gray-100/80 hover:shadow-2xl hover:border-gray-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-8 shadow-xl shadow-gray-100/80 hover:shadow-2xl hover:border-gray-300 transition-all duration-300 flex flex-col justify-between group text-left">
               <div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">Basic Plan</h3>
@@ -314,44 +310,42 @@ const Home = () => {
                     <span>Task & Workflow Management</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className = " text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
                     <span>Events & Schedule Management</span>
                   </li>
-                  <li className="flex items-center gap-3 ">
-                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 size={18} className="text-indigo-600 flex-shrink-0" />
                     <span>Core Notifications & Alerts</span>
                   </li>
-                  <li className="flex items-center gap-3 ">
-                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0" />
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 size={18} className="text-indigo-600 flex-shrink-0" />
                     <span>Centralized Operational Data</span>
                   </li>
-                  <li className="flex items-center gap-3 ">
-                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                  <li className="flex items-center gap-3">
+                    <CheckCircle2 size={18} className="text-indigo-600 flex-shrink-0" />
                     <span>Basic Dashboard & Activity Tracking</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
+                    <CheckCircle2 size={18} className="text-indigo-600 flex-shrink-0" />
                     <span>Standard Support</span>
                   </li>
-                  
                 </ul>
               </div>
 
               <div className="pt-8">
                 <Link to="/register-org" className="block w-full">
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    className="group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 shadow-sm transition-all duration-300"
+                  <button
+                    type="button"
+                    className="w-full group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 text-gray-900 shadow-sm transition-all duration-300"
                   >
                     Select Basic
-                  </Button>
+                  </button>
                 </Link>
               </div>
-            </Card>
+            </div>
 
             {/* Standard Plan */}
-            <Card className="rounded-3xl border border-gray-200/80 bg-white p-8 shadow-xl shadow-gray-100/80 hover:shadow-2xl hover:border-gray-300 transition-all duration-300 flex flex-col justify-between group">
+            <div className="rounded-3xl border border-gray-200/80 bg-white p-8 shadow-xl shadow-gray-100/80 hover:shadow-2xl hover:border-gray-300 transition-all duration-300 flex flex-col justify-between group text-left">
               <div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900">Standard Plan</h3>
@@ -409,73 +403,68 @@ const Home = () => {
 
               <div className="pt-8">
                 <Link to="/register-org" className="block w-full">
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    className="group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 shadow-sm transition-all duration-300"
+                  <button
+                    type="button"
+                    className="w-full group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl border border-gray-200 bg-gray-50 hover:bg-indigo-50 hover:border-indigo-200 hover:text-indigo-600 text-gray-900 shadow-sm transition-all duration-300"
                   >
                     Select Standard
-                  </Button>
+                  </button>
                 </Link>
               </div>
-            </Card>
+            </div>
 
-            {/* Premium Plan (Featured/Highlighted) */}
-            <Card className="relative rounded-3xl border-2 border-indigo-600 bg-gradient-to-b from-indigo-50/60 via-white to-white p-8 shadow-2xl shadow-indigo-100 hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-md">
-                Most Popular
-              </div>
-
+            {/* Premium Plan */}
+            <div className="relative rounded-3xl border-2 border-sky-400 bg-gradient-to-b from-sky-50/70 via-white to-white p-8 shadow-xl shadow-sky-100/50 hover:shadow-2xl transition-all duration-300 flex flex-col justify-between text-left">
               <div>
                 <div>
                   <h3 className="text-2xl font-bold text-gray-900 mt-1">Premium Plan</h3>
                   <p className="text-sm text-gray-500 mt-1.5">For large organizations and complex operations</p>
                 </div>
 
-                <div className="flex items-baseline gap-1 mt-6 pb-6 border-b border-indigo-100">
-                  <span className="text-4xl font-black text-indigo-600 tracking-tight">Rs. 80,000</span>
+                <div className="flex items-baseline gap-1 mt-6 pb-6 border-b border-sky-100">
+                  <span className="text-4xl font-black text-sky-600 tracking-tight">Rs. 80,000</span>
                   <span className="text-sm text-gray-400 font-medium">/month</span>
                 </div>
 
                 <ul className="mt-6 space-y-3.5 text-sm text-gray-700 font-medium">
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>1 Organization Workspace</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Unlimited Projects & Events</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Unlimited Users & Role Management</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Advanced Task & Workflow Management</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>AI-Powered Voice Capture</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Advanced Analytics & Insights</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Automated Reports & Visualizations</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Workflow Automation</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Advanced Notifications & Alerts</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle2 className="text-indigo-600 flex-shrink-0" size={18} />
+                    <CheckCircle2 className="text-sky-600 flex-shrink-0" size={18} />
                     <span>Priority 24/7 Support</span>
                   </li>
                 </ul>
@@ -483,21 +472,19 @@ const Home = () => {
 
               <div className="pt-8">
                 <Link to="/register-org" className="block w-full">
-                  <Button
-                    variant="primary"
-                    fullWidth
-                    className="group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 hover:shadow-xl transition-all duration-300"
+                  <button
+                    type="button"
+                    className="w-full group flex items-center justify-center gap-2 py-3.5 font-bold text-base rounded-xl bg-sky-600 hover:bg-sky-700 text-white shadow-lg shadow-sky-200 hover:shadow-xl transition-all duration-300"
                   >
                     Select Premium
-                  </Button>
+                  </button>
                 </Link>
               </div>
-            </Card>
+            </div>
 
           </div>
         </div>
       </section>
-
     </PublicLayout>
   );
 };
