@@ -83,17 +83,34 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Auth Operations
   // ===================
-  const login = async (email, password, expectedRoleDomain) => {
-    try {
-      const res = await api.post('/auth/login', { email, password, roleDomain: expectedRoleDomain });
-      const { token, user } = res.data;
-      localStorage.setItem('token', token);
-      setCurrentUser(user);
-      return { success: true, user };
-    } catch (err) {
-      return asError(err, 'Invalid email or password.');
-    }
-  };
+const login = async (email, password, expectedRoleDomain) => {
+  try {
+    console.log('LOGIN START');
+    console.log('API BASE URL:', import.meta.env.VITE_API_URL);
+    console.log('LOGIN DATA:', { email, expectedRoleDomain });
+
+    const res = await api.post('/auth/login', {
+      email,
+      password,
+      roleDomain: expectedRoleDomain
+    });
+
+    console.log('LOGIN RESPONSE:', res.status, res.data);
+
+    const { token, user } = res.data;
+
+    localStorage.setItem('token', token);
+    setCurrentUser(user);
+
+    return { success: true, user };
+  } catch (err) {
+    console.error('LOGIN ERROR:', err);
+    console.error('LOGIN ERROR RESPONSE:', err.response);
+    console.error('LOGIN ERROR MESSAGE:', err.message);
+
+    return asError(err, 'Invalid email or password.');
+  }
+};
 
   const logout = () => {
     localStorage.removeItem('token');
