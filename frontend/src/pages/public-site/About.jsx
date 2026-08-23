@@ -169,15 +169,15 @@ const About = () => {
           HERO
       ========================================================= */}
       <section className="relative overflow-hidden bg-white px-[5%] pt-16 pb-20 sm:pt-20 md:pt-28 lg:pt-32 lg:pb-28">
-        {/* Decorative background */}
         <div className="pointer-events-none absolute -right-32 -top-32 h-96 w-96 rounded-full bg-indigo-100/50 blur-3xl" />
-        <div className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-violet-100/40 blur-3xl" />
+
+        <div className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-blue-100/40 blur-3xl" />
 
         <div className="relative mx-auto max-w-6xl">
           <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
             <div>
               <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
-                <Sparkles size={16} />
+                <Heart size={16} />
                 About WorkSphere
               </div>
 
@@ -224,9 +224,9 @@ const About = () => {
               </div>
             </div>
 
-            {/* Hero visual */}
+            {/* HERO VISUAL */}
             <div className="relative">
-              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-indigo-100/70 via-white to-violet-100/60 blur-2xl" />
+              <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-indigo-100/70 via-white to-blue-100/60 blur-2xl" />
 
               <div className="relative overflow-hidden rounded-[2rem] border border-gray-200 bg-white p-5 shadow-[0_30px_80px_rgba(15,23,42,0.10)] sm:p-7">
                 <div className="mb-6 flex items-center justify-between">
@@ -234,6 +234,7 @@ const About = () => {
                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">
                       Operational Picture
                     </p>
+
                     <h3 className="mt-1 text-xl font-bold text-gray-900">
                       One Organization
                     </h3>
@@ -282,6 +283,7 @@ const About = () => {
                           <p className="font-semibold text-gray-900">
                             {item.title}
                           </p>
+
                           <p className="text-sm text-gray-500">
                             {item.text}
                           </p>
@@ -296,16 +298,18 @@ const About = () => {
                   })}
                 </div>
 
-                <div className="mt-5 rounded-2xl bg-gray-950 p-5 text-white">
+                <div className="mt-5 rounded-2xl bg-indigo-50 p-5">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/10">
-                      <CircleDot size={17} />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white shadow-sm">
+                      <CircleDot size={17} className="text-indigo-600" />
                     </div>
+
                     <div>
-                      <p className="text-sm font-semibold">
+                      <p className="text-sm font-semibold text-gray-900">
                         Connected Operational System
                       </p>
-                      <p className="text-xs text-gray-400">
+
+                      <p className="text-xs text-gray-500">
                         Activity → Information → Insight → Decision
                       </p>
                     </div>
@@ -353,6 +357,7 @@ const About = () => {
                     className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
                   >
                     <div className="h-2 w-2 rounded-full bg-indigo-500" />
+
                     <span className="text-sm font-medium text-gray-700">
                       {item}
                     </span>
@@ -443,21 +448,21 @@ const About = () => {
       </section>
 
       {/* =========================================================
-          OPERATIONAL LAYERS
+          OPERATIONAL LAYERS - LIGHT BLUE
       ========================================================= */}
-      <section className="bg-gray-950 px-[5%] py-20 text-white md:py-24">
+      <section className="border-y border-blue-100 bg-[#eef6ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-300">
+              <p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
                 The Work Behind Every Organization
               </p>
 
-              <h2 className="text-[2rem] font-extrabold leading-tight tracking-tight sm:text-[2.6rem]">
+              <h2 className="text-[2rem] font-extrabold leading-tight tracking-tight text-gray-950 sm:text-[2.6rem]">
                 Behind Every Organization Is a Workflow.
               </h2>
 
-              <p className="mt-5 max-w-lg leading-7 text-gray-400">
+              <p className="mt-5 max-w-lg leading-7 text-gray-600">
                 Every organization has an underlying cycle. WorkSphere connects
                 these layers so information doesn't disappear between people,
                 processes, and decisions.
@@ -471,21 +476,21 @@ const About = () => {
                 return (
                   <div
                     key={item.title}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors hover:bg-white/[0.07]"
+                    className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-200 hover:shadow-md"
                   >
-                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-white/10">
-                      <Icon size={19} className="text-indigo-300" />
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+                      <Icon size={19} className="text-indigo-600" />
                     </div>
 
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                    <p className="text-xs font-bold uppercase tracking-wider text-indigo-400">
                       0{index + 1}
                     </p>
 
-                    <h3 className="mt-1 font-bold text-white">
+                    <h3 className="mt-1 font-bold text-gray-900">
                       {item.title}
                     </h3>
 
-                    <p className="mt-1 text-sm text-gray-400">
+                    <p className="mt-1 text-sm text-gray-500">
                       {item.description}
                     </p>
                   </div>
@@ -497,7 +502,7 @@ const About = () => {
       </section>
 
       {/* =========================================================
-          WORKSPHERE IS NOT JUST TASK MANAGEMENT
+          MORE THAN TASK MANAGEMENT
       ========================================================= */}
       <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
@@ -544,6 +549,7 @@ const About = () => {
 
                         <div>
                           <p className="font-bold text-gray-900">{title}</p>
+
                           <p className="text-sm text-gray-500">{text}</p>
                         </div>
                       </div>
@@ -563,7 +569,7 @@ const About = () => {
       {/* =========================================================
           WORKSPHERE LOOP
       ========================================================= */}
-      <section className="bg-indigo-50/60 px-[5%] py-20 md:py-24">
+      <section className="bg-[#eaf4ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-lg">
@@ -621,34 +627,34 @@ const About = () => {
       </section>
 
       {/* =========================================================
-          AI
+          AI - LIGHT BLUE
       ========================================================= */}
-      <section className="bg-white px-[5%] py-20 md:py-24">
+      <section className="bg-[#eef6ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-6xl">
-          <div className="overflow-hidden rounded-[2rem] bg-gray-950 p-7 sm:p-10 lg:p-14">
+          <div className="overflow-hidden rounded-[2rem] border border-blue-100 bg-white p-7 shadow-[0_20px_60px_rgba(37,99,235,0.08)] sm:p-10 lg:p-14">
             <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr]">
               <div>
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10">
-                  <Mic className="text-indigo-300" size={23} />
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50">
+                  <Mic className="text-indigo-600" size={23} />
                 </div>
 
-                <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-300">
+                <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
                   Intelligence in the Workflow
                 </p>
 
-                <h2 className="mt-3 text-[2rem] font-extrabold leading-tight text-white sm:text-[2.5rem]">
+                <h2 className="mt-3 text-[2rem] font-extrabold leading-tight text-gray-950 sm:text-[2.5rem]">
                   AI Should Work in the Background.
                 </h2>
 
-                <p className="mt-5 leading-7 text-gray-400">
+                <p className="mt-5 leading-7 text-gray-600">
                   WorkSphere doesn't need AI everywhere. It needs AI where it
                   removes friction and allows professionals to stay focused on
                   their actual work.
                 </p>
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 sm:p-8">
-                <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-gray-500">
+              <div className="rounded-2xl border border-blue-100 bg-[#f8fbff] p-6 sm:p-8">
+                <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
                   Example: Structured Prescription Workflow
                 </p>
 
@@ -660,19 +666,22 @@ const About = () => {
                     ['Record', 'The result becomes part of the operational record'],
                   ].map(([title, text], index) => (
                     <div key={title}>
-                      <div className="flex items-center gap-4 rounded-xl bg-white/5 p-4">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-bold text-indigo-300">
+                      <div className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-xs font-bold text-indigo-600">
                           {index + 1}
                         </div>
 
                         <div>
-                          <p className="font-semibold text-white">{title}</p>
+                          <p className="font-semibold text-gray-900">
+                            {title}
+                          </p>
+
                           <p className="text-sm text-gray-500">{text}</p>
                         </div>
                       </div>
 
                       {index < 3 && (
-                        <div className="ml-8 h-3 border-l border-dashed border-white/10" />
+                        <div className="ml-8 h-3 border-l border-dashed border-indigo-200" />
                       )}
                     </div>
                   ))}
@@ -821,7 +830,7 @@ const About = () => {
       </section>
 
       {/* =========================================================
-          HOPEFELT
+          HOPEFELT FOUNDATION
       ========================================================= */}
       <section className="bg-white px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-5xl">
@@ -866,19 +875,19 @@ const About = () => {
       </section>
 
       {/* =========================================================
-          WHAT IT IS REALLY ABOUT
+          WHAT WORKSPHERE IS REALLY ABOUT - LIGHT BLUE
       ========================================================= */}
-      <section className="bg-gray-950 px-[5%] py-20 text-white md:py-24">
+      <section className="border-y border-blue-100 bg-[#eaf4ff] px-[5%] py-20 md:py-24">
         <div className="mx-auto max-w-5xl text-center">
-          <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-300">
+          <p className="text-sm font-bold uppercase tracking-[0.18em] text-indigo-600">
             What WorkSphere Is Really About
           </p>
 
-          <h2 className="mt-3 text-[2rem] font-extrabold leading-tight sm:text-[2.7rem]">
+          <h2 className="mt-3 text-[2rem] font-extrabold leading-tight text-gray-950 sm:text-[2.7rem]">
             It Isn't About Another Dashboard.
           </h2>
 
-          <p className="mx-auto mt-6 max-w-2xl leading-8 text-gray-400">
+          <p className="mx-auto mt-6 max-w-2xl leading-8 text-gray-600">
             It is about creating clarity across the organization — clarity
             about what is happening, who owns it, what needs attention, what
             the organization has accomplished, and what should happen next.
@@ -895,13 +904,14 @@ const About = () => {
             ].map((item) => (
               <div
                 key={item}
-                className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] p-4 text-left"
+                className="flex items-center gap-3 rounded-xl border border-blue-100 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
               >
                 <CheckCircle2
                   size={18}
-                  className="shrink-0 text-indigo-300"
+                  className="shrink-0 text-indigo-600"
                 />
-                <span className="text-sm font-medium text-gray-300">
+
+                <span className="text-sm font-medium text-gray-700">
                   {item}
                 </span>
               </div>
@@ -970,10 +980,10 @@ const About = () => {
   );
 };
 
-/*
- * Small local icon component.
- * Keeps the hero visual self-contained without adding another dependency.
- */
+/* =========================================================
+   CUSTOM ACTIVITY ICON
+========================================================= */
+
 const ActivityIcon = ({ size = 20, className = '' }) => (
   <svg
     width={size}
