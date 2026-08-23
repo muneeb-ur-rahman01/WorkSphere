@@ -1,21 +1,4 @@
-# CampOS — Change Summary
-
-> **Update (2nd pass):** Google Maps was removed entirely per request (it
-> required a billing-enabled Google Cloud project). Camp/Event location is
-> back to plain manual text entry, exactly like the original app — no
-> Maps dependency, no API key, no cost. Accessibility now has **3**
-> assignable sections instead of 1: **Registration Requests, Camps,
-> Events** — see the updated section 4/5 below. Several touched pages
-> (Accessibility, Registration Requests, Edit Role modal) also got a
-> modernized visual treatment (gradient icon badges, rounded-2xl cards,
-> softer shadows, smoother hover/transition states) without altering the
-> existing Dashboard layout, navigation, or colors elsewhere.
-
-This documents everything implemented against the development prompt
-(registration fixes, Accessibility, staff role editing, and temporarily
-hiding Payment Method / Timer). No existing Dashboard layout, navigation,
-colors, or unrelated UI was changed — new UI was added only where the
-prompt required it.
+# WorkSphere — Change Summary
 
 ## ⚙️ Setup required before running
 
