@@ -15,6 +15,7 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+console.log('API URL:', import.meta.env.VITE_API_URL);
 
 api.interceptors.response.use(
     (response) => response,
