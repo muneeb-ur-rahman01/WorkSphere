@@ -14,19 +14,24 @@ const PublicLayout = ({ children }) => {
   // Smoothly scrolls to a section on the home page. If we're on a
   // different page, navigate to home first and let Home.jsx scroll
   // to the section once it mounts — no full page/section "jump".
-const handleSectionLink = (e, sectionId) => {
-  e.preventDefault();
-  setMenuOpen(false);
+  const handleSectionLink = (e, sectionId) => {
+    e.preventDefault();
+    setMenuOpen(false);
 
-  const el = document.getElementById(sectionId);
+    // If we are not on the home page, navigate home with state first
+    if (location.pathname !== "/") {
+      navigate("/", { state: { scrollTo: sectionId } });
+      return;
+    }
 
-  if (el) {
-    el.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }
-};
+    const el = document.getElementById(sectionId);
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -37,26 +42,26 @@ const handleSectionLink = (e, sectionId) => {
         <div className="max-w-7xl mx-auto px-5 lg:px-10 h-20 flex items-center justify-between">
 
           {/* Logo */}
-      <Link           
-  to="/"
-  className="flex items-center gap-3"
-  onClick={() => setMenuOpen(false)}
->
-  <img
-    src={image}
-    alt="WorkSphere Logo"
-    className="h-14 w-auto object-contain"
-  />
+          <Link 
+            to="/"
+            className="flex items-center gap-3"
+            onClick={() => setMenuOpen(false)}
+          >
+            <img
+              src={image}
+              alt="WorkSphere Logo"
+              className="h-14 w-auto object-contain"
+            />
 
-  <div className="flex flex-col">
-    <h2 className="text-2xl font-extrabold text-black leading-tight">
-      Worksphere
-    </h2>
-    <span className="text-xs text-gray-500 font-medium tracking-wide italic">
-      (Hopefelt Foundation's Flagship Management Platform)
-    </span>
-  </div>
-</Link>
+            <div className="flex flex-col">
+              <h2 className="text-2xl font-extrabold text-black leading-tight">
+                Worksphere
+              </h2>
+              <span className="text-xs text-gray-500 font-medium tracking-wide italic">
+                (Hopefelt Foundation's Flagship Management Platform)
+              </span>
+            </div>
+          </Link>
 
           {/* Desktop Menu */}
           <nav className="hidden lg:flex items-center gap-8">
@@ -266,25 +271,27 @@ const handleSectionLink = (e, sectionId) => {
       {/* ================= FOOTER ================= */}
       <footer className="bg-white text-gray-800 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-5 lg:px-10 py-14">
-          <div className="grid gap-10 md:grid-cols-3">
+          <div className="grid gap-10 md:grid-cols-4">
 
-            {/* Brand */}
-            <div>
+            {/* Brand / Info */}
+            <div className="md:col-span-1">
               <div className="flex items-center gap-3 mb-5">
-               <img
-              src={image}
-              alt="WorkSphere Logo"
-              className="h-14 w-auto object-contain"
-            />
-
+                <img
+                  src={image}
+                  alt="WorkSphere Logo"
+                  className="h-14 w-auto object-contain"
+                />
                 <h2 className="text-2xl font-bold text-black">
                   WorkSphere
                 </h2>
               </div>
 
-              <p className="leading-7 text-gray-600">
-                The premium multi-tenant medical camp management platform
-                designed for NGOs, clinics and healthcare organizations.
+              <p className="leading-7 text-gray-600 text-sm mb-4">
+                The ultimate management operating system designed for NGOs, clinics, and organizations.
+              </p>
+
+              <p className="leading-6 text-gray-500 text-xs italic">
+                Built by Hopefelt Foundation’s IT & Technology Department to simplify the way organizations work, connect, and grow.
               </p>
             </div>
 
@@ -294,7 +301,7 @@ const handleSectionLink = (e, sectionId) => {
                 Product
               </h3>
 
-              <ul className="space-y-3">
+              <ul className="space-y-3 text-sm">
                 <li>
                   <a
                     href="#features"
@@ -311,7 +318,17 @@ const handleSectionLink = (e, sectionId) => {
                     onClick={(e) => handleSectionLink(e, "about")}
                     className="text-gray-700 hover:text-indigo-600 transition"
                   >
-                    About
+                    About WorkSphere
+                  </a>
+                </li>
+
+                <li>
+                  <a
+                    href="#how-it-works"
+                    onClick={(e) => handleSectionLink(e, "how-it-works")}
+                    className="text-gray-700 hover:text-indigo-600 transition"
+                  >
+                    How It Works
                   </a>
                 </li>
 
@@ -330,25 +347,55 @@ const handleSectionLink = (e, sectionId) => {
                     to="/register-org"
                     className="text-gray-700 hover:text-indigo-600 transition"
                   >
-                    Register NGO
+                    Register Organization
+                  </Link>
+                </li>
+
+                <li>
+                  <Link
+                    to="/login-choice"
+                    className="text-gray-700 hover:text-indigo-600 transition"
+                  >
+                    Enter Workspace
                   </Link>
                 </li>
               </ul>
             </div>
 
-            {/* Support */}
+            {/* Resources */}
             <div>
               <h3 className="text-lg font-semibold text-black mb-5">
-                Support
+                Resources
               </h3>
 
-              <ul className="space-y-3">
+              <ul className="space-y-3 text-sm">
                 <li>
                   <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
                     Documentation
                   </a>
                 </li>
 
+                <li>
+                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                    FAQs
+                  </a>
+                </li>
+
+                <li>
+                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                    Help & Support
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h3 className="text-lg font-semibold text-black mb-5">
+                Legal
+              </h3>
+
+              <ul className="space-y-3 text-sm">
                 <li>
                   <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
                     Privacy Policy
@@ -360,19 +407,21 @@ const handleSectionLink = (e, sectionId) => {
                     Terms & Conditions
                   </a>
                 </li>
+
+                <li>
+                  <a href="#" className="text-gray-700 hover:text-indigo-600 transition">
+                    Security
+                  </a>
+                </li>
               </ul>
             </div>
 
           </div>
 
-          <div className="border-t border-gray-200 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-gray-600 text-center md:text-left">
-              © 2026 WorkSphere. All Rights Reserved.
+          <div className="border-t border-gray-200 mt-12 pt-6 flex justify-center items-center">
+            <p className="text-sm text-gray-600 text-center">
+              © 2026 WorkSphere. All Rights Reserved. · A Flagship Digital Product of Hopefelt Foundation
             </p>
-
-            <span className="text-sm text-indigo-600 font-medium">
-              Hopefelt Foundation
-            </span>
           </div>
         </div>
       </footer>

@@ -28,10 +28,10 @@ const About = () => {
       <section className="relative overflow-hidden bg-white px-[5%] pt-16 pb-14 sm:pt-20 md:pt-24 lg:pt-[100px] lg:pb-20">
         <div className="mx-auto max-w-4xl text-center">
 
-          {/* <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 mb-8">
+          <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 mb-8">
             <Heart size={16} />
             About WorkSphere
-          </div> */}
+          </div>
 
           <h1 className="font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3rem] font-extrabold leading-[1.15] text-gray-900 max-w-3xl mx-auto mb-6">
            Multi-Tenant Workforce & Operations Management Platform
