@@ -333,10 +333,7 @@ const Home = () => {
                     <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
                     <span>Standard Support</span>
                   </li>
-                  <li className="flex items-center gap-3 ">
-                    <CheckCircle2 size={18} className= " text-indigo-600 flex-shrink-0"  />
-                    <span>Placeholder Feature</span>
-                  </li>
+                  
                 </ul>
               </div>
 
