@@ -177,7 +177,7 @@ const handleSectionLink = (e, sectionId) => {
                 onClick={(e) => handleSectionLink(e, "how-it-works")}
                 className="font-medium text-gray-700 hover:text-indigo-600"
               >
-                Features
+                How it works
               </a>
 
               <a
