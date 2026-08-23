@@ -52,10 +52,9 @@ const Home = () => {
           <h1 className="animate-slide-up font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[3.6rem] font-extrabold leading-[1.15] text-gray-900 max-w-5xl mx-auto mb-6">
            The Ultimate Management Operating System
           </h1>
-
-          <h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-gray-700 max-w-3xl mx-auto mb-4'>
-            One Platform. Every Team. Every Operation.
-          </h2>
+<h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-blue-600 max-w-3xl mx-auto mb-4 italic'>
+  "One Platform. Every Team. Every Operation"
+</h2>
 
           <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
             A universal management platform that enables organizations to coordinate teams, manage operations, assign tasks, track resources, and stay connected, while leveraging AI-powered voice capture, intelligent analytics, workflow automation, automated annual reporting, and real-time data visualization.
@@ -171,7 +170,7 @@ const Home = () => {
             </h2>
 
             <p className="max-w-xl mx-auto text-gray-500 text-[0.95rem] leading-7 italic">
-              From team coordination to analytics and automation, WorkSphere connects every part of your organization.
+              "From team coordination to analytics and automation, WorkSphere connects every part of your organization"
             </p>
 
           </div>
@@ -181,45 +180,45 @@ const Home = () => {
             {[
               {
                 icon: <Shield className="text-indigo-600" size={30} />,
-                title: "Multi-Tenant SaaS Security",
-                subtitle: "Role-Based Modules",
+                title: "Multi-Tenant SaaS Architecture",
+                subtitle: "One Platform. Multiple Organizations",
                 description:
-                  "Your NGO dashboard displays only your camp records. Protected by bank-grade data architecture, each workspace behaves like an independent ecosystem.",
+                  "Each organization operates within its own secure workspace, with dedicated users, data, settings, and modules while WorkSphere provides centralized platform management.",
               },
               {
                 icon: <Users2 className="text-indigo-600" size={30} />,
-                title: "Role-Based Workspace Matrix",
-                subtitle: "Admins, Staff & Volunteers",
+                title: "Role-Based Access Control",
+                subtitle: "The Right Access for Every Role",
                 description:
-                  "Separate control layers for organization Admins, salaried Employees, Interns seeking experience, and local Volunteers.",
+                  "Admins, Managers, Employees, Interns, Volunteers, and other users receive access based on their responsibilities, ensuring the right people see and manage the right information.",
               },
               {
                 icon: <Zap className="text-indigo-600" size={30} />,
-                title: "Broadcast & Availability Alerts",
-                subtitle: "No more manual calling",
+                title: "Smart Notifications & Availability",
+                subtitle: "Stay Connected in Real Time",
                 description:
-                  "Employees receive instant alerts and can submit their availability with one click.",
+                  "Send instant announcements, task updates, event notifications, and availability requests so teams stay informed and connected without relying on manual communication.",
               },
               {
                 icon: <Sparkles className="text-indigo-600" size={30} />,
-                title: "Dynamic Task Progression",
-                subtitle: "Collaborative Workflow",
+                title: "Dynamic Task & Workflow Management",
+                subtitle: "From Assignment to Completion",
                 description:
-                  "Assign tasks instantly and monitor progress from Pending to Completed with live updates.",
+                  "Create, assign, prioritize, and track tasks while monitoring progress through customizable workflows, deadlines, responsibilities, and real-time status updates.",
               },
               {
                 icon: <Mic className="text-indigo-600" size={30} />,
-                title: "AI Voice Prescription",
-                subtitle: "Fast Consultation",
+                title: "AI-Powered Voice Capture",
+                subtitle: "Smart Prescription & Dose Management",
                 description:
-                  "Doctors dictate prescriptions and AI instantly converts speech into structured medical notes.",
+                  "Doctors dictate prescriptions by voice, and AI converts them into structured records with medicine names, dosages, frequency, and instructions for faster and more accurate prescription management.",
               },
               {
                 icon: <BarChart3 className="text-indigo-600" size={30} />,
-                title: "Analytics & Reports",
+                title: "Analytics, Reports & Visualizations",
                 subtitle: "Smart Insights",
                 description:
-                  "Generate reports, monitor volunteers, export data and analyze overall camp performance.",
+                  "Track organizational performance, analyze activities, monitor key metrics, and automatically generate reports, dashboards, and visualizations to support data-driven decision-making.",
               },
             ].map((item, index) => (
 

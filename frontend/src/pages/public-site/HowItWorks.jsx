@@ -11,25 +11,28 @@ export default function HowItWorks() {
   const steps = [
     {
       step: "01",
-      title: "Organization Registration & Approval",
+      title: "Create Your Organization",
+      subText: "Create Your Organization",
       description:
-        "Medical NGOs, companies, or organizations sign up on the platform. The Super Admin reviews the request, verifies details, and approves the account for secure system access.",
+        "Register your organization, configure its workspace, and set up users, roles, and modules.",
       icon: Building2,
       badge: "Super Admin & Org",
     },
     {
       step: "02",
-      title: "Team & Camp Management",
+      title: "Connect Your People & Operations",
+      subText: "Connect Your People & Operations",
       description:
-        "Approved organizations can seamlessly create medical camps, events, and schedules. Onboard employees, interns, volunteers, and members, and assign role-based tasks efficiently.",
+        "Bring teams together, assign responsibilities, and manage tasks, projects, events, and workflows.",
       icon: Calendar,
       badge: "Operations",
     },
     {
       step: "03",
-      title: "Execution, Tasks & Real-Time Analytics",
+      title: "Track, Analyze & Automate",
+      subText: "Track, Analyze & Automate",
       description:
-        "Manage field operations in real-time, evaluate team performance, capture AI voice-prescriptions, and monitor comprehensive analytics and reports from a unified dashboard.",
+        "Monitor operations in real time, analyze performance, and generate automated reports and visualizations.",
       icon: BarChart3,
       badge: "Analytics & Growth",
     },
@@ -45,21 +48,13 @@ export default function HowItWorks() {
         {/* ================= SECTION HEADER ================= */}
 
         <div className="text-center max-w-3xl mx-auto mb-16">
-
-          {/* <span className="inline-flex text-indigo-600 font-semibold text-sm tracking-wider uppercase bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-            Seamless Workflow
-          </span> */}
-
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mt-4 mb-4">
             How WorkSphere Operates
           </h2>
 
-          <p className="text-gray-600 text-base sm:text-lg leading-7">
-            A streamlined multi-tenant ecosystem designed to connect
-            organizations, empower teams, and simplify administrative
-            workflows.
+          <p className="text-gray-600 text-base sm:text-lg leading-7 italic">
+            "A secure, scalable, multi-tenant ecosystem that connects organizations, people, workflows, and data enabling seamless operations from setup and team management to real-time execution, intelligent analytics, and automated reporting."
           </p>
-
         </div>
 
         {/* ================= STEPS GRID ================= */}
@@ -86,9 +81,14 @@ export default function HowItWorks() {
                     </span>
                   </div>
 
-                  {/* Icon */}
-                  <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-5 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                    <IconComponent className="w-6 h-6" />
+                  {/* Icon + Subtext right next to it */}
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
+                      <IconComponent className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wider">
+                      {item.subText}
+                    </span>
                   </div>
 
                   {/* Title */}
@@ -103,7 +103,6 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Bottom Accent */}
-
                 <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
 
               </div>
@@ -117,59 +116,38 @@ export default function HowItWorks() {
         <div className="mt-16 bg-white rounded-2xl p-8 border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6">
 
           <div className="flex items-center gap-4">
-
             <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center shrink-0">
-
               <UserCheck className="w-6 h-6" />
-
             </div>
 
             <div>
-
               <h4 className="text-lg font-bold text-gray-900">
-                Want to join as a Volunteer, Intern, or Staff?
+                Want to join as a Volunteer, Intern, or Staff/Employee?
               </h4>
 
               <p className="text-gray-600 text-sm mt-1">
-                Apply directly to your preferred organization and get
-                assigned to active.
+                Apply directly to your preferred organization and get assigned to active tasks.
               </p>
-
             </div>
-
           </div>
 
-   {/* <Link to="/register-org">
-                <button className="px-5 py-2.5 rounded-lg border border-indigo-600 text-indigo-600 font-medium hover:bg-indigo-600 hover:text-white transition-all duration-300">
-                  Register NGO
-                </button>
-              </Link> */}
-          {/* <button
-            type="button"
-            className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-xl transition-colors text-sm shrink-0"
-          >
-            Register / Apply Now
-          </button> */}
-                <Link
+          <Link
             to="/register-staff"
-            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-sm text-white bg-gradient-to-r           from-indigo-600 via-indigo-700 to-purple-600 rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all           duration-300 overflow-hidden shrink-0"
+            className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-semibold text-sm text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 rounded-xl shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 overflow-hidden shrink-0"
           >
-            {/* Subtle shine effect on hover */}
-           <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300          pointer-events-none" />
-
-           <span>Register / Apply Now</span>
-  
-           {/* Arrow icon that moves slightly on hover */}
-           <svg 
-             className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
-             fill="none" 
-             stroke="currentColor" 
+            <span className="absolute inset-0 w-full h-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <span>Register / Apply Now</span>
+            <svg 
+              className="w-4 h-4 transform group-hover:translate-x-1 transition-transform duration-300" 
+              fill="none" 
+              stroke="currentColor" 
               strokeWidth="2.5" 
-             viewBox="0 0 24 24"
-           >
-             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-           </svg>
-          </Link>         
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>        
+
         </div>
 
       </div>
