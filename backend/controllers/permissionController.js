@@ -12,7 +12,8 @@ const supabase = require('../config/supabase');
 const ASSIGNABLE_SECTIONS = [
   { key: 'registration_requests', label: 'Registration Requests', description: 'Review and approve/reject incoming staff registration requests.' },
   { key: 'camps', label: 'Camps', description: 'Create, edit, and manage medical camps and staff availability.' },
-  { key: 'events', label: 'Events', description: 'Create, edit, and manage organization events.' }
+  { key: 'events', label: 'Events', description: 'Create, edit, and manage organization events.' },
+  { key: 'meetings', label: 'Meetings', description: 'Create, edit, and manage organization meetings.' }
   // Add more sections here as they become permission-aware, e.g.:
   // { key: 'tasks', label: 'Tasks', description: 'Assign and track staff tasks.' }
 ];

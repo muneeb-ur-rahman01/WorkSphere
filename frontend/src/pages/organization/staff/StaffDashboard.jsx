@@ -2,18 +2,20 @@ import React, { useContext, useState, useRef } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import TaskThreadModal from '../../../shared/TaskThreadModal/TaskThreadModal';
+import { formatDMY } from '../../../shared/DateInputDMY/DateInputDMY';
 import { SUBSCRIPTION_PLANS } from '../../../Config/constant';
 
 import {
   CheckSquare, Calendar, Bell, Mic, Square, Megaphone,
-  CircleDot, CheckCircle2, ChevronRight, Activity, Loader2, AlertCircle, MessageCircle
+  CircleDot, CheckCircle2, ChevronRight, Activity, Loader2, AlertCircle, MessageCircle,
+  Video, MapPin, Clock, ExternalLink, Link2
 } from 'lucide-react';
 
 const StaffDashboard = () => {
   const {
     currentUser, tasks, updateTaskStatus,
     camps, availability, updateAvailability, notifications,
-    transcribePrescription, organizations
+    transcribePrescription, organizations, meetings
   } = useContext(AppContext);
 
   const myOrg = organizations.find(o => o.id === currentUser.orgId);
@@ -35,6 +37,19 @@ const StaffDashboard = () => {
   const myTasks = tasks.filter(t => t.assignedToId === currentUser.id);
   const openTask = myTasks.find(t => t.id === openTaskId) || null;
   const upcomingCamps = camps.filter(c => c.status === 'Upcoming');
+  const upcomingMeetings = meetings
+    .filter(m => m.orgId === currentUser.orgId && m.status === 'Upcoming')
+    .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+  // 24hr 'HH:MM' -> '2:30 PM' for display, without pulling in a date library
+  const formatTime = (t) => {
+    if (!t) return '';
+    const [hStr, mStr] = t.split(':');
+    let h = parseInt(hStr, 10);
+    const suffix = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    return `${h}:${mStr} ${suffix}`;
+  };
 
   const relevantToMe = (n) =>
     n.orgId === currentUser.orgId &&
@@ -401,6 +416,57 @@ const StaffDashboard = () => {
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-6">
                     No upcoming camps
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* UPCOMING MEETINGS */}
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white rounded-lg p-1.5">
+                  <Video size={16} />
+                </div>
+                <h2 className="text-lg font-semibold">Upcoming Meetings</h2>
+              </div>
+
+              <div className="space-y-3">
+                {upcomingMeetings.length > 0 ? (
+                  upcomingMeetings.map((m) => (
+                    <div
+                      key={m.id}
+                      className="border border-gray-100 rounded-xl p-4 bg-gray-50 hover:shadow-sm transition"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-medium">{m.subject}</h3>
+                        <span className="flex items-center gap-1 text-xs font-bold text-purple-700 bg-purple-50 border border-purple-200 rounded-full px-2 py-0.5 shrink-0">
+                          {m.meetingType === 'Online' ? <Video size={11} /> : <MapPin size={11} />}
+                          {m.meetingType}
+                        </span>
+                      </div>
+
+                      <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5">
+                        <Clock size={12} />
+                        {formatDMY(m.date)} • {formatTime(m.time)}
+                      </p>
+
+                      {m.meetingType === 'Online' && m.meetingLink && (
+                        <a
+                          href={m.meetingLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline w-fit"
+                        >
+                          <Link2 size={12} />
+                          Join Meeting Link
+                          <ExternalLink size={10} />
+                        </a>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-6">
+                    No upcoming meetings
                   </p>
                 )}
               </div>

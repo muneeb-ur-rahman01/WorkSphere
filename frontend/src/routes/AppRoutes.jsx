@@ -26,6 +26,7 @@ import PendingRequests from '../pages/organization/admin/PendingRequests';
 import OrgUsers from '../pages/organization/admin/OrgUsers';
 import Camps from '../pages/organization/admin/Camps';
 import Events from '../pages/organization/admin/Events';
+import Meetings from '../pages/organization/admin/Meetings';
 import Tasks from '../pages/organization/admin/Tasks';
 import OrgAnalytics from '../pages/organization/admin/Analytics';
 import Billing from '../pages/organization/admin/Billing';
@@ -137,6 +138,14 @@ const AppRoutes = () => {
         <Route path="/org-admin/events" element={
           <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
             <Events />
+          </PrivateRoute>
+        } />
+        {/* Also reachable by staff-tier roles granted the 'meetings'
+            Accessibility permission — the page redirects away anyone
+            without OrgAdmin or that specific grant. */}
+        <Route path="/org-admin/meetings" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Meetings />
           </PrivateRoute>
         } />
         <Route path="/org-admin/tasks" element={

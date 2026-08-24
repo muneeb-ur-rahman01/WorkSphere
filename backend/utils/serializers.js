@@ -88,6 +88,20 @@ const serializeEvent = (e) => ({
   createdAt: e.created_at
 });
 
+const serializeMeeting = (m) => ({
+  id: m.id,
+  orgId: m.org_id,
+  subject: m.subject,
+  meetingType: m.meeting_type,
+  date: m.meeting_date,
+  time: m.meeting_time,
+  meetingLink: m.meeting_link || '',
+  summary: m.summary || '',
+  status: m.status,
+  createdBy: m.created_by,
+  createdAt: m.created_at
+});
+
 const serializeTask = (t) => ({
   id: t.id,
   orgId: t.org_id,
@@ -170,6 +184,7 @@ module.exports = {
   serializeUser,
   serializeCamp,
   serializeEvent,
+  serializeMeeting,
   serializeTask,
   serializeTaskComment,
   serializeNotification,

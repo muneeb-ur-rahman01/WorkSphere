@@ -13,6 +13,7 @@ import {
   Building,
   Menu,
   X,
+  Video,
   UserCircle2,
   Settings as SettingsIcon,
   MessageSquare,
@@ -206,6 +207,11 @@ const DashboardLayout = ({ children }) => {
           icon: <CalendarDays size={18} />
         },
         {
+          path: '/org-admin/meetings',
+          label: 'Meetings',
+          icon: <Video size={18} />
+        },
+        {
           path: '/org-admin/tasks',
           label: 'Task Matrix',
           icon: <CheckSquare size={18} />,
@@ -261,6 +267,11 @@ const DashboardLayout = ({ children }) => {
         path: '/org-admin/events',
         label: 'Events',
         icon: <CalendarDays size={18} />
+      }] : []),
+      ...(hasAccess('meetings') ? [{
+        path: '/org-admin/meetings',
+        label: 'Meetings',
+        icon: <Video size={18} />
       }] : []),
       {
         path: '/discussion',
@@ -337,14 +348,14 @@ const DashboardLayout = ({ children }) => {
               shadow-indigo-500/20
             "
           >
-            {/* <Heart
+            <Heart
               size={18}
               fill="currentColor"
-            /> */}
+            />
           </div>
 
           <span className="font-bold text-lg tracking-tight">
-            WorkSphere
+            CampOS
           </span>
 
           <span

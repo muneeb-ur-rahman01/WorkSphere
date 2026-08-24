@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
-import { ShieldCheck, UserCog, CheckSquare, Square, ClipboardList, Calendar, CalendarDays, Layers } from 'lucide-react';
+import { ShieldCheck, UserCog, CheckSquare, Square, ClipboardList, Calendar, CalendarDays, Video, Layers } from 'lucide-react';
 import { getRoleBadgeColor } from '../../../Config/constant';
 
 // Icon per section key, purely cosmetic — falls back to a generic icon for
@@ -10,7 +10,8 @@ import { getRoleBadgeColor } from '../../../Config/constant';
 const SECTION_ICONS = {
   registration_requests: ClipboardList,
   camps: Calendar,
-  events: CalendarDays
+  events: CalendarDays,
+  meetings: Video
 };
 
 // Lets an OrgAdmin pick a staff member and grant/revoke access to specific

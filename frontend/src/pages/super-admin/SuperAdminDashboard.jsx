@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building, DollarSign, Users, Clock, Bell, AlertTriangle } from 'lucide-react';
+import { Building, DollarSign, Users, Clock, Bell, AlertTriangle, PauseCircle } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { SUBSCRIPTION_PLANS } from '../../Config/constant';
@@ -12,6 +12,7 @@ const SuperAdminDashboard = () => {
   const totalOrgs = organizations.length;
   const activeOrgs = organizations.filter(o => o.status === 'Active').length;
   const pendingOrgs = organizations.filter(o => o.status === 'Pending').length;
+  const suspendedOrgs = organizations.filter(o => o.status === 'Suspended').length;
   const totalUsers = users.length;
 
   // Revenue based on each org's actual subscription plan price (falls back
@@ -47,7 +48,7 @@ const SuperAdminDashboard = () => {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
 
         {[
           {
@@ -64,6 +65,11 @@ const SuperAdminDashboard = () => {
             label: 'Pending NGOs', value: pendingOrgs, icon: Clock,
             accent: 'from-amber-500 to-orange-500',
             sub: 'Requires Approval', subClass: 'text-amber-600 font-semibold'
+          },
+          {
+            label: 'Suspended', value: suspendedOrgs, icon: PauseCircle,
+            accent: 'from-red-500 to-rose-600',
+            sub: 'Organizations Suspended', subClass: 'text-red-600 font-semibold'
           },
           {
             label: 'Registered Users', value: totalUsers, icon: Users,

@@ -15,6 +15,7 @@ export const AppProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [camps, setCamps] = useState([]);
   const [events, setEvents] = useState([]);
+  const [meetings, setMeetings] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [availability, setAvailability] = useState([]);
@@ -47,6 +48,16 @@ export const AppProvider = ({ children }) => {
         api.get('/users').then(r => setUsers(r.data.users)).catch(() => {}),
         api.get('/camps').then(r => setCamps(r.data.camps)).catch(() => {}),
         api.get('/events').then(r => setEvents(r.data.events)).catch(() => {}),
+        api.get('/meetings')
+  .then(r => {
+    console.log('MEETINGS RESPONSE:', r.data);
+    setMeetings(r.data.meetings);
+  })
+  .catch(err => {
+    console.error('GET MEETINGS ERROR:', err);
+    console.error('STATUS:', err?.response?.status);
+    console.error('RESPONSE:', err?.response?.data);
+  }),
         api.get('/tasks').then(r => setTasks(r.data.tasks)).catch(() => {}),
         api.get('/notifications').then(r => setNotifications(r.data.notifications)).catch(() => {}),
         api.get('/availability').then(r => setAvailability(r.data.availability)).catch(() => {}),
@@ -83,34 +94,17 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Auth Operations
   // ===================
-const login = async (email, password, expectedRoleDomain) => {
-  try {
-    console.log('LOGIN START');
-    console.log('API BASE URL:', import.meta.env.VITE_API_URL);
-    console.log('LOGIN DATA:', { email, expectedRoleDomain });
-
-    const res = await api.post('/auth/login', {
-      email,
-      password,
-      roleDomain: expectedRoleDomain
-    });
-
-    console.log('LOGIN RESPONSE:', res.status, res.data);
-
-    const { token, user } = res.data;
-
-    localStorage.setItem('token', token);
-    setCurrentUser(user);
-
-    return { success: true, user };
-  } catch (err) {
-    console.error('LOGIN ERROR:', err);
-    console.error('LOGIN ERROR RESPONSE:', err.response);
-    console.error('LOGIN ERROR MESSAGE:', err.message);
-
-    return asError(err, 'Invalid email or password.');
-  }
-};
+  const login = async (email, password, expectedRoleDomain) => {
+    try {
+      const res = await api.post('/auth/login', { email, password, roleDomain: expectedRoleDomain });
+      const { token, user } = res.data;
+      localStorage.setItem('token', token);
+      setCurrentUser(user);
+      return { success: true, user };
+    } catch (err) {
+      return asError(err, 'Invalid email or password.');
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -118,6 +112,7 @@ const login = async (email, password, expectedRoleDomain) => {
     setUsers([]);
     setCamps([]);
     setEvents([]);
+    setMeetings([]);
     setTasks([]);
     setNotifications([]);
     setAvailability([]);
@@ -324,6 +319,75 @@ const login = async (email, password, expectedRoleDomain) => {
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete event.');
+    }
+  };
+
+  // ===================
+  // Meeting Operations (OrgAdmin schedules, visible org-wide once created)
+  // ===================
+const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
+  try {
+    console.log('Creating meeting:', {
+      subject,
+      meetingType,
+      date,
+      time,
+      meetingLink
+    });
+
+    const res = await api.post('/meetings', {
+      subject,
+      meetingType,
+      date,
+      time,
+      meetingLink
+    });
+
+    console.log('Meeting response:', res.data);
+
+    await refreshAll();
+
+    return {
+      success: true,
+      id: res.data.meeting?.id
+    };
+  } catch (err) {
+    console.error('CREATE MEETING ERROR:', err);
+    console.error('STATUS:', err?.response?.status);
+    console.error('RESPONSE:', err?.response?.data);
+
+    return asError(err, 'Could not create meeting.');
+  }
+};
+  const updateMeeting = async (meetingId, updates) => {
+    try {
+      await api.patch(`/meetings/${meetingId}`, updates);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update meeting.');
+    }
+  };
+
+  // Thin wrapper around updateMeeting for the common "add a recap after the
+  // meeting happened" action — also flips status to Completed if it wasn't already.
+  const addMeetingSummary = async (meetingId, summary) => {
+    try {
+      await api.patch(`/meetings/${meetingId}`, { summary, status: 'Completed' });
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not save the meeting summary.');
+    }
+  };
+
+  const deleteMeeting = async (meetingId) => {
+    try {
+      await api.delete(`/meetings/${meetingId}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete meeting.');
     }
   };
 
@@ -682,6 +746,7 @@ const login = async (email, password, expectedRoleDomain) => {
       users,
       camps,
       events,
+      meetings,
       tasks,
       notifications,
       availability,
@@ -716,6 +781,10 @@ const login = async (email, password, expectedRoleDomain) => {
       createEvent,
       updateEvent,
       deleteEvent,
+      createMeeting,
+      updateMeeting,
+      addMeetingSummary,
+      deleteMeeting,
       getOrgAnalytics,
       getPlatformAnalytics,
       createTask,
