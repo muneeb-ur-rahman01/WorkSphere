@@ -355,7 +355,7 @@ const DashboardLayout = ({ children }) => {
           </div>
 
           <span className="font-bold text-lg tracking-tight">
-            CampOS
+            WorkSphere
           </span>
 
           <span
