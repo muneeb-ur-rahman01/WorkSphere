@@ -129,7 +129,7 @@ const AdminDashboard = () => {
               DASHBOARD
             </h1>
             <p className="text-indigo-100 mt-2 max-w-xl">
-              Real-time operations coordinator for your medical, Events and Meeting  deployments and personnel.
+              Real-time operations coordinator for your medical, Events and Meeting Deployments and personnel.
             </p>
           </div>
         </div>
