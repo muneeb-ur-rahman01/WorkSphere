@@ -38,7 +38,7 @@ const PublicLayout = ({ children }) => {
 
       {/* ================= HEADER ================= */}
 
-      <header className="sticky top-0 z-50 bg-indigo-600 border-b border-indigo-700 shadow-md">
+      <header className="sticky top-0 z-50 bg-indigo-500 border-b border-indigo-700 shadow-md">
         <div className="max-w-7xl mx-auto px-5 lg:px-10 h-20 flex items-center justify-between">
 
           {/* Logo */}
@@ -269,7 +269,7 @@ const PublicLayout = ({ children }) => {
       </main>
 
       {/* ================= FOOTER ================= */}
-      <footer className="bg-indigo-600 text-white border-t border-indigo-700">
+      <footer className="bg-indigo-500 text-white border-t border-indigo-700">
         <div className="max-w-7xl mx-auto px-5 lg:px-10 py-14">
           <div className="grid gap-10 md:grid-cols-4 font-bold">
 

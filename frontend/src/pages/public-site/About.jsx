@@ -193,14 +193,14 @@ const About = () => {
                 </span>
               </h1>
 
-              <p className="mt-7 max-w-2xl font-[var(--font-body)] text-[1.05rem] leading-8 text-gray-600 sm:text-[1.12rem]">
+              <p className="mt-7 max-w-2xl font-[var(--font-body)] text-[1.05rem] leading-8 text-gray-600 sm:text-[1.12rem] ">
                 Organizations don't usually struggle because they
                 lack people.
                 They struggle because their people, information,
                 responsibilities, and processes are scattered.
               </p>
 
-              <p className="mt-4 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500">
+              <p className="mt-4 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500 italic">
                 WorkSphere creates a connected environment where the
                 work itself becomes organized, visible, measurable,
                 and actionable.
@@ -1043,7 +1043,7 @@ const About = () => {
           TEAM
       ========================================================= */}
 
-      <Team />
+      {/* <Team /> */}
 
       {/* =========================================================
           FINAL CTA
@@ -1051,7 +1051,7 @@ const About = () => {
 
       <section className="relative overflow-hidden bg-white px-[5%] py-24 md:py-28">
 
-        <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-100/70 blur-3xl" />
+        {/* <div className="pointer-events-none absolute left-1/2 top-0 h-72 w-72 -translate-x-1/2 rounded-full bg-blue-100/70 blur-3xl" /> */}
 
         <div className="relative mx-auto max-w-4xl text-center">
 
@@ -1068,7 +1068,7 @@ const About = () => {
             of working.
           </h2>
 
-          <p className="mx-auto mt-5 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500 sm:text-lg">
+          <p className="mx-auto mt-5 max-w-2xl font-[var(--font-body)] text-base leading-7 text-gray-500 sm:text-lg italic">
             Give your teams the structure they need while keeping
             their attention on the work that actually matters.
           </p>

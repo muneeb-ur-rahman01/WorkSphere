@@ -14,8 +14,8 @@ return (
         Choose Workspace
       </h1>
 
-      <p className="text-gray-600 mb-12">
-        Please select your dashboard type to access your CampOS panels.
+      <p className="text-gray-600 mb-12 italic">
+        Please select your dashboard type to access your WorkSphere panel
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

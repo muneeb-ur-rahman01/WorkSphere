@@ -126,10 +126,10 @@ const AdminDashboard = () => {
           <div className="absolute -left-10 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
           <div className="relative">
             <h1 className="text-3xl font-bold text-white">
-              Organization Command Center
+              DASHBOARD
             </h1>
             <p className="text-indigo-100 mt-2 max-w-xl">
-              Real-time operations coordinator for your medical deployments and personnel.
+              Real-time operations coordinator for your medical, Events and Meeting  deployments and personnel.
             </p>
           </div>
         </div>

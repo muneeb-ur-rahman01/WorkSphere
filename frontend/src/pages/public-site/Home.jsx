@@ -257,7 +257,7 @@ const Home = () => {
         </div>
       </section>
 
-      <Team />
+      {/* <Team /> */}
 
       {/* ================= PRICING SECTION ================= */}
       <section
