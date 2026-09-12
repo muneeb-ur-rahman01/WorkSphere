@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Heart, LogIn, Menu, X } from "lucide-react";
 import { AppContext } from "../context/AppContext";
 import image from "../assets/Images/logo.png";
+import QueryWidget from "../shared/QueryWidget/QueryWidget";
 
 const PublicLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -488,6 +489,7 @@ const PublicLayout = ({ children }) => {
           </div>
         </div>
       </footer>
+      <QueryWidget />
 
     </div>
   );
