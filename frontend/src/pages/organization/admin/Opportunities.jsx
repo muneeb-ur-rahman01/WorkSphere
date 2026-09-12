@@ -109,6 +109,11 @@ const Opportunities = () => {
   const [applicants, setApplicants] = useState([]);
   const [loadingApplicants, setLoadingApplicants] = useState(false);
 
+  // DELETE CONFIRMATION STATE
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [opportunityToDelete, setOpportunityToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
   // =====================================================
   // ROLE CHECK
   // =====================================================
@@ -232,14 +237,32 @@ const Opportunities = () => {
   // DELETE
   // =====================================================
 
-  const handleDelete = async (opp) => {
-    const confirmed = window.confirm(
-      `Delete "${opp.title}"?\n\nThis will permanently remove the opportunity and its applications.`
-    );
+  const handleDelete = (opp) => {
+    setOpportunityToDelete(opp);
+    setDeleteModalOpen(true);
+  };
 
-    if (!confirmed) return;
+  const cancelDelete = () => {
+    if (deleting) return;
 
-    await deleteOpportunity(opp.id);
+    setDeleteModalOpen(false);
+    setOpportunityToDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!opportunityToDelete || deleting) return;
+
+    setDeleting(true);
+
+    try {
+      await deleteOpportunity(opportunityToDelete.id);
+    } catch (error) {
+      console.error('Opportunity delete error:', error);
+    } finally {
+      setDeleting(false);
+      setDeleteModalOpen(false);
+      setOpportunityToDelete(null);
+    }
   };
 
   // =====================================================
@@ -781,6 +804,149 @@ const Opportunities = () => {
               </form>
 
             </div>
+          </div>
+        )}
+
+        {/* =================================================
+            DELETE CONFIRMATION MODAL
+        ================================================== */}
+
+        {deleteModalOpen && opportunityToDelete && (
+          <div
+            className="
+              fixed
+              inset-0
+              z-[200]
+              flex
+              items-center
+              justify-center
+              bg-slate-950/60
+              p-4
+              backdrop-blur-sm
+            "
+            onMouseDown={(e) => {
+              if (
+                e.target === e.currentTarget &&
+                !deleting
+              ) {
+                cancelDelete();
+              }
+            }}
+          >
+
+            <div
+              className="
+                w-full
+                max-w-md
+                rounded-2xl
+                bg-white
+                p-6
+                shadow-2xl
+              "
+            >
+
+              {/* DELETE ICON */}
+
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+                <Trash2
+                  size={26}
+                  className="text-red-600"
+                />
+              </div>
+
+              {/* MESSAGE */}
+
+              <div className="mt-5 text-center">
+
+                <h2 className="text-xl font-extrabold text-slate-900">
+                  Are you sure to delete this opportunity?
+                </h2>
+
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  This will permanently remove{' '}
+                  <span className="font-bold text-slate-700">
+                    "{opportunityToDelete.title}"
+                  </span>{' '}
+                  and its applications.
+                </p>
+
+              </div>
+
+              {/* BUTTONS */}
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-center">
+
+                <button
+                  type="button"
+                  onClick={cancelDelete}
+                  disabled={deleting}
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    rounded-xl
+                    border
+                    border-slate-200
+                    bg-white
+                    px-5
+                    py-3
+                    text-sm
+                    font-bold
+                    text-slate-600
+                    transition
+                    hover:bg-slate-50
+                    hover:text-slate-800
+                    disabled:cursor-not-allowed
+                    disabled:opacity-50
+                  "
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={deleting}
+                  className="
+                    inline-flex
+                    items-center
+                    justify-center
+                    gap-2
+                    rounded-xl
+                    bg-red-600
+                    px-5
+                    py-3
+                    text-sm
+                    font-bold
+                    text-white
+                    shadow-lg
+                    shadow-red-100
+                    transition
+                    hover:bg-red-700
+                    active:scale-[0.98]
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                  "
+                >
+
+                  {deleting ? (
+                    <>
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Delete
+                    </>
+                  )}
+
+                </button>
+
+              </div>
+
+            </div>
+
           </div>
         )}
 
