@@ -13,11 +13,11 @@ const getEvents = async (req, res) => {
   return res.json({ success: true, events: data.map(serializeEvent) });
 };
 
-// POST /api/events (OrgAdmin)  body: { title, location, date, description, eventType }
+// POST /api/events (OrgAdmin)  body: { title, location, date, time, description, eventType, imageUrl }
 // Independent from Camps: broadcasts a general event announcement instead of
 // an availability request, since Events don't use the roster workflow.
 const createEvent = async (req, res) => {
-  const { title, location, date, description, eventType } = req.body;
+  const { title, location, date, time, description, eventType, imageUrl } = req.body;
   if (!title || !location || !date) {
     return res.status(400).json({ success: false, error: 'Title, location and date are required.' });
   }
@@ -29,7 +29,9 @@ const createEvent = async (req, res) => {
       title,
       location,
       date,
+      time,
       description,
+      image_url: imageUrl,
       event_type: eventType || 'General',
       status: 'Upcoming'
     })
@@ -49,18 +51,20 @@ const createEvent = async (req, res) => {
   return res.json({ success: true, event: serializeEvent(event) });
 };
 
-// PATCH /api/events/:id (OrgAdmin)  body: { title, location, date, description, eventType, status }
+// PATCH /api/events/:id (OrgAdmin)  body: { title, location, date, time, description, eventType, status, imageUrl }
 const updateEvent = async (req, res) => {
   const { id } = req.params;
-  const { title, location, date, description, eventType, status } = req.body;
+  const { title, location, date, time, description, eventType, status, imageUrl } = req.body;
 
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (location !== undefined) updates.location = location;
   if (date !== undefined) updates.date = date;
+  if (time !== undefined) updates.time = time;
   if (description !== undefined) updates.description = description;
   if (eventType !== undefined) updates.event_type = eventType;
   if (status !== undefined) updates.status = status;
+  if (imageUrl !== undefined) updates.image_url = imageUrl;
 
   const { data: event, error } = await supabase
     .from('events')

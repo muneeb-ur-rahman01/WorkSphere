@@ -3,8 +3,9 @@ const { serializePrescription } = require('../utils/serializers');
 const { transcribePrescriptionAudio } = require('../utils/geminiClient');
 
 // POST /api/prescriptions  (multipart/form-data, field name: "audio")
-// Staff (Employee/Intern/Volunteer) or OrgAdmin records a doctor's dictation;
-// Gemini transcribes + structures it, then we save the record.
+// Organization Admin records a doctor's dictation (AI Module — see
+// prescriptionRoutes.js); Gemini transcribes + structures it, then we save
+// the record.
 const createFromAudio = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, error: 'No audio file was received.' });
@@ -45,25 +46,19 @@ const createFromAudio = async (req, res) => {
   return res.json({ success: true, prescription: serializePrescription(saved) });
 };
 
-// GET /api/prescriptions
-// OrgAdmin sees every prescription logged in their organization.
-// Staff only sees the ones they personally recorded.
+// GET /api/prescriptions (OrgAdmin only — see prescriptionRoutes.js)
+// Every prescription logged in the organization.
 const getPrescriptions = async (req, res) => {
   if (!req.user.orgId) {
     return res.json({ success: true, prescriptions: [] });
   }
 
-  let query = supabase
+  const { data, error } = await supabase
     .from('prescriptions')
     .select('*')
     .eq('org_id', req.user.orgId)
     .order('created_at', { ascending: false });
 
-  if (req.user.role !== 'OrgAdmin') {
-    query = query.eq('created_by', req.user.id);
-  }
-
-  const { data, error } = await query;
   if (error) return res.status(500).json({ success: false, error: 'Could not fetch prescriptions.' });
   return res.json({ success: true, prescriptions: data.map(serializePrescription) });
 };

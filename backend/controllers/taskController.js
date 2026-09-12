@@ -23,21 +23,25 @@ const fetchTaskOr404 = async (id, res) => {
   return task;
 };
 
-// GET /api/tasks
+// GET /api/tasks?projectId=&campaignId=
 const getTasks = async (req, res) => {
   const orgId = req.user.role === 'SuperAdmin' ? req.query.orgId : req.user.orgId;
   let query = supabase.from('tasks').select('*').order('created_at', { ascending: false });
   if (orgId) query = query.eq('org_id', orgId);
+  if (req.query.projectId) query = query.eq('project_id', req.query.projectId);
+  if (req.query.campaignId) query = query.eq('campaign_id', req.query.campaignId);
 
   const { data, error } = await query;
   if (error) return res.status(500).json({ success: false, error: 'Could not fetch tasks.' });
   return res.json({ success: true, tasks: data.map(serializeTask) });
 };
 
-// POST /api/tasks (OrgAdmin) body: { title, description, assignedToId, priority, dueDate }
+// POST /api/tasks (OrgAdmin) body: { title, description, assignedToId, priority, dueDate, projectId, campaignId }
+// projectId/campaignId are optional — set them to surface this task under a
+// Project's or Campaign's "Tasks" sub-section without a parallel task list.
 // Also creates a notification for the assignee, mirroring the original app.
 const createTask = async (req, res) => {
-  const { title, description, assignedToId, priority, dueDate } = req.body;
+  const { title, description, assignedToId, priority, dueDate, projectId, campaignId } = req.body;
   if (!title || !assignedToId) {
     return res.status(400).json({ success: false, error: 'Title and assignee are required.' });
   }
@@ -51,7 +55,9 @@ const createTask = async (req, res) => {
       assigned_to_id: assignedToId,
       priority: priority || 'Medium',
       due_date: dueDate,
-      status: 'Pending'
+      status: 'Pending',
+      project_id: projectId || null,
+      campaign_id: campaignId || null
     })
     .select()
     .single();

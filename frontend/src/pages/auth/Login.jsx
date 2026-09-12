@@ -116,20 +116,22 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
 
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-black mb-2">
-              Email Address
-            </label>
+  <label className="block text-sm font-semibold text-black mb-2">
+    Email Address
+  </label>
 
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="e.g. admin@ghf.org"
-              className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              required
-            />
-          </div>
+  <input
+    type="email"
+    name="email"
+    value={formData.email}
+    onChange={handleChange}
+    placeholder="e.g. admin@ghf.org"
+    className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+    pattern="[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+    title="Please enter a valid email address"
+    required
+  />
+</div>
 
                     {/* Password */}
           <div className="mb-5">
@@ -152,6 +154,7 @@ const Login = () => {
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
+              maxLength={8}
               className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />

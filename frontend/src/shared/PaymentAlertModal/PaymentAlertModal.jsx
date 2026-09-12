@@ -43,6 +43,7 @@ const PaymentAlertModal = ({ subscription, planLabel }) => {
   };
 
   const isBlocked = alertKey === 'blocked';
+  const isTrial = subscription.trialStatus === 'Active' || subscription.trialStatus === 'Expired';
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -60,23 +61,46 @@ const PaymentAlertModal = ({ subscription, planLabel }) => {
         </div>
 
         <h3 className="text-xl font-bold text-black mb-2">
-          {isBlocked ? 'Operations Paused — Payment Required' : 'Payment Reminder'}
+          {isBlocked
+            ? (isTrial ? 'Free Trial Ended — Select a Plan' : 'Operations Paused — Payment Required')
+            : (isTrial ? 'Free Trial Ending Soon' : 'Payment Reminder')}
         </h3>
 
         {isBlocked ? (
           <p className="text-sm text-gray-700 leading-6 mb-6">
-            Your organization's 10-day payment window has ended and the subscription payment
-            of <strong>{formatPKR(subscription.amountDue)}</strong> for the <strong>{planLabel}</strong> was
-            not received. All operations (camps, events, tasks, and other actions) are paused
-            until payment is completed. Your data is safe — nothing has been deleted. Complete
-            payment now to unlock operations immediately.
+            {isTrial ? (
+              <>
+                Your organization's 7-day free trial has ended and no subscription plan is active.
+                All operations (camps, events, tasks, and other actions) are paused until a plan is
+                selected. Your data is safe — nothing has been deleted. Choose a plan now to unlock
+                operations immediately.
+              </>
+            ) : (
+              <>
+                Your organization's subscription payment
+                of <strong>{formatPKR(subscription.amountDue)}</strong> for the <strong>{planLabel}</strong> was
+                not received. All operations (camps, events, tasks, and other actions) are paused
+                until payment is completed. Your data is safe — nothing has been deleted. Complete
+                payment now to unlock operations immediately.
+              </>
+            )}
           </p>
         ) : (
           <p className="text-sm text-gray-700 leading-6 mb-6">
-            Your organization has {subscription.daysUntilDue} day{subscription.daysUntilDue === 1 ? '' : 's'} left
-            to complete the subscription payment of <strong>{formatPKR(subscription.amountDue)}</strong> for
-            the <strong>{planLabel}</strong>. If payment isn't received by the due date, your organization's
-            operations will be paused automatically until payment is made.
+            {isTrial ? (
+              <>
+                Your free trial has {subscription.trialDaysRemaining} day{subscription.trialDaysRemaining === 1 ? '' : 's'} left.
+                Select a subscription plan for <strong>{planLabel}</strong> ({formatPKR(subscription.amountDue)}) before it
+                ends to avoid any interruption to your organization's operations.
+              </>
+            ) : (
+              <>
+                Your organization has {subscription.daysUntilDue} day{subscription.daysUntilDue === 1 ? '' : 's'} left
+                to complete the subscription payment of <strong>{formatPKR(subscription.amountDue)}</strong> for
+                the <strong>{planLabel}</strong>. If payment isn't received by the due date, your organization's
+                operations will be paused automatically until payment is made.
+              </>
+            )}
           </p>
         )}
 
@@ -87,7 +111,7 @@ const PaymentAlertModal = ({ subscription, planLabel }) => {
               isBlocked ? 'bg-red-600 hover:bg-red-700' : 'bg-gradient-to-r from-purple-600 to-indigo-600'
             }`}
           >
-            {isBlocked ? 'Pay Now to Unlock' : 'Pay Now'}
+            {isBlocked ? (isTrial ? 'Select a Plan' : 'Pay Now to Unlock') : (isTrial ? 'Select a Plan' : 'Pay Now')}
           </button>
           <button
             onClick={() => setDismissed(true)}

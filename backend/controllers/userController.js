@@ -2,7 +2,8 @@ const bcrypt = require('bcryptjs');
 const supabase = require('../config/supabase');
 const { serializeUser } = require('../utils/serializers');
 const { addUserToOpenGroups } = require('./discussionController');
-const { sendRegistrationAcceptedEmail } = require('../utils/mailer');
+const { sendRegistrationAcceptedEmail, sendRegistrationRejectedEmail } = require('../utils/mailer');
+const { logAudit, AUDIT_ACTIONS } = require('../utils/auditLog');
 
 // Roles an Organization Admin may assign when adding personnel directly.
 // Keep in sync with frontend/src/Config/constant.js (STAFF_ROLES).
@@ -85,9 +86,27 @@ const updateStaffStatus = async (req, res) => {
   }
 
   const wasPendingApproval = target.status === 'Pending' && status === 'Active';
+  const wasPendingRejection = target.status === 'Pending' && status === 'Rejected';
 
   const { error } = await supabase.from('users').update({ status }).eq('id', id);
   if (error) return res.status(500).json({ success: false, error: 'Could not update user status.' });
+
+  const statusActionMap = {
+    Active: AUDIT_ACTIONS.USER_APPROVED,
+    Rejected: AUDIT_ACTIONS.USER_REJECTED,
+    Suspended: AUDIT_ACTIONS.USER_SUSPENDED,
+    Pending: AUDIT_ACTIONS.USER_STATUS_CHANGED
+  };
+  await logAudit({
+    actor: req.user,
+    orgId: target.org_id,
+    action: statusActionMap[status] || AUDIT_ACTIONS.USER_STATUS_CHANGED,
+    entityType: 'user',
+    entityId: id,
+    entityLabel: target.full_name,
+    previousValue: { status: target.status },
+    newValue: { status }
+  });
 
   // Newly-approved accounts should land with at least one working channel,
   // same as admin-added staff.
@@ -110,10 +129,24 @@ const updateStaffStatus = async (req, res) => {
     }
   }
 
+  // A Pending -> Rejected transition means the applicant was turned down.
+  if (wasPendingRejection) {
+    let orgName;
+    if (target.org_id) {
+      const { data: org } = await supabase.from('organizations').select('name').eq('id', target.org_id).maybeSingle();
+      orgName = org?.name;
+    }
+    try {
+      await sendRegistrationRejectedEmail({ to: target.email, fullName: target.full_name, orgName });
+    } catch (mailErr) {
+      console.error('[updateStaffStatus] Failed to send rejection email:', mailErr.message);
+    }
+  }
+
   return res.json({ success: true });
 };
 
-// PATCH /api/users/:id/role  body: { role }  (OrgAdmin edits an existing staff member's role)
+// PATCH /api/users/:id/role  body: { role }  (OrgAdmin edits their own org's staff; SuperAdmin can edit any org's staff — see Super Admin User Management)
 const updateStaffRole = async (req, res) => {
   const { id } = req.params;
   const { role } = req.body;
@@ -121,7 +154,7 @@ const updateStaffRole = async (req, res) => {
     return res.status(400).json({ success: false, error: 'Invalid role.' });
   }
 
-  const { data: target } = await supabase.from('users').select('org_id, role').eq('id', id).maybeSingle();
+  const { data: target } = await supabase.from('users').select('org_id, role, full_name').eq('id', id).maybeSingle();
   if (!target) return res.status(404).json({ success: false, error: 'User not found.' });
   if (req.user.role === 'OrgAdmin' && target.org_id !== req.user.orgId) {
     return res.status(403).json({ success: false, error: 'Not authorized to modify this user.' });
@@ -138,6 +171,17 @@ const updateStaffRole = async (req, res) => {
     await supabase.from('users').update({ assigned_mentor: null }).eq('id', id);
   }
 
+  await logAudit({
+    actor: req.user,
+    orgId: target.org_id,
+    action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
+    entityType: 'user',
+    entityId: id,
+    entityLabel: target.full_name,
+    previousValue: { role: target.role },
+    newValue: { role }
+  });
+
   return res.json({ success: true });
 };
 
@@ -145,8 +189,8 @@ const updateStaffRole = async (req, res) => {
 const deleteStaff = async (req, res) => {
   const { id } = req.params;
 
+  const { data: target } = await supabase.from('users').select('org_id, full_name').eq('id', id).maybeSingle();
   if (req.user.role === 'OrgAdmin') {
-    const { data: target } = await supabase.from('users').select('org_id').eq('id', id).single();
     if (!target || target.org_id !== req.user.orgId) {
       return res.status(403).json({ success: false, error: 'Not authorized to remove this user.' });
     }
@@ -154,6 +198,16 @@ const deleteStaff = async (req, res) => {
 
   const { error } = await supabase.from('users').delete().eq('id', id);
   if (error) return res.status(500).json({ success: false, error: 'Could not remove staff member.' });
+
+  await logAudit({
+    actor: req.user,
+    orgId: target?.org_id || null,
+    action: AUDIT_ACTIONS.USER_DELETED,
+    entityType: 'user',
+    entityId: id,
+    entityLabel: target?.full_name || null
+  });
+
   return res.json({ success: true });
 };
 

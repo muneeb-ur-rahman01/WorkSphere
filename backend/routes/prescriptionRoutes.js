@@ -19,20 +19,19 @@ const upload = multer({
 });
 
 router.use(requireAuth);
-// AI prescription dictation is a clinical/field-operations tool - restricted to
-// roles that actually work camps (not the general "Membership" tier, which is
-// a lighter-weight supporter role without clinical duties).
-// AI transcription is a Premium-plan feature. requireFeature() checks the
-// org's ACTIVE subscription + plan entitlement server-side (see
-// backend/middleware/subscriptionAccess.js) so this can't be bypassed by
-// calling the API directly even if the frontend button is hidden.
+// AI Module (prescription voice dictation) lives in the Organization Admin
+// Portal only — moved off Staff/Intern per the platform update (item 9).
+// requireFeature() still checks the org's ACTIVE subscription + plan
+// entitlement server-side (see backend/middleware/subscriptionAccess.js)
+// so this can't be bypassed by calling the API directly even if the
+// frontend button is hidden.
 router.post(
   '/',
-  requireRole('OrgAdmin', 'Employee', 'Intern', 'Volunteer', 'Executive Director'),
+  requireRole('OrgAdmin'),
   requireFeature(FEATURES.AI_PRESCRIPTIONS),
   upload.single('audio'),
   createFromAudio
 );
-router.get('/', getPrescriptions);
+router.get('/', requireRole('OrgAdmin'), getPrescriptions);
 
 module.exports = router;

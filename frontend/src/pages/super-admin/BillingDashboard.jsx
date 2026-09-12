@@ -3,7 +3,7 @@ import { AppContext } from '../../context/AppContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Search, Building, X, Clock, CreditCard, History } from 'lucide-react';
 
-const STATUS_FILTERS = ['All', 'Paid', 'Pending', 'PastDue', 'Suspended', 'Premium', 'Standard', 'Basic'];
+const STATUS_FILTERS = ['All', 'Paid', 'Pending', 'PastDue', 'Suspended', 'Premium', 'Standard', 'Basic', 'Trial'];
 
 const formatPKR = (amount) => (amount === null || amount === undefined ? '—' : `Rs. ${Number(amount).toLocaleString('en-PK')}`);
 const formatDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');

@@ -8,13 +8,14 @@ import Input from '../../../shared/Input/Input';
 import Table from '../../../shared/Table/Table';
 import Modal from '../../../shared/Modal/Modal';
 import { useConfirm } from '../../../shared/ConfirmDialog/ConfirmDialog';
-import { Calendar, Plus, MapPin, UserCheck, HelpCircle, UserX, Trash2, Pencil, CheckCircle2 } from 'lucide-react';
+import { Calendar, Plus, MapPin, UserCheck, HelpCircle, UserX, Trash2, Pencil, CheckCircle2, Globe, Clock } from 'lucide-react';
 
 const CAMP_STATUSES = ['Upcoming', 'Completed', 'Cancelled'];
 
 const Camps = () => {
-  const { currentUser, camps, createCamp, updateCamp, deleteCamp, availability, users, hasAccess } = useContext(AppContext);
+  const { currentUser, camps, createCamp, updateCamp, deleteCamp, availability, users, hasAccess, requestVisibility } = useContext(AppContext);
   const confirm = useConfirm();
+  const [requestingVisibilityId, setRequestingVisibilityId] = useState(null);
 
   // Reachable by OrgAdmin always, or by a staff member granted the 'camps'
   // Accessibility permission (see Accessibility.jsx). Anyone else is
@@ -103,6 +104,12 @@ const Camps = () => {
   const handleViewAvailability = (camp) => {
     setActiveCampForAvailability(camp);
     setAvailModalOpen(true);
+  };
+
+  const handleRequestVisibility = async (camp) => {
+    setRequestingVisibilityId(camp.id);
+    await requestVisibility('camp', camp.id);
+    setRequestingVisibilityId(null);
   };
 
   // Get availability stats for a specific camp
@@ -273,6 +280,33 @@ const Camps = () => {
               >
                 Inspect Personnel Availability
               </button>
+
+              {/* Public Home Page visibility */}
+              <div className="mt-3">
+                {camp.visibilityStatus === 'Approved' && (
+                  <span className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg py-2">
+                    <Globe size={14} /> Publicly visible on Home Page
+                  </span>
+                )}
+                {camp.visibilityStatus === 'Pending' && (
+                  <span className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-2">
+                    <Clock size={14} /> Visibility request pending review
+                  </span>
+                )}
+                {(!camp.visibilityStatus || camp.visibilityStatus === 'None' || camp.visibilityStatus === 'Rejected') && (
+                  <button
+                    onClick={() => handleRequestVisibility(camp)}
+                    disabled={requestingVisibilityId === camp.id}
+                    className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-gray-600 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 rounded-lg py-2 transition disabled:opacity-50"
+                  >
+                    <Globe size={14} />
+                    {camp.visibilityStatus === 'Rejected' ? 'Request Rejected — Resubmit' : 'Request Public Visibility'}
+                  </button>
+                )}
+                {camp.visibilityStatus === 'Rejected' && camp.visibilityRejectionReason && (
+                  <p className="text-[11px] text-red-500 mt-1 text-center">Reason: {camp.visibilityRejectionReason}</p>
+                )}
+              </div>
             </div>
           );
         })

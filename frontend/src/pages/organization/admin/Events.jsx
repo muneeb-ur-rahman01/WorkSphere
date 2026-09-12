@@ -2,15 +2,16 @@ import React, { useContext, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
-import { CalendarDays, Plus, MapPin, Trash2, Pencil, Tag, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, Plus, MapPin, Trash2, Pencil, Tag, CheckCircle2, Globe, Clock } from 'lucide-react';
 import { useConfirm } from '../../../shared/ConfirmDialog/ConfirmDialog';
 
 const EVENT_TYPES = ['General', 'Training', 'Fundraiser', 'Awareness', 'Outreach'];
 const EVENT_STATUSES = ['Upcoming', 'Completed', 'Cancelled'];
 
 const Events = () => {
-  const { currentUser, events, createEvent, updateEvent, deleteEvent, hasAccess } = useContext(AppContext);
+  const { currentUser, events, createEvent, updateEvent, deleteEvent, hasAccess, requestVisibility } = useContext(AppContext);
   const confirm = useConfirm();
+  const [requestingVisibilityId, setRequestingVisibilityId] = useState(null);
 
   // Reachable by OrgAdmin always, or by a staff member granted the 'events'
   // Accessibility permission (see Accessibility.jsx). Anyone else is
@@ -104,6 +105,12 @@ const Events = () => {
   // One-click shortcut to mark an event Completed without opening the modal
   const handleMarkComplete = async (event) => {
     await updateEvent(event.id, { status: 'Completed' });
+  };
+
+  const handleRequestVisibility = async (event) => {
+    setRequestingVisibilityId(event.id);
+    await requestVisibility('event', event.id);
+    setRequestingVisibilityId(null);
   };
 
   return (
@@ -235,6 +242,33 @@ const Events = () => {
             <p className="text-gray-700 mt-4 min-h-[60px]">
               {event.description || 'No additional details provided.'}
             </p>
+
+            {/* Public Home Page visibility */}
+            <div className="mt-4">
+              {event.visibilityStatus === 'Approved' && (
+                <span className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg py-2">
+                  <Globe size={14} /> Publicly visible on Home Page
+                </span>
+              )}
+              {event.visibilityStatus === 'Pending' && (
+                <span className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg py-2">
+                  <Clock size={14} /> Visibility request pending review
+                </span>
+              )}
+              {(!event.visibilityStatus || event.visibilityStatus === 'None' || event.visibilityStatus === 'Rejected') && (
+                <button
+                  onClick={() => handleRequestVisibility(event)}
+                  disabled={requestingVisibilityId === event.id}
+                  className="w-full flex items-center justify-center gap-1.5 text-xs font-bold text-gray-600 hover:text-indigo-600 border border-gray-200 hover:border-indigo-300 rounded-lg py-2 transition disabled:opacity-50"
+                >
+                  <Globe size={14} />
+                  {event.visibilityStatus === 'Rejected' ? 'Request Rejected — Resubmit' : 'Request Public Visibility'}
+                </button>
+              )}
+              {event.visibilityStatus === 'Rejected' && event.visibilityRejectionReason && (
+                <p className="text-[11px] text-red-500 mt-1 text-center">Reason: {event.visibilityRejectionReason}</p>
+              )}
+            </div>
           </div>
         ))
       ) : (

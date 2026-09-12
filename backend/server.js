@@ -18,8 +18,26 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const billingRoutes = require('./routes/billingRoutes');
 const discussionRoutes = require('./routes/discussionRoutes');
 const permissionRoutes = require('./routes/permissionRoutes');
+const queryRoutes = require('./routes/queryRoutes');
+const visibilityRoutes = require('./routes/visibilityRoutes');
+const publicRoutes = require('./routes/publicRoutes');
+const opportunityRoutes = require('./routes/opportunityRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
+const platformSettingsRoutes = require('./routes/platformSettingsRoutes');
+const projectRoutes = require('./routes/projectRoutes');
+const campaignRoutes = require('./routes/campaignRoutes');
+const donorRoutes = require('./routes/donorRoutes');
+const donationRoutes = require('./routes/donationRoutes');
+const volunteerRoutes = require('./routes/volunteerRoutes');
+const sponsorRoutes = require('./routes/sponsorRoutes');
+const partnerRoutes = require('./routes/partnerRoutes');
+const beneficiaryRoutes = require('./routes/beneficiaryRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const documentRoutes = require('./routes/documentRoutes');
+const directoryRoutes = require('./routes/directoryRoutes');
+const connectionRoutes = require('./routes/connectionRoutes');
 const { checkExpiringSubscriptions } = require('./controllers/notificationController');
-const { suspendOverdueOrganizations } = require('./utils/subscriptionScheduler');
+const { suspendOverdueOrganizations, notifyExpiringTrials } = require('./utils/subscriptionScheduler');
 
 const app = express();
 
@@ -44,6 +62,24 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/discussion-groups', discussionRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/queries', queryRoutes);
+app.use('/api/visibility-requests', visibilityRoutes);
+app.use('/api/public', publicRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/platform-settings', platformSettingsRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/donors', donorRoutes);
+app.use('/api/donations', donationRoutes);
+app.use('/api/volunteers', volunteerRoutes);
+app.use('/api/sponsors', sponsorRoutes);
+app.use('/api/partners', partnerRoutes);
+app.use('/api/beneficiaries', beneficiaryRoutes);
+app.use('/api/expenses', expenseRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/directory', directoryRoutes);
+app.use('/api/connections', connectionRoutes);
 
 // 404 handler
 app.use((req, res) => res.status(404).json({ success: false, error: 'Route not found.' }));
@@ -68,11 +104,18 @@ app.listen(PORT, () => {
     checkExpiringSubscriptions().catch((err) => console.error('[Subscription Watcher] run failed:', err.message));
   }, 60 * 60 * 1000);
 
-  // 10-day registration payment window / renewal overdue sweep — see
+  // 7-day free trial / renewal overdue sweep — see
   // backend/utils/subscriptionScheduler.js. Restoration only ever happens
   // via a verified payment (paymentController.handleCallback), never here.
   suspendOverdueOrganizations().catch((err) => console.error('[Subscription Scheduler] initial run failed:', err.message));
   setInterval(() => {
     suspendOverdueOrganizations().catch((err) => console.error('[Subscription Scheduler] run failed:', err.message));
+  }, 60 * 60 * 1000);
+
+  // Trial-ending-soon reminder (email + in-app), 2 days out — see
+  // backend/utils/subscriptionScheduler.js.
+  notifyExpiringTrials().catch((err) => console.error('[Trial Reminder] initial run failed:', err.message));
+  setInterval(() => {
+    notifyExpiringTrials().catch((err) => console.error('[Trial Reminder] run failed:', err.message));
   }, 60 * 60 * 1000);
 });

@@ -3,7 +3,8 @@ import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import {
   Users, Calendar, CalendarDays, CheckSquare, ClipboardCheck, ArrowUpRight,
-  Megaphone, CreditCard, Send, ShieldCheck, AlertTriangle
+  Megaphone, CreditCard, Send, ShieldCheck, AlertTriangle,
+  Video, Briefcase, FolderKanban, HandHeart, HeartHandshake, Gift, Handshake, Heart, Wallet, FileText
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SUBSCRIPTION_PLANS, STAFF_ROLES, PAYMENTS_ENABLED } from '../../../Config/constant';
@@ -14,7 +15,9 @@ import CountdownTimer from '../../../shared/CountdownTimer/CountdownTimer';
 const AdminDashboard = () => {
   const {
     currentUser, users, camps, events, tasks, notifications, organizations,
-    postAnnouncement, payWithGateway
+    postAnnouncement, payWithGateway,
+    meetings, opportunities, projects, campaigns, volunteers: volunteerRecords,
+    donors, sponsors, partners, beneficiaries, expenses, documents
   } = useContext(AppContext);
 
   // Filter stats belonging to this Organization only
@@ -101,7 +104,11 @@ const AdminDashboard = () => {
   // payment due date instead. Overdue orgs get no target — the reminder
   // banner/suspension notice already covers that state.
   const countdownTarget = !subscription?.isOverdue ? (myOrg?.subscriptionEnd || myOrg?.paymentDueAt) : null;
-  const countdownLabel = myOrg?.subscriptionEnd ? 'Plan renews in' : 'Payment due in';
+  const countdownLabel = myOrg?.subscriptionEnd
+    ? 'Plan renews in'
+    : subscription?.trialStatus === 'Active'
+      ? 'Free trial ends in'
+      : 'Payment due in';
   const countdownAmountLabel = !myOrg?.subscriptionEnd && myOrg?.amountDue
     ? `Rs. ${Number(myOrg.amountDue).toLocaleString('en-PK')} due — ${SUBSCRIPTION_PLANS[planKey]?.label || myOrg?.subPlan || 'Basic Plan'}`
     : undefined;
@@ -126,10 +133,10 @@ const AdminDashboard = () => {
           <div className="absolute -left-10 -bottom-16 w-64 h-64 bg-white/10 rounded-full blur-2xl" />
           <div className="relative">
             <h1 className="text-3xl font-bold text-white">
-              DASHBOARD
+              Organization Command Center
             </h1>
             <p className="text-indigo-100 mt-2 max-w-xl">
-              Real-time operations coordinator for your medical, Events and Meeting Deployments and personnel.
+              Real-time operations coordinator for your medical deployments and personnel.
             </p>
           </div>
         </div>
@@ -188,24 +195,83 @@ const AdminDashboard = () => {
               label: 'Task Completion', value: `${completionRate}%`, icon: CheckSquare,
               accent: 'from-emerald-500 to-green-600',
               sub: `${completedTasksCount} of ${totalTasksCount} tasks completed`
+            },
+            {
+              label: 'Meetings', value: meetings.filter(m => m.orgId === currentUser.orgId).length, icon: Video,
+              accent: 'from-sky-500 to-blue-600',
+              sub: 'Scheduled meetings', href: '/org-admin/meetings'
+            },
+            {
+              label: 'Opportunities', value: opportunities.length, icon: Briefcase,
+              accent: 'from-teal-500 to-emerald-600',
+              sub: 'Open volunteering opportunities', href: '/org-admin/opportunities'
+            },
+            {
+              label: 'Projects', value: projects.length, icon: FolderKanban,
+              accent: 'from-indigo-500 to-violet-600',
+              sub: 'Total projects', href: '/org-admin/projects'
+            },
+            {
+              label: 'Campaigns', value: campaigns.length, icon: Megaphone,
+              accent: 'from-fuchsia-500 to-purple-500',
+              sub: 'Total campaigns', href: '/org-admin/campaigns'
+            },
+            {
+              label: 'Volunteers', value: volunteerRecords.length, icon: HandHeart,
+              accent: 'from-amber-500 to-orange-500',
+              sub: 'Registered volunteers', href: '/org-admin/volunteers'
+            },
+            {
+              label: 'Donors', value: donors.length, icon: HeartHandshake,
+              accent: 'from-rose-500 to-pink-500',
+              sub: 'Total donors', href: '/org-admin/donors'
+            },
+            {
+              label: 'Sponsors', value: sponsors.length, icon: Gift,
+              accent: 'from-yellow-500 to-amber-600',
+              sub: 'Total sponsors', href: '/org-admin/sponsors'
+            },
+            {
+              label: 'Partners', value: partners.length, icon: Handshake,
+              accent: 'from-cyan-500 to-teal-600',
+              sub: 'Total partners', href: '/org-admin/partners'
+            },
+            {
+              label: 'Beneficiaries', value: beneficiaries.length, icon: Heart,
+              accent: 'from-red-500 to-rose-600',
+              sub: 'Total beneficiaries', href: '/org-admin/beneficiaries'
+            },
+            {
+              label: 'Expenses', value: expenses.length, icon: Wallet,
+              accent: 'from-slate-500 to-gray-700',
+              sub: 'Total expense records', href: '/org-admin/expenses'
+            },
+            {
+              label: 'Documents', value: documents.length, icon: FileText,
+              accent: 'from-lime-500 to-green-600',
+              sub: 'Total documents', href: '/org-admin/documents'
             }
-          ].map((card, idx) => (
-            <div
-              key={idx}
-              className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-indigo-100/40 p-6 hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                  {card.label}
-                </span>
-                <div className={`bg-gradient-to-br ${card.accent} text-white rounded-xl p-2 shadow-md`}>
-                  <card.icon size={18} />
+          ].map((card, idx) => {
+            const CardTag = card.href ? Link : 'div';
+            return (
+              <CardTag
+                key={idx}
+                {...(card.href ? { to: card.href } : {})}
+                className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-indigo-100/40 p-6 hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
+                    {card.label}
+                  </span>
+                  <div className={`bg-gradient-to-br ${card.accent} text-white rounded-xl p-2 shadow-md`}>
+                    <card.icon size={18} />
+                  </div>
                 </div>
-              </div>
-              <h2 className="text-4xl font-extrabold text-black mt-4">{card.value}</h2>
-              <p className={`text-sm mt-2 ${card.subClass || 'text-gray-600'}`}>{card.sub}</p>
-            </div>
-          ))}
+                <h2 className="text-4xl font-extrabold text-black mt-4">{card.value}</h2>
+                <p className={`text-sm mt-2 ${card.subClass || 'text-gray-600'}`}>{card.sub}</p>
+              </CardTag>
+            );
+          })}
 
         </div>
 

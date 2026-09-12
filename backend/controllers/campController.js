@@ -13,17 +13,17 @@ const getCamps = async (req, res) => {
   return res.json({ success: true, camps: data.map(serializeCamp) });
 };
 
-// POST /api/camps (OrgAdmin)  body: { title, location, date, description }
+// POST /api/camps (OrgAdmin)  body: { title, location, date, time, description, imageUrl }
 // Also creates a broadcast notification to the org's staff, mirroring the original app.
 const createCamp = async (req, res) => {
-  const { title, location, date, description } = req.body;
+  const { title, location, date, time, description, imageUrl } = req.body;
   if (!title || !location || !date) {
     return res.status(400).json({ success: false, error: 'Title, location and date are required.' });
   }
 
   const { data: camp, error } = await supabase
     .from('camps')
-    .insert({ org_id: req.user.orgId, title, location, date, description, status: 'Upcoming' })
+    .insert({ org_id: req.user.orgId, title, location, date, time, description, image_url: imageUrl, status: 'Upcoming' })
     .select()
     .single();
 
@@ -40,17 +40,19 @@ const createCamp = async (req, res) => {
   return res.json({ success: true, camp: serializeCamp(camp) });
 };
 
-// PATCH /api/camps/:id (OrgAdmin)  body: { title, location, date, description, status }
+// PATCH /api/camps/:id (OrgAdmin)  body: { title, location, date, time, description, status, imageUrl }
 const updateCamp = async (req, res) => {
   const { id } = req.params;
-  const { title, location, date, description, status } = req.body;
+  const { title, location, date, time, description, status, imageUrl } = req.body;
 
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (location !== undefined) updates.location = location;
   if (date !== undefined) updates.date = date;
+  if (time !== undefined) updates.time = time;
   if (description !== undefined) updates.description = description;
   if (status !== undefined) updates.status = status;
+  if (imageUrl !== undefined) updates.image_url = imageUrl;
 
   const { data: camp, error } = await supabase
     .from('camps')

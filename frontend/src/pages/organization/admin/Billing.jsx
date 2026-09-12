@@ -40,11 +40,22 @@ const paymentStatusIcon = (status) => {
 };
 
 const Billing = () => {
-  const { currentUser, organizations, payWithGateway, getOrgBillingHistory } = useContext(AppContext);
+  const { currentUser, organizations, payWithGateway, getOrgBillingHistory, setMyCancellationRequest } = useContext(AppContext);
 
   const myOrg = organizations.find(o => o.id === currentUser.orgId);
   const subscription = myOrg?.subscription || null;
   const planKey = myOrg?.subPlan && SUBSCRIPTION_PLANS[myOrg.subPlan] ? myOrg.subPlan : 'Basic';
+
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState('');
+
+  const handleToggleCancellation = async (cancel) => {
+    setCancelLoading(true);
+    setCancelError('');
+    const res = await setMyCancellationRequest(cancel);
+    setCancelLoading(false);
+    if (!res.success) setCancelError(res.error);
+  };
 
   const [selectedPlan, setSelectedPlan] = useState(planKey);
   const [payLoading, setPayLoading] = useState(false);
@@ -82,7 +93,11 @@ const Billing = () => {
     : null;
 
   const countdownTarget = !subscription?.isOverdue ? (myOrg?.subscriptionEnd || myOrg?.paymentDueAt) : null;
-  const countdownLabel = myOrg?.subscriptionEnd ? 'Plan renews in' : 'Payment due in';
+  const countdownLabel = myOrg?.subscriptionEnd
+    ? 'Plan renews in'
+    : subscription?.trialStatus === 'Active'
+      ? 'Free trial ends in'
+      : 'Payment due in';
   const countdownAmountLabel = !myOrg?.subscriptionEnd && myOrg?.amountDue
     ? `Rs. ${Number(myOrg.amountDue).toLocaleString('en-PK')} due — ${SUBSCRIPTION_PLANS[planKey]?.label || myOrg?.subPlan || 'Basic Plan'}`
     : undefined;
@@ -158,7 +173,11 @@ const Billing = () => {
                   <p className="text-lg font-bold text-black">{SUBSCRIPTION_PLANS[planKey]?.label || myOrg?.subPlan || 'Basic Plan'}</p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${subStatusBadge(subscription?.subscriptionStatus)}`}>
-                  {subscription?.subscriptionStatus || 'TrialPending'}
+                  {subscription?.trialStatus === 'Active'
+                    ? `Free Trial — ${subscription.trialDaysRemaining} day${subscription.trialDaysRemaining === 1 ? '' : 's'} left`
+                    : subscription?.trialStatus === 'Expired'
+                      ? 'Trial Ended'
+                      : subscription?.subscriptionStatus || 'TrialPending'}
                 </span>
               </div>
 
@@ -166,6 +185,13 @@ const Billing = () => {
                 <span className="text-gray-500">Plan price</span>
                 <span className="font-semibold text-black">{formatPKR(SUBSCRIPTION_PLANS[planKey]?.price ?? myOrg?.planPrice)}</span>
               </div>
+
+              {SUBSCRIPTION_PLANS[planKey]?.perks && (
+                <div className="flex items-center justify-between text-sm gap-4">
+                  <span className="text-gray-500 whitespace-nowrap">Usage limits</span>
+                  <span className="font-semibold text-black text-right">{SUBSCRIPTION_PLANS[planKey].perks}</span>
+                </div>
+              )}
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-500">Payment status</span>
@@ -178,6 +204,17 @@ const Billing = () => {
                 <span className="text-gray-500">Registered on</span>
                 <span className="font-semibold text-black">{formatDate(myOrg?.registrationDate)}</span>
               </div>
+
+              {subscription?.trialStatus && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Free trial</span>
+                  <span className={`font-semibold ${subscription.trialStatus === 'Expired' ? 'text-red-600' : subscription.trialStatus === 'Active' ? 'text-amber-600' : 'text-green-600'}`}>
+                    {subscription.trialStatus === 'Active' && `${subscription.trialDaysRemaining} day${subscription.trialDaysRemaining === 1 ? '' : 's'} left (ends ${formatDate(myOrg?.trialEndDate)})`}
+                    {subscription.trialStatus === 'Expired' && `Ended ${formatDate(myOrg?.trialEndDate)}`}
+                    {subscription.trialStatus === 'Converted' && 'Converted to paid plan'}
+                  </span>
+                </div>
+              )}
 
               <div className="pt-3 border-t border-gray-200">
                 {subscription?.isOverdue ? (
@@ -205,6 +242,35 @@ const Billing = () => {
                   <p className="text-sm text-gray-500">No active billing cycle yet — pay to activate.</p>
                 )}
               </div>
+
+              <div className="pt-3 border-t border-gray-200 flex items-center justify-between gap-3 flex-wrap">
+                {myOrg?.cancellationRequestedAt ? (
+                  <>
+                    <p className="text-sm text-amber-700">
+                      Cancellation requested on {formatDate(myOrg.cancellationRequestedAt)} — your plan won't auto-renew.
+                    </p>
+                    <button
+                      onClick={() => handleToggleCancellation(false)}
+                      disabled={cancelLoading}
+                      className="text-sm font-semibold text-indigo-600 border border-indigo-200 rounded-lg px-4 py-1.5 hover:bg-indigo-50 transition disabled:opacity-60"
+                    >
+                      {cancelLoading ? 'Updating...' : 'Keep Subscription'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-400">Changed your mind about renewing?</p>
+                    <button
+                      onClick={() => handleToggleCancellation(true)}
+                      disabled={cancelLoading}
+                      className="text-sm font-semibold text-red-600 border border-red-200 rounded-lg px-4 py-1.5 hover:bg-red-50 transition disabled:opacity-60"
+                    >
+                      {cancelLoading ? 'Updating...' : 'Cancel Subscription'}
+                    </button>
+                  </>
+                )}
+              </div>
+              {cancelError && <p className="text-xs text-red-600">{cancelError}</p>}
             </div>
 
             {PAYMENTS_ENABLED && countdownTarget && (

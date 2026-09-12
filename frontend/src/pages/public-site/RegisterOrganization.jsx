@@ -120,27 +120,27 @@ const RegisterOrganization = () => {
               {payLoading ? 'Redirecting to secure checkout…' : `Pay Now — ${SUBSCRIPTION_PLANS[formData.plan]?.priceLabel}`}
             </Button>
 
-            <div className="flex flex-col gap-3">
-  <Link to="/login-choice">
-    <Button
-      variant="primary"
-      fullWidth
-      className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
-    >
-      Pay Later — Go to Login Page
-    </Button>
-  </Link>
+                      <div className="flex flex-col gap-3">
+            <Link to="/login-choice">
+              <Button
+                variant="primary"
+                fullWidth
+                className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
+              >
+                Pay Later — Go to Login Page
+              </Button>
+            </Link>
 
-  <Link to="/">
-    <Button
-      variant="primary"
-      fullWidth
-      className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
-    >
-      Return to Home
-    </Button>
-  </Link>
-</div>
+            <Link to="/">
+              <Button
+                variant="primary"
+                fullWidth
+                className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
+              >
+                Return to Home
+              </Button>
+            </Link>
+          </div>
           </div>
         </Card>
       ) : (
@@ -214,15 +214,16 @@ const RegisterOrganization = () => {
                 Password
               </label>
 
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Choose a secure password"
-                className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-              />
+                        <input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              maxLength={8}
+              placeholder="Choose a secure password"
+              className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              required
+            />
             </div>
 
             {/* Subscription Plan */}

@@ -5,6 +5,7 @@ import { AppContext } from '../context/AppContext';
 // Public site pages
 import Home from '../pages/public-site/Home';
 import About from '../pages/public-site/About';
+import PublicOpportunities from '../pages/public-site/Opportunities';
 import RegisterOrganization from '../pages/public-site/RegisterOrganization';
 import LoginChoice from '../pages/public-site/LoginChoice';
 
@@ -19,6 +20,12 @@ import SuperAdminDashboard from '../pages/super-admin/SuperAdminDashboard';
 import Organizations from '../pages/super-admin/Organizations';
 import SuperAdminAnalytics from '../pages/super-admin/Analytics';
 import BillingDashboard from '../pages/super-admin/BillingDashboard';
+import Queries from '../pages/super-admin/Queries';
+import SuperAdminVisibilityRequests from '../pages/super-admin/VisibilityRequests';
+import SuperAdminAuditLogs from '../pages/super-admin/AuditLogs';
+import UserManagement from '../pages/super-admin/UserManagement';
+import SystemMonitoring from '../pages/super-admin/SystemMonitoring';
+import PlatformSettings from '../pages/super-admin/PlatformSettings';
 
 // NGO Admin pages
 import AdminDashboard from '../pages/organization/admin/AdminDashboard';
@@ -26,11 +33,30 @@ import PendingRequests from '../pages/organization/admin/PendingRequests';
 import OrgUsers from '../pages/organization/admin/OrgUsers';
 import Camps from '../pages/organization/admin/Camps';
 import Events from '../pages/organization/admin/Events';
+import VisibilityRequests from '../pages/organization/admin/VisibilityRequests';
+import Opportunities from '../pages/organization/admin/Opportunities';
+import AIAssistant from '../pages/organization/admin/AIAssistant';
 import Meetings from '../pages/organization/admin/Meetings';
 import Tasks from '../pages/organization/admin/Tasks';
 import OrgAnalytics from '../pages/organization/admin/Analytics';
 import Billing from '../pages/organization/admin/Billing';
 import Accessibility from '../pages/organization/admin/Accessibility';
+import OrgAuditLogs from '../pages/organization/admin/AuditLogs';
+import Projects from '../pages/organization/admin/Projects';
+import Campaigns from '../pages/organization/admin/Campaigns';
+import Donors from '../pages/organization/admin/Donors';
+import Volunteers from '../pages/organization/admin/Volunteers';
+import Sponsors from '../pages/organization/admin/Sponsors';
+import Partners from '../pages/organization/admin/Partners';
+import Beneficiaries from '../pages/organization/admin/Beneficiaries';
+import Expenses from '../pages/organization/admin/Expenses';
+import Documents from '../pages/organization/admin/Documents';
+import ApprovalSystem from '../pages/organization/admin/ApprovalSystem';
+import Fundraising from '../pages/organization/admin/Fundraising';
+import Impact from '../pages/organization/admin/Impact';
+import OrganizationDirectory from '../pages/organization/admin/OrganizationDirectory';
+import Connections from '../pages/organization/admin/Connections';
+import OrgProfile from '../pages/organization/admin/OrgProfile';
 
 // Staff pages
 import StaffDashboard from '../pages/organization/staff/StaffDashboard';
@@ -71,6 +97,7 @@ const AppRoutes = () => {
         {/* Public Site Routes */}
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
+        <Route path="/opportunities" element={<PublicOpportunities />} />
         <Route path="/register-org" element={<RegisterOrganization />} />
         <Route path="/login-choice" element={<LoginChoice />} />
         <Route path="/payment/result" element={<PaymentResult />} />
@@ -100,6 +127,36 @@ const AppRoutes = () => {
         <Route path="/super-admin/analytics" element={
           <PrivateRoute allowedRoles={['SuperAdmin']}>
             <SuperAdminAnalytics />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/queries" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <Queries />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/visibility-requests" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <SuperAdminVisibilityRequests />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/audit-logs" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <SuperAdminAuditLogs />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/user-management" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <UserManagement />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/system-monitoring" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <SystemMonitoring />
+          </PrivateRoute>
+        } />
+        <Route path="/super-admin/platform-settings" element={
+          <PrivateRoute allowedRoles={['SuperAdmin']}>
+            <PlatformSettings />
           </PrivateRoute>
         } />
 
@@ -140,12 +197,109 @@ const AppRoutes = () => {
             <Events />
           </PrivateRoute>
         } />
+        <Route path="/org-admin/visibility-requests" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <VisibilityRequests />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/opportunities" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <Opportunities />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/ai-assistant" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <AIAssistant />
+          </PrivateRoute>
+        } />
         {/* Also reachable by staff-tier roles granted the 'meetings'
             Accessibility permission — the page redirects away anyone
             without OrgAdmin or that specific grant. */}
         <Route path="/org-admin/meetings" element={
           <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
             <Meetings />
+          </PrivateRoute>
+        } />
+        {/* Also reachable by staff-tier roles granted the 'projects' /
+            'campaigns' / 'donors' Accessibility permission — each page
+            redirects away anyone without OrgAdmin or that specific grant,
+            and hides create/edit/delete controls for read-only viewers. */}
+        <Route path="/org-admin/projects" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Projects />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/campaigns" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Campaigns />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/donors" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Donors />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/volunteers" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Volunteers />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/sponsors" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Sponsors />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/partners" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Partners />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/beneficiaries" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Beneficiaries />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/expenses" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Expenses />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/documents" element={
+          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+            <Documents />
+          </PrivateRoute>
+        } />
+        {/* Approval decisions (User/Partnership/Expense/Document) are always
+            an OrgAdmin-only responsibility, per spec section 15 — unlike the
+            modules above, this is never delegable via Accessibility. */}
+        <Route path="/org-admin/approvals" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <ApprovalSystem />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/fundraising" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <Fundraising />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/impact" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <Impact />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/profile" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <OrgProfile />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/directory" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <OrganizationDirectory />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/connections" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <Connections />
           </PrivateRoute>
         } />
         <Route path="/org-admin/tasks" element={
@@ -161,6 +315,11 @@ const AppRoutes = () => {
         <Route path="/org-admin/analytics" element={
           <PrivateRoute allowedRoles={['OrgAdmin']}>
             <OrgAnalytics />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/audit-logs" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <OrgAuditLogs />
           </PrivateRoute>
         } />
 

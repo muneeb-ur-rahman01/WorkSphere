@@ -21,6 +21,16 @@ const FEATURES = {
 };
 
 const PLANS = {
+  Trial: {
+    key: 'Trial',
+    label: '7-Day Free Trial',
+    price: 0,
+    currency: CURRENCY,
+    billingCycle: 'Trial',
+    billingCycleMonths: 0,
+    features: [],
+    perks: '1 Camp, 15 Users — full access for 7 days, no payment required'
+  },
   Basic: {
     key: 'Basic',
     label: 'Basic Plan',

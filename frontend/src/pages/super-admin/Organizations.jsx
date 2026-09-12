@@ -5,7 +5,7 @@ import { useConfirm } from '../../shared/ConfirmDialog/ConfirmDialog';
 import { Search, Building, Check, Ban, Trash, ShieldCheck } from 'lucide-react';
 
 const Organizations = () => {
-  const { organizations, updateOrgStatus, deleteOrganization, users } = useContext(AppContext);
+  const { organizations, updateOrgStatus, deleteOrganization, setPublicEventsEnabled, users } = useContext(AppContext);
   const [searchTerm, setSearchTerm] = useState('');
   const confirm = useConfirm();
 
@@ -26,7 +26,7 @@ const Organizations = () => {
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
       <div>
         <h1 className="text-3xl font-bold text-black">
-          Manage NGO Workspaces
+          Organization Management
         </h1>
 
         <p className="text-gray-600 mt-1">
@@ -91,6 +91,14 @@ const Organizations = () => {
 
               <th className="px-6 py-4 text-left font-bold text-gray-700">
                 Status
+              </th>
+
+              <th className="px-6 py-4 text-left font-bold text-gray-700">
+                Trial / Subscription
+              </th>
+
+              <th className="px-6 py-4 text-left font-bold text-gray-700">
+                Public Events
               </th>
 
               <th className="px-6 py-4 text-left font-bold text-gray-700">
@@ -165,6 +173,49 @@ const Organizations = () => {
                       {org.status}
                     </span>
 
+                  </td>
+
+                  <td className="px-6 py-4">
+                    {org.subscription?.trialStatus ? (
+                      <div>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            org.subscription.trialStatus === 'Active'
+                              ? 'bg-amber-100 text-amber-700'
+                              : org.subscription.trialStatus === 'Expired'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {org.subscription.trialStatus === 'Active'
+                            ? `Trial — ${org.subscription.trialDaysRemaining}d left`
+                            : org.subscription.trialStatus === 'Expired'
+                              ? 'Trial Expired'
+                              : 'Converted'}
+                        </span>
+                        <p className="text-[11px] text-gray-500 mt-1">
+                          {org.subscription.trialStatus === 'Converted'
+                            ? `${org.subPlan} · ${org.subscription.subscriptionStatus}`
+                            : `Ends ${org.trialEndDate ? new Date(org.trialEndDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '—'}`}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-gray-400">Not started</span>
+                    )}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => setPublicEventsEnabled(org.id, !org.publicEventsEnabled)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition ${
+                        org.publicEventsEnabled
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                      title="Controls whether this organization's approved camps/events can appear on the public Home Page"
+                    >
+                      {org.publicEventsEnabled ? 'Enabled' : 'Disabled'}
+                    </button>
                   </td>
 
                   <td className="px-6 py-4">

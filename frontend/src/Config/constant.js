@@ -1,10 +1,11 @@
 // ================================
-// Payment Method / Timer — TEMPORARILY DISABLED
-// Flip this back to true to restore the Payment Method screens, the
-// countdown timer, and the payment reminder/blocked popups when the
-// project moves toward deployment. All underlying billing code/UI is kept
-// in place and simply gated behind this flag rather than removed. See also
-// PAYMENT_ENFORCEMENT_ENABLED in backend/middleware/subscriptionAccess.js.
+// Payment Method / Timer / Free-Trial screens — HIDDEN again by request.
+// Flip back to true to restore the Payment Method screens, the countdown
+// timer, and the payment reminder/blocked popups. All underlying billing
+// code/UI stays in place, just gated behind this flag. See also
+// PAYMENT_ENFORCEMENT_ENABLED in backend/middleware/subscriptionAccess.js —
+// keep both flags in sync, otherwise an org's trial can expire and lock
+// them out with no visible way to pay.
 // ================================
 export const PAYMENTS_ENABLED = false;
 
@@ -123,6 +124,16 @@ export const NOTIFICATION_TYPE = {
 // ================================
 
 export const SUBSCRIPTION_PLANS = {
+
+    "Trial": {
+        key: "Trial",
+        label: "7-Day Free Trial",
+        priceLabel: "Free for 7 days",
+        price: 0,
+        billingCycle: "Trial",
+        aiFeatures: false,
+        perks: "1 Camp, 15 Users — full access for 7 days, no payment required"
+    },
 
     "Basic": {
         key: "Basic",

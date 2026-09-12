@@ -21,6 +21,23 @@ export const AppProvider = ({ children }) => {
   const [availability, setAvailability] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [discussionGroups, setDiscussionGroups] = useState([]);
+  const [queries, setQueries] = useState([]); // SuperAdmin only — external user queries inbox
+  const [visibilityRequests, setVisibilityRequests] = useState([]); // event/camp public-visibility requests
+  const [opportunities, setOpportunities] = useState([]); // OrgAdmin only — own org's opportunities
+  const [projects, setProjects] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [donors, setDonors] = useState([]);
+  const [donations, setDonations] = useState([]);
+  const [volunteers, setVolunteers] = useState([]);
+  const [sponsors, setSponsors] = useState([]);
+  const [sponsorships, setSponsorships] = useState([]);
+  const [partners, setPartners] = useState([]);
+  const [beneficiaries, setBeneficiaries] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [directory, setDirectory] = useState([]);
+  const [connections, setConnections] = useState([]);
   const [myPermissions, setMyPermissions] = useState([]); // Accessibility: section keys granted to the current user
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem('campos_current_user');
@@ -48,31 +65,52 @@ export const AppProvider = ({ children }) => {
         api.get('/users').then(r => setUsers(r.data.users)).catch(() => {}),
         api.get('/camps').then(r => setCamps(r.data.camps)).catch(() => {}),
         api.get('/events').then(r => setEvents(r.data.events)).catch(() => {}),
-        api.get('/meetings')
-  .then(r => {
-    console.log('MEETINGS RESPONSE:', r.data);
-    setMeetings(r.data.meetings);
-  })
-  .catch(err => {
-    console.error('GET MEETINGS ERROR:', err);
-    console.error('STATUS:', err?.response?.status);
-    console.error('RESPONSE:', err?.response?.data);
-  }),
+        api.get('/meetings').then(r => setMeetings(r.data.meetings)).catch(() => {}),
         api.get('/tasks').then(r => setTasks(r.data.tasks)).catch(() => {}),
         api.get('/notifications').then(r => setNotifications(r.data.notifications)).catch(() => {}),
         api.get('/availability').then(r => setAvailability(r.data.availability)).catch(() => {}),
-        api.get('/prescriptions').then(r => setPrescriptions(r.data.prescriptions)).catch(() => {}),
         api.get('/discussion-groups').then(r => setDiscussionGroups(r.data.groups)).catch(() => {}),
         api.get('/permissions/me').then(r => setMyPermissions(r.data.sections)).catch(() => {})
       ];
+      // Projects / Campaigns / Donors / Donations / Volunteers: visible to
+      // every org member (mutation is what's permission-gated), same as
+      // Camps/Events/Tasks above. SuperAdmin doesn't have a single org in
+      // context, so these stay OrgAdmin/staff-only for now — the Super
+      // Admin System Monitoring screen gets its cross-org numbers from
+      // /organizations and /users instead.
+      if (currentUser.role !== 'SuperAdmin') {
+        requests.push(api.get('/projects').then(r => setProjects(r.data.projects)).catch(() => {}));
+        requests.push(api.get('/campaigns').then(r => setCampaigns(r.data.campaigns)).catch(() => {}));
+        requests.push(api.get('/donors').then(r => setDonors(r.data.donors)).catch(() => {}));
+        requests.push(api.get('/donations').then(r => setDonations(r.data.donations)).catch(() => {}));
+        requests.push(api.get('/volunteers').then(r => setVolunteers(r.data.volunteers)).catch(() => {}));
+        requests.push(api.get('/sponsors').then(r => setSponsors(r.data.sponsors)).catch(() => {}));
+        requests.push(api.get('/sponsors/sponsorships/all').then(r => setSponsorships(r.data.sponsorships)).catch(() => {}));
+        requests.push(api.get('/partners').then(r => setPartners(r.data.partners)).catch(() => {}));
+        requests.push(api.get('/beneficiaries').then(r => setBeneficiaries(r.data.beneficiaries)).catch(() => {}));
+        requests.push(api.get('/beneficiaries/enrollments/all').then(r => setEnrollments(r.data.enrollments)).catch(() => {}));
+        requests.push(api.get('/expenses').then(r => setExpenses(r.data.expenses)).catch(() => {}));
+        requests.push(api.get('/documents').then(r => setDocuments(r.data.documents)).catch(() => {}));
+      }
       if (currentUser.role === 'SuperAdmin') {
         requests.push(api.get('/organizations').then(r => setOrganizations(r.data.organizations)).catch(() => {}));
+        requests.push(api.get('/queries').then(r => setQueries(r.data.queries)).catch(() => {}));
+        requests.push(api.get('/visibility-requests', { params: { status: 'All' } }).then(r => setVisibilityRequests(r.data.requests)).catch(() => {}));
       } else {
         requests.push(
           api.get('/organizations/me')
             .then(r => setOrganizations(r.data.organization ? [r.data.organization] : []))
             .catch(() => {})
         );
+        if (currentUser.role === 'OrgAdmin') {
+          requests.push(api.get('/visibility-requests/mine').then(r => setVisibilityRequests(r.data.requests)).catch(() => {}));
+          requests.push(api.get('/opportunities').then(r => setOpportunities(r.data.opportunities)).catch(() => {}));
+          // AI Module (prescription transcription) moved here from Staff/Intern
+          // — see backend/routes/prescriptionRoutes.js, now OrgAdmin-only.
+          requests.push(api.get('/prescriptions').then(r => setPrescriptions(r.data.prescriptions)).catch(() => {}));
+          // Cross-Organization Connections (spec section 16) — OrgAdmin only.
+          requests.push(api.get('/connections').then(r => setConnections(r.data.connections)).catch(() => {}));
+        }
       }
       await Promise.all(requests);
     } finally {
@@ -164,7 +202,7 @@ export const AppProvider = ({ children }) => {
   const registerOrganization = async (orgName, adminName, email, password, plan = 'Basic') => {
     try {
       const res = await api.post('/auth/register-organization', { orgName, adminName, email, password, plan });
-      return { success: true, orgId: res.data.orgId, paymentDueAt: res.data.paymentDueAt, amountDue: res.data.amountDue };
+      return { success: true, orgId: res.data.orgId, amountDue: res.data.amountDue };
     } catch (err) {
       return asError(err, 'Registration failed.');
     }
@@ -187,6 +225,16 @@ export const AppProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete organization.');
+    }
+  };
+
+  const setPublicEventsEnabled = async (orgId, enabled) => {
+    try {
+      await api.patch(`/organizations/${orgId}/public-events`, { enabled });
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update public visibility setting.');
     }
   };
 
@@ -259,9 +307,9 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Camp Operations (independent from Events)
   // ===================
-  const createCamp = async (title, location, date, description) => {
+  const createCamp = async (title, location, date, description, extra = {}) => {
     try {
-      const res = await api.post('/camps', { title, location, date, description });
+      const res = await api.post('/camps', { title, location, date, description, ...extra });
       await refreshAll();
       return res.data.camp?.id;
     } catch (err) {
@@ -292,9 +340,9 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Event Operations (independent from Camps)
   // ===================
-  const createEvent = async (title, location, date, description, eventType) => {
+  const createEvent = async (title, location, date, description, eventType, extra = {}) => {
     try {
-      const res = await api.post('/events', { title, location, date, description, eventType });
+      const res = await api.post('/events', { title, location, date, description, eventType, ...extra });
       await refreshAll();
       return res.data.event?.id;
     } catch (err) {
@@ -325,40 +373,16 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Meeting Operations (OrgAdmin schedules, visible org-wide once created)
   // ===================
-const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
-  try {
-    console.log('Creating meeting:', {
-      subject,
-      meetingType,
-      date,
-      time,
-      meetingLink
-    });
+  const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
+    try {
+      const res = await api.post('/meetings', { subject, meetingType, date, time, meetingLink });
+      await refreshAll();
+      return { success: true, id: res.data.meeting?.id };
+    } catch (err) {
+      return asError(err, 'Could not create meeting.');
+    }
+  };
 
-    const res = await api.post('/meetings', {
-      subject,
-      meetingType,
-      date,
-      time,
-      meetingLink
-    });
-
-    console.log('Meeting response:', res.data);
-
-    await refreshAll();
-
-    return {
-      success: true,
-      id: res.data.meeting?.id
-    };
-  } catch (err) {
-    console.error('CREATE MEETING ERROR:', err);
-    console.error('STATUS:', err?.response?.status);
-    console.error('RESPONSE:', err?.response?.data);
-
-    return asError(err, 'Could not create meeting.');
-  }
-};
   const updateMeeting = async (meetingId, updates) => {
     try {
       await api.patch(`/meetings/${meetingId}`, updates);
@@ -429,6 +453,395 @@ const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not revoke access.');
+    }
+  };
+
+  // ===========================================================
+  // Projects
+  // ===========================================================
+  const createProject = async (payload) => {
+    try {
+      const res = await api.post('/projects', payload);
+      await refreshAll();
+      return { success: true, project: res.data.project };
+    } catch (err) {
+      return asError(err, 'Could not create project.');
+    }
+  };
+  const updateProject = async (id, payload) => {
+    try {
+      await api.patch(`/projects/${id}`, payload);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update project.');
+    }
+  };
+  const deleteProject = async (id) => {
+    try {
+      await api.delete(`/projects/${id}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete project.');
+    }
+  };
+  const getProjectTeam = async (id) => {
+    try {
+      const res = await api.get(`/projects/${id}/team`);
+      return { success: true, members: res.data.members };
+    } catch (err) {
+      return asError(err, 'Could not load project team.');
+    }
+  };
+  const addProjectTeamMember = async (id, userId, roleOnEntity) => {
+    try {
+      await api.post(`/projects/${id}/team`, { userId, roleOnEntity });
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not add team member.');
+    }
+  };
+  const removeProjectTeamMember = async (id, userId) => {
+    try {
+      await api.delete(`/projects/${id}/team/${userId}`);
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not remove team member.');
+    }
+  };
+
+  // ===========================================================
+  // Campaigns
+  // ===========================================================
+  const createCampaign = async (payload) => {
+    try {
+      const res = await api.post('/campaigns', payload);
+      await refreshAll();
+      return { success: true, campaign: res.data.campaign };
+    } catch (err) {
+      return asError(err, 'Could not create campaign.');
+    }
+  };
+  const updateCampaign = async (id, payload) => {
+    try {
+      await api.patch(`/campaigns/${id}`, payload);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update campaign.');
+    }
+  };
+  const deleteCampaign = async (id) => {
+    try {
+      await api.delete(`/campaigns/${id}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete campaign.');
+    }
+  };
+  const getCampaignTeam = async (id) => {
+    try {
+      const res = await api.get(`/campaigns/${id}/team`);
+      return { success: true, members: res.data.members };
+    } catch (err) {
+      return asError(err, 'Could not load campaign team.');
+    }
+  };
+  const addCampaignTeamMember = async (id, userId, roleOnEntity) => {
+    try {
+      await api.post(`/campaigns/${id}/team`, { userId, roleOnEntity });
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not add team member.');
+    }
+  };
+  const removeCampaignTeamMember = async (id, userId) => {
+    try {
+      await api.delete(`/campaigns/${id}/team/${userId}`);
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not remove team member.');
+    }
+  };
+
+  // ===========================================================
+  // Donors & Donations
+  // ===========================================================
+  const createDonor = async (payload) => {
+    try {
+      const res = await api.post('/donors', payload);
+      await refreshAll();
+      return { success: true, donor: res.data.donor };
+    } catch (err) {
+      return asError(err, 'Could not create donor.');
+    }
+  };
+  const updateDonor = async (id, payload) => {
+    try {
+      await api.patch(`/donors/${id}`, payload);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update donor.');
+    }
+  };
+  const deleteDonor = async (id) => {
+    try {
+      await api.delete(`/donors/${id}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete donor.');
+    }
+  };
+  const createDonation = async (payload) => {
+    try {
+      const res = await api.post('/donations', payload);
+      await refreshAll();
+      return { success: true, donation: res.data.donation };
+    } catch (err) {
+      return asError(err, 'Could not record donation.');
+    }
+  };
+  const deleteDonation = async (id) => {
+    try {
+      await api.delete(`/donations/${id}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete donation record.');
+    }
+  };
+
+  // ===========================================================
+  // Volunteers (CRM layer on top of role='Volunteer' staff users)
+  // ===========================================================
+  const updateVolunteerProfile = async (userId, payload) => {
+    try {
+      await api.put(`/volunteers/${userId}/profile`, payload);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update volunteer profile.');
+    }
+  };
+
+  // ===========================================================
+  // Sponsors & Sponsorships
+  // ===========================================================
+  const createSponsor = async (payload) => {
+    try { const res = await api.post('/sponsors', payload); await refreshAll(); return { success: true, sponsor: res.data.sponsor }; }
+    catch (err) { return asError(err, 'Could not create sponsor.'); }
+  };
+  const updateSponsor = async (id, payload) => {
+    try { await api.patch(`/sponsors/${id}`, payload); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update sponsor.'); }
+  };
+  const deleteSponsor = async (id) => {
+    try { await api.delete(`/sponsors/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete sponsor.'); }
+  };
+  const createSponsorship = async (payload) => {
+    try { const res = await api.post('/sponsors/sponsorships', payload); await refreshAll(); return { success: true, sponsorship: res.data.sponsorship }; }
+    catch (err) { return asError(err, 'Could not record sponsorship.'); }
+  };
+  const updateSponsorship = async (id, payload) => {
+    try { await api.patch(`/sponsors/sponsorships/${id}`, payload); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update sponsorship.'); }
+  };
+  const deleteSponsorship = async (id) => {
+    try { await api.delete(`/sponsors/sponsorships/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete sponsorship.'); }
+  };
+
+  // ===========================================================
+  // Partners (Partnership Approval — OrgAdmin only)
+  // ===========================================================
+  const createPartner = async (payload) => {
+    try { const res = await api.post('/partners', payload); await refreshAll(); return { success: true, partner: res.data.partner }; }
+    catch (err) { return asError(err, 'Could not create partner.'); }
+  };
+  const updatePartner = async (id, payload) => {
+    try { await api.patch(`/partners/${id}`, payload); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update partner.'); }
+  };
+  const updatePartnerStatus = async (id, status) => {
+    try { await api.patch(`/partners/${id}/status`, { status }); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update partner status.'); }
+  };
+  const deletePartner = async (id) => {
+    try { await api.delete(`/partners/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete partner.'); }
+  };
+
+  // ===========================================================
+  // Beneficiaries & Program Enrollment
+  // ===========================================================
+  const createBeneficiary = async (payload) => {
+    try { const res = await api.post('/beneficiaries', payload); await refreshAll(); return { success: true, beneficiary: res.data.beneficiary }; }
+    catch (err) { return asError(err, 'Could not register beneficiary.'); }
+  };
+  const updateBeneficiary = async (id, payload) => {
+    try { await api.patch(`/beneficiaries/${id}`, payload); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update beneficiary.'); }
+  };
+  const deleteBeneficiary = async (id) => {
+    try { await api.delete(`/beneficiaries/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete beneficiary.'); }
+  };
+  const createEnrollment = async (payload) => {
+    try { const res = await api.post('/beneficiaries/enrollments', payload); await refreshAll(); return { success: true, enrollment: res.data.enrollment }; }
+    catch (err) { return asError(err, 'Could not enroll beneficiary.'); }
+  };
+  const updateEnrollment = async (id, payload) => {
+    try { await api.patch(`/beneficiaries/enrollments/${id}`, payload); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update enrollment.'); }
+  };
+  const deleteEnrollment = async (id) => {
+    try { await api.delete(`/beneficiaries/enrollments/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not remove enrollment.'); }
+  };
+
+  // ===========================================================
+  // Expenses (Expense Approval — OrgAdmin only)
+  // ===========================================================
+  const createExpense = async (payload) => {
+    try { const res = await api.post('/expenses', payload); await refreshAll(); return { success: true, expense: res.data.expense }; }
+    catch (err) { return asError(err, 'Could not submit expense.'); }
+  };
+  const updateExpenseStatus = async (id, status) => {
+    try { await api.patch(`/expenses/${id}/status`, { status }); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update expense status.'); }
+  };
+  const deleteExpense = async (id) => {
+    try { await api.delete(`/expenses/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete expense.'); }
+  };
+
+  // ===========================================================
+  // Document Management (Document Approval — OrgAdmin only)
+  // ===========================================================
+  const createDocument = async (payload) => {
+    try { const res = await api.post('/documents', payload); await refreshAll(); return { success: true, document: res.data.document }; }
+    catch (err) { return asError(err, 'Could not upload document.'); }
+  };
+  const updateDocumentStatus = async (id, status) => {
+    try { await api.patch(`/documents/${id}/status`, { status }); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not update document status.'); }
+  };
+  const deleteDocument = async (id) => {
+    try { await api.delete(`/documents/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not delete document.'); }
+  };
+
+  // ===========================================================
+  // Organization Public Profile (Directory) & Subscription Cancellation
+  // ===========================================================
+  const updateMyDirectoryProfile = async (payload) => {
+    try {
+      await api.patch('/organizations/me/directory-profile', payload);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update organization profile.');
+    }
+  };
+
+  const setMyCancellationRequest = async (cancel) => {
+    try {
+      await api.patch('/organizations/me/cancellation', { cancel });
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update cancellation request.');
+    }
+  };
+
+  // ===========================================================
+  // Cross-Organization Directory & Connections (spec section 16)
+  // Directory is fetched on-demand (search-driven) rather than in
+  // refreshAll's polling loop; connections refresh with everything else.
+  // ===========================================================
+  const fetchDirectory = async (params = {}) => {
+    try {
+      const res = await api.get('/directory', { params });
+      setDirectory(res.data.organizations);
+      return { success: true, organizations: res.data.organizations };
+    } catch (err) {
+      return asError(err, 'Could not load the organization directory.');
+    }
+  };
+
+  const createConnectionRequest = async (targetOrgId, message) => {
+    try {
+      const res = await api.post('/connections', { targetOrgId, message });
+      await refreshAll();
+      return { success: true, connection: res.data.connection };
+    } catch (err) {
+      return asError(err, 'Could not send connection request.');
+    }
+  };
+  const respondToConnection = async (id, status) => {
+    try { await api.patch(`/connections/${id}/status`, { status }); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not respond to connection.'); }
+  };
+  const withdrawConnection = async (id) => {
+    try { await api.delete(`/connections/${id}`); await refreshAll(); return { success: true }; }
+    catch (err) { return asError(err, 'Could not withdraw connection.'); }
+  };
+  const fetchConnectionMessages = async (id) => {
+    try {
+      const res = await api.get(`/connections/${id}/messages`);
+      return { success: true, messages: res.data.messages };
+    } catch (err) {
+      return asError(err, 'Could not load messages.');
+    }
+  };
+  const sendConnectionMessage = async (id, message) => {
+    try {
+      const res = await api.post(`/connections/${id}/messages`, { message });
+      return { success: true, message: res.data.message };
+    } catch (err) {
+      return asError(err, 'Could not send message.');
+    }
+  };
+
+  // ===========================================================
+  // Audit Logs (Super Admin: platform-wide / one org via orgId filter;
+  // Org Admin: always scoped server-side to their own org). Fetched
+  // on-demand by the Audit Logs screens rather than in refreshAll's
+  // polling loop, since the log can grow large and isn't needed on
+  // every dashboard.
+  // ===========================================================
+  const fetchAuditLogs = async (params = {}) => {
+    try {
+      const res = await api.get('/audit-logs', { params });
+      return { success: true, logs: res.data.logs };
+    } catch (err) {
+      return asError(err, 'Could not load audit logs.');
+    }
+  };
+
+  // ===========================================================
+  // Platform Settings (Super Admin only — see spec section 13)
+  // ===========================================================
+  const fetchPlatformSettings = async () => {
+    try {
+      const res = await api.get('/platform-settings');
+      return { success: true, settings: res.data.settings };
+    } catch (err) {
+      return asError(err, 'Could not load platform settings.');
+    }
+  };
+
+  const updatePlatformSetting = async (key, value) => {
+    try {
+      await api.put(`/platform-settings/${key}`, { value });
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update setting.');
     }
   };
 
@@ -740,6 +1153,177 @@ const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
     }
   };
 
+  // ===================
+  // External User Queries (Home Page Query widget -> Super Admin inbox)
+  // ===================
+  // Public — no auth required, callable from an anonymous visitor on the
+  // Home page.
+  const submitQuery = async (payload) => {
+    try {
+      const res = await api.post('/queries', payload);
+      return { success: true, query: res.data.query };
+    } catch (err) {
+      return asError(err, 'Could not submit your query. Please try again.');
+    }
+  };
+
+  const updateQueryStatus = async (queryId, status) => {
+    try {
+      const res = await api.patch(`/queries/${queryId}/status`, { status });
+      await refreshAll();
+      return { success: true, query: res.data.query };
+    } catch (err) {
+      return asError(err, 'Could not update query status.');
+    }
+  };
+
+  const respondToQuery = async (queryId, message) => {
+    try {
+      const res = await api.post(`/queries/${queryId}/respond`, { message });
+      await refreshAll();
+      return { success: true, query: res.data.query, warning: res.data.warning };
+    } catch (err) {
+      return asError(err, 'Could not send the response.');
+    }
+  };
+
+  // ===================
+  // Event/Camp Public Visibility Requests
+  // ===================
+  const requestVisibility = async (itemType, itemId) => {
+    try {
+      const res = await api.post('/visibility-requests', { itemType, itemId });
+      await refreshAll();
+      return { success: true, item: res.data.item };
+    } catch (err) {
+      return asError(err, 'Could not submit the visibility request.');
+    }
+  };
+
+  const reviewVisibilityRequest = async (itemType, itemId, decision, reason) => {
+    try {
+      const res = await api.patch('/visibility-requests/review', { itemType, itemId, decision, reason });
+      await refreshAll();
+      return { success: true, item: res.data.item };
+    } catch (err) {
+      return asError(err, 'Could not review the visibility request.');
+    }
+  };
+
+  // Public — no auth. Powers the Home Page "Events & Camps" section.
+  const getPublicEventsAndCamps = async () => {
+    try {
+      const res = await api.get('/public/events-camps');
+      return { success: true, items: res.data.items };
+    } catch (err) {
+      return asError(err, 'Could not load public events.');
+    }
+  };
+
+  // ===================
+  // Opportunity Management (Org Admin CRUD + public browse/apply)
+  // ===================
+  const createOpportunity = async (payload) => {
+    try {
+      const res = await api.post('/opportunities', payload);
+      await refreshAll();
+      return { success: true, opportunity: res.data.opportunity };
+    } catch (err) {
+      return asError(err, 'Could not create opportunity.');
+    }
+  };
+
+  const updateOpportunity = async (id, payload) => {
+    try {
+      const res = await api.patch(`/opportunities/${id}`, payload);
+      await refreshAll();
+      return { success: true, opportunity: res.data.opportunity };
+    } catch (err) {
+      return asError(err, 'Could not update opportunity.');
+    }
+  };
+
+
+
+
+
+  const deleteOpportunity = async (id) => {
+    try {
+      await api.delete(`/opportunities/${id}`);
+      await refreshAll();
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete opportunity.');
+    }
+  };
+
+  const getOpportunityApplications = async (id) => {
+    try {
+      const res = await api.get(`/opportunities/${id}/applications`);
+      return { success: true, applications: res.data.applications };
+    } catch (err) {
+      return asError(err, 'Could not load applications.');
+    }
+  };
+
+  // Public — no auth. Home Page Opportunities browsing/apply.
+  const getPublicOpportunities = async () => {
+    try {
+      const res = await api.get('/public/opportunities');
+      return { success: true, opportunities: res.data.opportunities };
+    } catch (err) {
+      return asError(err, 'Could not load opportunities.');
+    }
+  };
+
+  const getPublicOpportunityById = async (id) => {
+    try {
+      const res = await api.get(`/public/opportunities/${id}`);
+      return { success: true, opportunity: res.data.opportunity };
+    } catch (err) {
+      return asError(err, 'Could not load opportunity.');
+    }
+  };
+
+
+  const getMyProjectAssignments = async () => {
+  try {
+    const res = await api.get('/projects/my/assignments');
+
+    return {
+      success: true,
+      projects: res.data.projects || []
+    };
+  } catch (err) {
+    return asError(err, 'Could not load project assignments.');
+  }
+};
+
+const updateProjectAssignmentStatus = async (projectId, status) => {
+  try {
+    const res = await api.patch(
+      `/projects/${projectId}/assignment-status`,
+      { status }
+    );
+
+    return {
+      success: true,
+      assignment: res.data.assignment
+    };
+  } catch (err) {
+    return asError(err, 'Could not update project status.');
+  }
+};
+
+  const applyToOpportunity = async (id, payload) => {
+    try {
+      const res = await api.post(`/public/opportunities/${id}/apply`, payload);
+      return { success: true, application: res.data.application };
+    } catch (err) {
+      return asError(err, 'Could not submit your application.');
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       organizations,
@@ -752,12 +1336,82 @@ const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
       availability,
       prescriptions,
       discussionGroups,
+      queries,
+      visibilityRequests,
+      opportunities,
       myPermissions,
       hasAccess,
       getAssignableSections,
       getUserPermissions,
       grantPermission,
       revokePermission,
+      fetchAuditLogs,
+      fetchPlatformSettings,
+      updatePlatformSetting,
+      projects,
+      createProject,
+      updateProject,
+      deleteProject,
+      getProjectTeam,
+      addProjectTeamMember,
+      removeProjectTeamMember,
+      getMyProjectAssignments,
+      updateProjectAssignmentStatus,
+      campaigns,
+      createCampaign,
+      updateCampaign,
+      deleteCampaign,
+      getCampaignTeam,
+      addCampaignTeamMember,
+      removeCampaignTeamMember,
+      donors,
+      createDonor,
+      updateDonor,
+      deleteDonor,
+      donations,
+      createDonation,
+      deleteDonation,
+      volunteers,
+      updateVolunteerProfile,
+      sponsors,
+      sponsorships,
+      createSponsor,
+      updateSponsor,
+      deleteSponsor,
+      createSponsorship,
+      updateSponsorship,
+      deleteSponsorship,
+      partners,
+      createPartner,
+      updatePartner,
+      updatePartnerStatus,
+      deletePartner,
+      beneficiaries,
+      enrollments,
+      createBeneficiary,
+      updateBeneficiary,
+      deleteBeneficiary,
+      createEnrollment,
+      updateEnrollment,
+      deleteEnrollment,
+      expenses,
+      createExpense,
+      updateExpenseStatus,
+      deleteExpense,
+      documents,
+      createDocument,
+      updateDocumentStatus,
+      deleteDocument,
+      updateMyDirectoryProfile,
+      setMyCancellationRequest,
+      directory,
+      fetchDirectory,
+      connections,
+      createConnectionRequest,
+      respondToConnection,
+      withdrawConnection,
+      fetchConnectionMessages,
+      sendConnectionMessage,
       currentUser,
       loading,
       login,
@@ -810,6 +1464,20 @@ const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
       getPayments,
       getBillingOverview,
       getOrgBillingHistory,
+      submitQuery,
+      updateQueryStatus,
+      respondToQuery,
+      requestVisibility,
+      reviewVisibilityRequest,
+      getPublicEventsAndCamps,
+      setPublicEventsEnabled,
+      createOpportunity,
+      updateOpportunity,
+      deleteOpportunity,
+      getOpportunityApplications,
+      getPublicOpportunities,
+      getPublicOpportunityById,
+      applyToOpportunity,
       refreshAll
     }}>
       {children}

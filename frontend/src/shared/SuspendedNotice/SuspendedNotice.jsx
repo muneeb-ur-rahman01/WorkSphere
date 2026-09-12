@@ -12,25 +12,39 @@ const formatPKR = (amount) => `Rs. ${Number(amount || 0).toLocaleString('en-PK')
 const SuspendedNotice = ({ subscription, planLabel, payHref = '#billing' }) => {
   if (!subscription) return null;
 
+  const isTrialExpired = subscription.trialStatus === 'Expired';
+
   return (
     <div className="max-w-2xl mx-auto mt-10 mb-10">
       <div className="bg-white border border-red-200 rounded-2xl shadow-xl p-10 text-center">
         <div className="inline-flex p-4 rounded-full bg-red-100 text-red-600 mb-6">
           <ShieldAlert size={44} />
         </div>
-        <h2 className="text-2xl font-bold text-black mb-3">Payment Required</h2>
+        <h2 className="text-2xl font-bold text-black mb-3">
+          {isTrialExpired ? 'Your Free Trial Has Ended' : 'Payment Required'}
+        </h2>
         <p className="text-gray-700 text-sm leading-7 mb-6">
-          Your organization's operations are paused because the subscription payment
-          for the <strong>{planLabel}</strong> ({formatPKR(subscription.amountDue)}) is
-          overdue by {subscription.overdueDays} day{subscription.overdueDays === 1 ? '' : 's'}.
-          Your data is safe and nothing has been deleted — complete payment below to
-          restore access immediately.
+          {isTrialExpired ? (
+            <>
+              Your organization's 7-day free trial has ended and operations are paused until
+              a subscription plan is selected. Your data is safe and nothing has been deleted —
+              choose a plan below to restore access immediately.
+            </>
+          ) : (
+            <>
+              Your organization's operations are paused because the subscription payment
+              for the <strong>{planLabel}</strong> ({formatPKR(subscription.amountDue)}) is
+              overdue by {subscription.overdueDays} day{subscription.overdueDays === 1 ? '' : 's'}.
+              Your data is safe and nothing has been deleted — complete payment below to
+              restore access immediately.
+            </>
+          )}
         </p>
         <a
           href={payHref}
           className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold py-3 px-8 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300"
         >
-          Go to Billing & Pay Now
+          {isTrialExpired ? 'Select a Subscription Plan' : 'Go to Billing & Pay Now'}
         </a>
       </div>
     </div>

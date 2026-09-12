@@ -50,13 +50,18 @@ const getBillingOverview = async (req, res) => {
       subscriptionExpiry: org.subscription_end,
       overdueDays: subscription.overdueDays,
       orgStatus: org.status,
-      subscriptionStatus: subscription.subscriptionStatus
+      subscriptionStatus: subscription.subscriptionStatus,
+      trialStatus: subscription.trialStatus,
+      trialStartDate: subscription.trialStartDate,
+      trialEndDate: subscription.trialEndDate,
+      trialDaysRemaining: subscription.trialDaysRemaining,
+      operationsBlocked: subscription.operationsBlocked
     };
   });
 
   // Status filter: billing-lifecycle statuses OR plan-name shortcuts OR 'Paid'/'Pending'
   if (status && status !== 'All') {
-    if (['Basic', 'Standard', 'Premium'].includes(status)) {
+    if (['Trial', 'Basic', 'Standard', 'Premium'].includes(status)) {
       rows = rows.filter((r) => r.plan === status);
     } else if (status === 'Paid') {
       rows = rows.filter((r) => r.paymentStatus === 'Paid');

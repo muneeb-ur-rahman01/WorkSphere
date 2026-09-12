@@ -14,7 +14,9 @@ const BILLING_EVENTS = {
   PAYMENT_OVERDUE: 'payment_became_overdue',
   ORG_SUSPENDED: 'organization_suspended',
   ORG_PAYMENT_COMPLETED: 'organization_payment_completed',
-  ORG_OPERATIONS_RESUMED: 'organization_operations_resumed'
+  ORG_OPERATIONS_RESUMED: 'organization_operations_resumed',
+  TRIAL_STARTED: 'trial_started',
+  TRIAL_EXPIRED: 'trial_expired'
 };
 
 // Writes one immutable row to billing_events. Never throws — a logging

@@ -14,7 +14,7 @@ router.post('/', requireRole('OrgAdmin'), createStaffByAdmin);
 // they can approve/reject registration requests just like an OrgAdmin.
 router.patch('/:id/status', requireRoleOrSectionPermission('registration_requests', 'OrgAdmin', 'SuperAdmin'), updateStaffStatus);
 
-router.patch('/:id/role', requireRole('OrgAdmin'), updateStaffRole);
+router.patch('/:id/role', requireRole('OrgAdmin', 'SuperAdmin'), updateStaffRole);
 router.delete('/:id', requireRole('OrgAdmin', 'SuperAdmin'), deleteStaff);
 router.patch('/:id/mentor', requireRole('OrgAdmin'), assignMentor);
 

@@ -11,25 +11,33 @@ const { getPlan } = require('../config/plans');
 // restriction by calling the API directly.
 //
 // Subscription lifecycle (organizations.subscription_status):
-//   TrialPending -> Active      (payment verified during/after the 10-day trial)
-//   TrialPending -> PastDue     (10-day trial window elapsed, unpaid)
+//   TrialPending -> Active      (payment verified during/after the 7-day trial)
+//   TrialPending -> PastDue     (7-day trial window elapsed, unpaid)
 //   Active       -> PastDue     (renewal period elapsed, unpaid)
 //   PastDue      -> Suspended   (extended non-payment; reserved for manual/future use)
 //   PastDue/Suspended -> Active (payment verified — see paymentController.handleCallback)
 //   *            -> Cancelled   (org cancels; reserved for future use)
+//
+// Free trial (organizations.trial_start_date / trial_end_date):
+//   Set exactly once, when a SuperAdmin approves an org (status -> Active
+//   for the first time) — see organizationController.updateOrgStatus.
+//   payment_due_at is kept in sync with trial_end_date so the existing
+//   hourly sweep (subscriptionScheduler.suspendOverdueOrganizations) and
+//   requireOperational() below enforce trial expiry with no separate state
+//   machine. Derived trialStatus: Active | Expired | Converted | null
+//   (null = trial hasn't started yet, e.g. org still Pending approval).
 // ============================================================
 
 const BLOCKED_STATUSES = ['PastDue', 'Suspended', 'Cancelled', 'Expired'];
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const TRIAL_PERIOD_DAYS = 7;
 
-// ------------------------------------------------------------------------
-// TEMPORARY: Payment Method is hidden/disabled across the app for now (see
-// the frontend PAYMENTS_ENABLED flag in frontend/src/Config/constant.js).
-// With no way for an org to actually pay, requireOperational() must not
-// lock organizations out of normal operations. This is the single switch
-// that re-enables billing-driven access blocking once payments come back
-// online - nothing else in this file needs to change.
-// ------------------------------------------------------------------------
+// Billing-driven access blocking (requireOperational) is OFF again, to
+// match the frontend PAYMENTS_ENABLED flag in
+// frontend/src/Config/constant.js — with the Payment Method screens
+// hidden, there's no visible way for an org to actually pay, so locking
+// them out on trial/payment expiry would trap them. Keep both flags in
+// sync; flip both back to true together when payments come back online.
 const PAYMENT_ENFORCEMENT_ENABLED = false;
 
 // Pure function — no I/O — so it's easy to reuse from the scheduler, the
@@ -38,30 +46,40 @@ const computeSubscriptionView = (org) => {
   const now = new Date();
   const dueAt = org.payment_due_at ? new Date(org.payment_due_at) : null;
   const registeredAt = org.registration_date ? new Date(org.registration_date) : null;
+  const trialStartAt = org.trial_start_date ? new Date(org.trial_start_date) : null;
+  const trialEndAt = org.trial_end_date ? new Date(org.trial_end_date) : null;
 
   const isOverdue = Boolean(dueAt) && now > dueAt && !['Active'].includes(org.subscription_status);
   const overdueDays = isOverdue ? Math.floor((now - dueAt) / MS_PER_DAY) : 0;
   const plan = getPlan(org.sub_plan);
   const operationsBlocked = BLOCKED_STATUSES.includes(org.subscription_status);
 
-  // Days elapsed since the org registered (used for the 10-day trial
-  // payment window reminder below). Days remaining until the due date
-  // itself, for display ("3 days left to pay").
   const daysSinceRegistration = registeredAt ? Math.floor((now - registeredAt) / MS_PER_DAY) : null;
   const daysUntilDue = dueAt ? Math.ceil((dueAt - now) / MS_PER_DAY) : null;
 
-  // Reminder popup rules (see backend/utils/subscriptionScheduler.js for the
-  // matching enforcement side):
-  //   Day 0-5 of the trial payment window  -> silent, no reminder.
-  //   Day 6-10 (still TrialPending, unpaid) -> show the reminder popup daily.
-  //   Day 10+ (due date passed, unpaid)     -> subscription_status flips to
-  //     PastDue via the hourly sweep, operationsBlocked becomes true, and
-  //     the UI shows the blocking "operations paused" popup instead.
+  // Trial status: Converted once a real paid subscription is Active,
+  // Active while inside the 7-day window, Expired once it's passed and
+  // the org still isn't Active, null if the trial hasn't started yet.
+  let trialStatus = null;
+  if (trialStartAt) {
+    if (org.subscription_status === 'Active') trialStatus = 'Converted';
+    else if (trialEndAt && now <= trialEndAt) trialStatus = 'Active';
+    else trialStatus = 'Expired';
+  }
+  const trialDaysRemaining =
+    trialStatus === 'Active' && trialEndAt ? Math.max(0, Math.ceil((trialEndAt - now) / MS_PER_DAY)) : 0;
+  const trialDaysElapsed =
+    trialStartAt ? Math.min(TRIAL_PERIOD_DAYS, Math.max(0, Math.floor((now - trialStartAt) / MS_PER_DAY))) : 0;
+
+  // Reminder rules (see backend/utils/subscriptionScheduler.js for the
+  // matching email side):
+  //   Trial days 1-5   -> silent, no reminder.
+  //   Trial days 6-7   -> show the in-app reminder ("trial ending soon").
+  //   Trial expired, still unpaid -> subscription_status flips to PastDue
+  //     via the hourly sweep, operationsBlocked becomes true, and the UI
+  //     shows the blocking "select a plan to continue" state instead.
   const shouldShowPaymentReminder =
-    !operationsBlocked &&
-    org.subscription_status === 'TrialPending' &&
-    daysSinceRegistration !== null &&
-    daysSinceRegistration > 5;
+    !operationsBlocked && trialStatus === 'Active' && trialDaysRemaining <= 2;
 
   return {
     subscriptionStatus: org.subscription_status || 'TrialPending',
@@ -72,6 +90,12 @@ const computeSubscriptionView = (org) => {
     paymentDueAt: org.payment_due_at,
     daysSinceRegistration,
     daysUntilDue,
+    trialStatus,
+    trialStartDate: org.trial_start_date,
+    trialEndDate: org.trial_end_date,
+    trialDaysRemaining,
+    trialDaysElapsed,
+    trialPeriodDays: TRIAL_PERIOD_DAYS,
     plan: plan ? { key: plan.key, label: plan.label, price: plan.price, features: plan.features } : null,
     shouldShowPaymentReminder
   };
@@ -130,9 +154,13 @@ const requireOperational = () => async (req, res, next) => {
   if (!req.subscription) return next(); // no org (shouldn't happen for these roles) — let the route's own checks handle it
 
   if (req.subscription.operationsBlocked) {
+    const message =
+      req.subscription.trialStatus === 'Expired'
+        ? 'Your 7-day free trial has ended. Please select a subscription plan to continue using CampOS.'
+        : 'Your organization\'s subscription payment is overdue. Please complete payment to restore access.';
     return res.status(402).json({
       success: false,
-      error: 'Your organization\'s subscription payment is overdue. Please complete payment to restore access.',
+      error: message,
       code: 'SUBSCRIPTION_PAYMENT_REQUIRED',
       subscription: req.subscription
     });
@@ -166,6 +194,8 @@ const requireFeature = (featureKey) => async (req, res, next) => {
 
 module.exports = {
   BLOCKED_STATUSES,
+  TRIAL_PERIOD_DAYS,
+  PAYMENT_ENFORCEMENT_ENABLED,
   computeSubscriptionView,
   canUseFeature,
   loadSubscriptionContext,

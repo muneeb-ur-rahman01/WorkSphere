@@ -1,5 +1,7 @@
+
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+
 import {
   Heart,
   LayoutDashboard,
@@ -11,20 +13,40 @@ import {
   CheckSquare,
   LogOut,
   Building,
-  Menu,
-  X,
   Video,
   UserCircle2,
   Settings as SettingsIcon,
   MessageSquare,
+  MessageCircleQuestion,
   BarChart3,
   CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  Globe,
+  Briefcase,
+  Sparkles,
+  History,
+  Activity,
+  ChevronDown,
+  ChevronRight,
+  FolderKanban,
+  Megaphone,
+  HeartHandshake,
+  HandHeart,
+  Gift,
+  Handshake,
+  UsersRound,
+  Wallet,
+  FileText,
+  ClipboardCheck,
+  TrendingUp
 } from 'lucide-react';
 
 import { AppContext } from '../context/AppContext';
 import PaymentAlertModal from '../shared/PaymentAlertModal/PaymentAlertModal';
-import { SUBSCRIPTION_PLANS, PAYMENTS_ENABLED } from '../Config/constant';
+import {
+  SUBSCRIPTION_PLANS,
+  PAYMENTS_ENABLED
+} from '../Config/constant';
 
 const DashboardLayout = ({ children }) => {
   const {
@@ -35,18 +57,39 @@ const DashboardLayout = ({ children }) => {
     users,
     tasks,
     discussionGroups,
+    queries,
+    visibilityRequests,
     hasAccess
   } = useContext(AppContext);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // =========================================================
+  // SIDEBAR
+  // =========================================================
+
+  // Sidebar is collapsed by default.
+  // It expands automatically when mouse enters the sidebar.
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  const toggleGroup = (key) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
 
   if (!currentUser) {
     navigate('/login-choice');
     return null;
   }
+
+  // =========================================================
+  // LOGOUT
+  // =========================================================
 
   const handleLogout = () => {
     logout();
@@ -58,12 +101,12 @@ const DashboardLayout = ({ children }) => {
   // =========================================================
 
   const currentOrg = organizations.find(
-    o => String(o.id) === String(currentUser.orgId)
+    (o) => String(o.id) === String(currentUser.orgId)
   );
 
   const orgName = currentOrg
     ? currentOrg.name
-    : 'CampOS SaaS Admin';
+    : 'WorkSphere SaaS Admin';
 
   // =========================================================
   // SUBSCRIPTION
@@ -81,8 +124,7 @@ const DashboardLayout = ({ children }) => {
   // NOTIFICATIONS
   // =========================================================
 
-  const userNotifications = notifications.filter(n => {
-
+  const userNotifications = notifications.filter((n) => {
     // SuperAdmin gets global notifications
     if (currentUser.role === 'SuperAdmin') {
       return n.orgId === null;
@@ -93,8 +135,7 @@ const DashboardLayout = ({ children }) => {
       return n.orgId === currentUser.orgId;
     }
 
-    // A notification aimed at one specific user (e.g. an Accessibility
-    // grant) is only ever shown to that user, not the whole org.
+    // Notification for a specific user
     if (n.targetUserId) {
       return n.targetUserId === currentUser.id;
     }
@@ -114,7 +155,7 @@ const DashboardLayout = ({ children }) => {
   // =========================================================
 
   const pendingRequestsCount = users.filter(
-    u =>
+    (u) =>
       u.orgId === currentUser.orgId &&
       u.status === 'Pending'
   ).length;
@@ -122,12 +163,12 @@ const DashboardLayout = ({ children }) => {
   const unreadTaskCommentsCount =
     currentUser.role === 'OrgAdmin'
       ? tasks.filter(
-          t =>
+          (t) =>
             t.orgId === currentUser.orgId &&
             t.hasUnreadForAdmin
         ).length
       : tasks.filter(
-          t =>
+          (t) =>
             t.assignedToId === currentUser.id &&
             t.hasUnreadForAssignee
         ).length;
@@ -142,6 +183,9 @@ const DashboardLayout = ({ children }) => {
   // =========================================================
 
   const getNavItems = () => {
+    // =======================================================
+    // SUPER ADMIN
+    // =======================================================
 
     if (currentUser.role === 'SuperAdmin') {
       return [
@@ -152,19 +196,74 @@ const DashboardLayout = ({ children }) => {
         },
         {
           path: '/super-admin/organizations',
-          label: 'Manage NGOs',
+          label: 'Organization Management',
           icon: <Building size={18} />
         },
-        ...(PAYMENTS_ENABLED ? [{
-          path: '/super-admin/billing',
-          label: 'Billing & Payments',
-          icon: <CreditCard size={18} />
-        }] : []),
         {
-          path: '/super-admin/analytics',
-          label: 'Analytics & Reports',
-          icon: <BarChart3 size={18} />
+          path: '/super-admin/user-management',
+          label: 'User Management',
+          icon: <Users size={18} />
         },
+
+        ...(PAYMENTS_ENABLED
+          ? [
+              {
+                path: '/super-admin/billing',
+                label: 'Billing & Payments',
+                icon: <CreditCard size={18} />
+              }
+            ]
+          : []),
+
+        {
+          key: 'external-relations',
+          label: 'External Relations',
+          icon: <Globe size={18} />,
+          children: [
+            {
+              path: '/super-admin/queries',
+              label: 'External Queries',
+              icon: <MessageCircleQuestion size={18} />,
+              badge: 'newQueries'
+            },
+            {
+              path: '/super-admin/visibility-requests',
+              label: 'Visibility Requests',
+              icon: <Globe size={18} />,
+              badge: 'pendingVisibilityRequests'
+            }
+          ]
+        },
+
+        {
+          key: 'reports-monitoring',
+          label: 'Reports & Monitoring',
+          icon: <BarChart3 size={18} />,
+          children: [
+            {
+              path: '/super-admin/analytics',
+              label: 'Analytics & Reports',
+              icon: <BarChart3 size={18} />
+            },
+            {
+              path: '/super-admin/system-monitoring',
+              label: 'System Monitoring',
+              icon: <Activity size={18} />
+            },
+            {
+              path: '/super-admin/audit-logs',
+              label: 'Audit Logs',
+              icon: <History size={18} />
+            }
+          ]
+        },
+
+        {
+          path: '/super-admin/platform-settings',
+          label: 'Platform Settings',
+          icon: <SettingsIcon size={18} />
+        },
+
         {
           path: '/settings',
           label: 'Settings',
@@ -172,6 +271,10 @@ const DashboardLayout = ({ children }) => {
         }
       ];
     }
+
+    // =======================================================
+    // ORG ADMIN
+    // =======================================================
 
     if (currentUser.role === 'OrgAdmin') {
       return [
@@ -180,59 +283,195 @@ const DashboardLayout = ({ children }) => {
           label: 'Overview Dashboard',
           icon: <LayoutDashboard size={18} />
         },
+
         {
-          path: '/org-admin/requests',
-          label: 'Registration Requests',
-          icon: <PlusCircle size={18} />,
-          badge: 'pendingRequests'
+          key: 'user-access-management',
+          label: 'User & Access Management',
+          icon: <Users size={18} />,
+          children: [
+            {
+              path: '/org-admin/requests',
+              label: 'Registration Requests',
+              icon: <PlusCircle size={18} />,
+              badge: 'pendingRequests'
+            },
+            {
+              path: '/org-admin/users',
+              label: 'Employees & Staff',
+              icon: <Users size={18} />
+            },
+            {
+              path: '/org-admin/accessibility',
+              label: 'Accessibility',
+              icon: <ShieldCheck size={18} />
+            }
+          ]
         },
+
         {
-          path: '/org-admin/users',
-          label: 'Employees & Staff',
-          icon: <Users size={18} />
+          key: 'camps-events',
+          label: 'Camps & Events',
+          icon: <Calendar size={18} />,
+          children: [
+            {
+              path: '/org-admin/camps',
+              label: 'Camps',
+              icon: <Calendar size={18} />
+            },
+            {
+              path: '/org-admin/events',
+              label: 'Events',
+              icon: <CalendarDays size={18} />
+            },
+            {
+              path: '/org-admin/visibility-requests',
+              label: 'Event/Camp Visibility',
+              icon: <Globe size={18} />
+            },
+            {
+              path: '/org-admin/opportunities',
+              label: 'Opportunities',
+              icon: <Briefcase size={18} />
+            }
+          ]
         },
+
         {
-          path: '/org-admin/accessibility',
-          label: 'Accessibility',
-          icon: <ShieldCheck size={18} />
+          key: 'projects-campaigns',
+          label: 'Projects & Campaigns',
+          icon: <FolderKanban size={18} />,
+          children: [
+            {
+              path: '/org-admin/projects',
+              label: 'Projects',
+              icon: <FolderKanban size={18} />
+            },
+            {
+              path: '/org-admin/campaigns',
+              label: 'Campaigns',
+              icon: <Megaphone size={18} />
+            },
+            {
+              path: '/org-admin/meetings',
+              label: 'Meetings',
+              icon: <Video size={18} />
+            },
+            {
+              path: '/org-admin/tasks',
+              label: 'Task Matrix',
+              icon: <CheckSquare size={18} />,
+              badge: 'unreadTaskComments'
+            }
+          ]
         },
+
         {
-          path: '/org-admin/camps',
-          label: 'Camps',
-          icon: <Calendar size={18} />
+          key: 'people-partnerships',
+          label: 'People & Partnerships',
+          icon: <UsersRound size={18} />,
+          children: [
+            {
+              path: '/org-admin/volunteers',
+              label: 'Volunteers',
+              icon: <HandHeart size={18} />
+            },
+            {
+              path: '/org-admin/donors',
+              label: 'Donors',
+              icon: <HeartHandshake size={18} />
+            },
+            {
+              path: '/org-admin/sponsors',
+              label: 'Sponsors',
+              icon: <Gift size={18} />
+            },
+            {
+              path: '/org-admin/partners',
+              label: 'Partners',
+              icon: <Handshake size={18} />
+            },
+            {
+              path: '/org-admin/beneficiaries',
+              label: 'Beneficiaries',
+              icon: <Heart size={18} />
+            }
+          ]
         },
+
         {
-          path: '/org-admin/events',
-          label: 'Events',
-          icon: <CalendarDays size={18} />
+          key: 'finance-documents',
+          label: 'Finance & Documents',
+          icon: <Wallet size={18} />,
+          children: [
+            ...(PAYMENTS_ENABLED
+              ? [
+                  {
+                    path: '/org-admin/billing',
+                    label: 'Billing & Subscription',
+                    icon: <CreditCard size={18} />
+                  }
+                ]
+              : []),
+            {
+              path: '/org-admin/expenses',
+              label: 'Expenses',
+              icon: <Wallet size={18} />
+            },
+            {
+              path: '/org-admin/documents',
+              label: 'Documents',
+              icon: <FileText size={18} />
+            }
+          ]
         },
+
         {
-          path: '/org-admin/meetings',
-          label: 'Meetings',
-          icon: <Video size={18} />
+          path: '/org-admin/approvals',
+          label: 'Approval System',
+          icon: <ClipboardCheck size={18} />
         },
+
         {
-          path: '/org-admin/tasks',
-          label: 'Task Matrix',
-          icon: <CheckSquare size={18} />,
-          badge: 'unreadTaskComments'
+          key: 'reports-audit',
+          label: 'Reports & Insights',
+          icon: <BarChart3 size={18} />,
+          children: [
+            {
+              path: '/org-admin/analytics',
+              label: 'Analytics & Reports',
+              icon: <BarChart3 size={18} />
+            },
+            {
+              path: '/org-admin/fundraising',
+              label: 'Fundraising',
+              icon: <TrendingUp size={18} />
+            },
+            {
+              path: '/org-admin/impact',
+              label: 'Impact Management',
+              icon: <Sparkles size={18} />
+            },
+            {
+              path: '/org-admin/audit-logs',
+              label: 'Audit & Activity Logs',
+              icon: <History size={18} />
+            }
+          ]
         },
-        ...(PAYMENTS_ENABLED ? [{
-          path: '/org-admin/billing',
-          label: 'Billing & Subscription',
-          icon: <CreditCard size={18} />
-        }] : []),
+
         {
-          path: '/org-admin/analytics',
-          label: 'Analytics & Reports',
-          icon: <BarChart3 size={18} />
+          path: '/org-admin/ai-assistant',
+          label: 'AI Module',
+          icon: <Sparkles size={18} />
         },
+
         {
           path: '/discussion',
           label: 'Discussion',
           icon: <MessageSquare size={18} />,
           badge: 'unreadDiscussion'
         },
+
         {
           path: '/settings',
           label: 'Settings',
@@ -241,6 +480,10 @@ const DashboardLayout = ({ children }) => {
       ];
     }
 
+    // =======================================================
+    // STAFF
+    // =======================================================
+
     return [
       {
         path: '/staff/dashboard',
@@ -248,37 +491,221 @@ const DashboardLayout = ({ children }) => {
         icon: <LayoutDashboard size={18} />,
         badge: 'unreadTaskComments'
       },
-      // Only shown if this staff member was granted the
-      // 'registration_requests' Accessibility permission by their OrgAdmin.
-      ...(hasAccess('registration_requests') ? [{
-        path: '/org-admin/requests',
-        label: 'Registration Requests',
-        icon: <PlusCircle size={18} />,
-        badge: 'pendingRequests'
-      }] : []),
-      // Same pattern for 'camps' and 'events' — each only appears once
-      // an OrgAdmin has granted that specific section.
-      ...(hasAccess('camps') ? [{
-        path: '/org-admin/camps',
-        label: 'Camps',
-        icon: <Calendar size={18} />
-      }] : []),
-      ...(hasAccess('events') ? [{
-        path: '/org-admin/events',
-        label: 'Events',
-        icon: <CalendarDays size={18} />
-      }] : []),
-      ...(hasAccess('meetings') ? [{
-        path: '/org-admin/meetings',
-        label: 'Meetings',
-        icon: <Video size={18} />
-      }] : []),
+
+      ...(hasAccess('registration_requests')
+        ? [
+            {
+              path: '/org-admin/requests',
+              label: 'Registration Requests',
+              icon: <PlusCircle size={18} />,
+              badge: 'pendingRequests'
+            }
+          ]
+        : []),
+
+      // -----------------------------------------------------
+      // CAMPS & EVENTS
+      // -----------------------------------------------------
+
+      ...(() => {
+        const children = [
+          ...(hasAccess('camps')
+            ? [
+                {
+                  path: '/org-admin/camps',
+                  label: 'Camps',
+                  icon: <Calendar size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('events')
+            ? [
+                {
+                  path: '/org-admin/events',
+                  label: 'Events',
+                  icon: <CalendarDays size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('meetings')
+            ? [
+                {
+                  path: '/org-admin/meetings',
+                  label: 'Meetings',
+                  icon: <Video size={18} />
+                }
+              ]
+            : [])
+        ];
+
+        return children.length > 0
+          ? [
+              {
+                key: 'camps-events',
+                label: 'Camps & Events',
+                icon: <Calendar size={18} />,
+                children
+              }
+            ]
+          : [];
+      })(),
+
+      // -----------------------------------------------------
+      // PROJECTS & CAMPAIGNS
+      // -----------------------------------------------------
+
+      ...(() => {
+        const children = [
+          ...(hasAccess('projects')
+            ? [
+                {
+                  path: '/org-admin/projects',
+                  label: 'Projects',
+                  icon: <FolderKanban size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('campaigns')
+            ? [
+                {
+                  path: '/org-admin/campaigns',
+                  label: 'Campaigns',
+                  icon: <Megaphone size={18} />
+                }
+              ]
+            : [])
+        ];
+
+        return children.length > 0
+          ? [
+              {
+                key: 'projects-campaigns',
+                label: 'Projects & Campaigns',
+                icon: <FolderKanban size={18} />,
+                children
+              }
+            ]
+          : [];
+      })(),
+
+      // -----------------------------------------------------
+      // PEOPLE & PARTNERSHIPS
+      // -----------------------------------------------------
+
+      ...(() => {
+        const children = [
+          ...(hasAccess('volunteers')
+            ? [
+                {
+                  path: '/org-admin/volunteers',
+                  label: 'Volunteers',
+                  icon: <HandHeart size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('donors')
+            ? [
+                {
+                  path: '/org-admin/donors',
+                  label: 'Donors',
+                  icon: <HeartHandshake size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('sponsors')
+            ? [
+                {
+                  path: '/org-admin/sponsors',
+                  label: 'Sponsors',
+                  icon: <Gift size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('partners')
+            ? [
+                {
+                  path: '/org-admin/partners',
+                  label: 'Partners',
+                  icon: <Handshake size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('beneficiaries')
+            ? [
+                {
+                  path: '/org-admin/beneficiaries',
+                  label: 'Beneficiaries',
+                  icon: <Heart size={18} />
+                }
+              ]
+            : [])
+        ];
+
+        return children.length > 0
+          ? [
+              {
+                key: 'people-partnerships',
+                label: 'People & Partnerships',
+                icon: <UsersRound size={18} />,
+                children
+              }
+            ]
+          : [];
+      })(),
+
+      // -----------------------------------------------------
+      // FINANCE & DOCUMENTS
+      // -----------------------------------------------------
+
+      ...(() => {
+        const children = [
+          ...(hasAccess('expenses')
+            ? [
+                {
+                  path: '/org-admin/expenses',
+                  label: 'Expenses',
+                  icon: <Wallet size={18} />
+                }
+              ]
+            : []),
+
+          ...(hasAccess('documents')
+            ? [
+                {
+                  path: '/org-admin/documents',
+                  label: 'Documents',
+                  icon: <FileText size={18} />
+                }
+              ]
+            : [])
+        ];
+
+        return children.length > 0
+          ? [
+              {
+                key: 'finance-documents',
+                label: 'Finance & Documents',
+                icon: <Wallet size={18} />,
+                children
+              }
+            ]
+          : [];
+      })(),
+
       {
         path: '/discussion',
         label: 'Discussion',
         icon: <MessageSquare size={18} />,
         badge: 'unreadDiscussion'
       },
+
       {
         path: '/settings',
         label: 'Settings',
@@ -293,8 +720,7 @@ const DashboardLayout = ({ children }) => {
   // BADGE HELPER
   // =========================================================
 
-  const getBadgeCount = badge => {
-
+  const getBadgeCount = (badge) => {
     if (badge === 'pendingRequests') {
       return pendingRequestsCount;
     }
@@ -307,8 +733,24 @@ const DashboardLayout = ({ children }) => {
       return unreadDiscussionCount;
     }
 
+    if (badge === 'newQueries') {
+      return queries.filter(
+        (q) => q.status === 'New'
+      ).length;
+    }
+
+    if (badge === 'pendingVisibilityRequests') {
+      return visibilityRequests.filter(
+        (r) => r.visibilityStatus === 'Pending'
+      ).length;
+    }
+
     return 0;
   };
+
+  // =========================================================
+  // RENDER
+  // =========================================================
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900">
@@ -318,26 +760,61 @@ const DashboardLayout = ({ children }) => {
       ===================================================== */}
 
       <aside
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => setSidebarHovered(false)}
         className={`
+          fixed
+          left-0
+          top-0
+          z-50
+          h-screen
+          flex
+          flex-col
           bg-[#0b1220]
           text-white
-          border-r border-slate-800
-          flex flex-col
-          transition-all duration-300
-          ${
-            sidebarOpen
-              ? 'w-72'
-              : 'w-0 overflow-hidden'
-          }
+
+          border-r
+          border-white/10
+
+          shadow-2xl
+          shadow-black/20
+
+          transition-all
+          duration-300
+          ease-in-out
+
+          overflow-hidden
+
+          ${sidebarHovered ? 'w-72' : 'w-16'}
         `}
       >
 
-        {/* Brand */}
+        {/* ===================================================
+            BRAND
+        =================================================== */}
 
-        <div className="flex items-center gap-2 px-5 py-5 border-b border-slate-800">
+        <div
+          className={`
+            flex
+            items-center
+            gap-3
+            py-5
+            border-b
+            border-white/10
+            transition-all
+            duration-300
+
+            ${
+              sidebarHovered
+                ? 'px-5 justify-start'
+                : 'px-3 justify-center'
+            }
+          `}
+        >
 
           <div
             className="
+              shrink-0
               bg-gradient-to-br
               from-indigo-500
               to-violet-600
@@ -347,6 +824,7 @@ const DashboardLayout = ({ children }) => {
               shadow-lg
               shadow-indigo-500/20
             "
+            title="WorkSphere"
           >
             <Heart
               size={18}
@@ -354,53 +832,359 @@ const DashboardLayout = ({ children }) => {
             />
           </div>
 
-          <span className="font-bold text-lg tracking-tight">
-            WorkSphere
-          </span>
+          {sidebarHovered && (
+            <>
+              <span
+                className="
+                  font-bold
+                  text-lg
+                  tracking-tight
+                  whitespace-nowrap
+                "
+              >
+                WorkSphere
+              </span>
 
-          <span
-            className="
-              text-xs
-              bg-slate-800
-              border border-slate-700
-              px-2
-              py-0.5
-              rounded
-              text-slate-300
-            "
-          >
-            v1.0
-          </span>
+              <span
+                className="
+                  text-xs
+                  bg-white/10
+                  border
+                  border-white/10
+                  px-2
+                  py-0.5
+                  rounded
+                  text-slate-300
+                  whitespace-nowrap
+                "
+              >
+                v1.0
+              </span>
+            </>
+          )}
 
         </div>
 
-        {/* User Info */}
+        {/* ===================================================
+            USER INFO
+        =================================================== */}
 
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-800">
+        <div
+          className={`
+            flex
+            items-center
+            gap-3
+            py-5
+            border-b
+            border-white/10
+            transition-all
+            duration-300
 
-          <div className="text-indigo-400">
+            ${
+              sidebarHovered
+                ? 'px-5 justify-start'
+                : 'px-3 justify-center'
+            }
+          `}
+        >
+
+          <div
+            className="
+              text-indigo-400
+              shrink-0
+            "
+            title={currentUser.fullName}
+          >
             <UserCircle2 size={34} />
           </div>
 
-          <div className="min-w-0">
+          {sidebarHovered && (
+            <div className="min-w-0">
 
-            <p className="text-sm truncate font-semibold tracking-tight">
-              {currentUser.fullName}
-            </p>
+              <p
+                className="
+                  text-sm
+                  truncate
+                  font-semibold
+                  tracking-tight
+                "
+              >
+                {currentUser.fullName}
+              </p>
 
-            <span className="text-xs text-slate-400">
-              {currentUser.role}
-            </span>
+              <span className="text-xs text-slate-400">
+                {currentUser.role}
+              </span>
 
-          </div>
+            </div>
+          )}
 
         </div>
 
-        {/* Navigation */}
+        {/* ===================================================
+            NAVIGATION
+        =================================================== */}
 
-        <nav className="flex flex-col gap-1 p-3 flex-1">
+        <nav
+          className="
+            flex
+            flex-col
+            gap-1
+            p-2
+            flex-1
+            overflow-y-auto
+            overflow-x-hidden
+
+            scrollbar-thin
+            scrollbar-thumb-slate-700
+            scrollbar-track-transparent
+          "
+        >
 
           {navItems.map((item, idx) => {
+
+            // =================================================
+            // GROUP
+            // =================================================
+
+            if (item.children) {
+
+              const isCollapsed =
+                !!collapsedGroups[item.key];
+
+              const groupBadgeTotal =
+                item.children.reduce(
+                  (sum, child) =>
+                    sum + getBadgeCount(child.badge),
+                  0
+                );
+
+              const groupHasActiveChild =
+                item.children.some(
+                  (child) =>
+                    location.pathname === child.path
+                );
+
+              return (
+                <div
+                  key={item.key || idx}
+                  className="flex flex-col"
+                >
+
+                  {/* GROUP HEADER */}
+
+                  <button
+                    type="button"
+                    title={
+                      !sidebarHovered
+                        ? item.label
+                        : undefined
+                    }
+                    onClick={() => {
+                      if (sidebarHovered) {
+                        toggleGroup(item.key);
+                      }
+                    }}
+                    className={`
+                      flex
+                      items-center
+                      gap-3
+                      py-2.5
+                      rounded-lg
+                      text-sm
+                      transition-all
+                      duration-200
+                      w-full
+
+                      ${
+                        sidebarHovered
+                          ? 'px-3 justify-start'
+                          : 'px-3 justify-center'
+                      }
+
+                      ${
+                        groupHasActiveChild
+                          ? 'text-white bg-white/5'
+                          : `
+                            text-slate-400
+                            hover:text-white
+                            hover:bg-white/10
+                          `
+                      }
+                    `}
+                  >
+
+                    <span
+                      className={
+                        groupHasActiveChild
+                          ? 'text-white shrink-0'
+                          : 'text-slate-400 shrink-0'
+                      }
+                    >
+                      {item.icon}
+                    </span>
+
+                    {sidebarHovered && (
+                      <>
+                        <span
+                          className="
+                            flex-1
+                            font-semibold
+                            uppercase
+                            tracking-wide
+                            text-xs
+                            text-left
+                            whitespace-nowrap
+                          "
+                        >
+                          {item.label}
+                        </span>
+
+                        {groupBadgeTotal > 0 && (
+                          <span
+                            className="
+                              bg-rose-500
+                              text-white
+                              text-xs
+                              font-semibold
+                              px-2
+                              py-0.5
+                              rounded-full
+                              shadow-sm
+                              shrink-0
+                            "
+                          >
+                            {groupBadgeTotal}
+                          </span>
+                        )}
+
+                        {isCollapsed ? (
+                          <ChevronRight
+                            size={14}
+                            className="shrink-0"
+                          />
+                        ) : (
+                          <ChevronDown
+                            size={14}
+                            className="shrink-0"
+                          />
+                        )}
+                      </>
+                    )}
+
+                  </button>
+
+                  {/* GROUP CHILDREN */}
+
+                  {sidebarHovered && !isCollapsed && (
+                    <div
+                      className="
+                        flex
+                        flex-col
+                        gap-1
+                        pl-3
+                        mt-1
+                        mb-1
+                        ml-4
+                        border-l
+                        border-white/10
+                      "
+                    >
+
+                      {item.children.map((child) => {
+
+                        const childActive =
+                          location.pathname === child.path;
+
+                        const childBadge =
+                          getBadgeCount(child.badge);
+
+                        return (
+                          <Link
+                            key={child.path}
+                            to={child.path}
+                            className={`
+                              flex
+                              items-center
+                              gap-3
+                              px-3
+                              py-2
+                              rounded-lg
+                              text-sm
+                              transition-all
+                              duration-200
+
+                              ${
+                                childActive
+                                  ? `
+                                    bg-gradient-to-r
+                                    from-indigo-500
+                                    to-violet-600
+                                    text-white
+                                    shadow-md
+                                    shadow-indigo-500/20
+                                  `
+                                  : `
+                                    text-slate-400
+                                    hover:text-white
+                                    hover:bg-white/10
+                                  `
+                              }
+                            `}
+                          >
+
+                            <span
+                              className={
+                                childActive
+                                  ? 'text-white shrink-0'
+                                  : 'text-slate-400 shrink-0'
+                              }
+                            >
+                              {child.icon}
+                            </span>
+
+                            <span
+                              className="
+                                flex-1
+                                font-medium
+                                whitespace-nowrap
+                              "
+                            >
+                              {child.label}
+                            </span>
+
+                            {childBadge > 0 && (
+                              <span
+                                className="
+                                  bg-rose-500
+                                  text-white
+                                  text-xs
+                                  font-semibold
+                                  px-2
+                                  py-0.5
+                                  rounded-full
+                                  shadow-sm
+                                  shrink-0
+                                "
+                              >
+                                {childBadge}
+                              </span>
+                            )}
+
+                          </Link>
+                        );
+                      })}
+
+                    </div>
+                  )}
+
+                </div>
+              );
+            }
+
+            // =================================================
+            // STANDALONE ITEM
+            // =================================================
 
             const isActive =
               location.pathname === item.path;
@@ -410,17 +1194,30 @@ const DashboardLayout = ({ children }) => {
 
             return (
               <Link
-                key={idx}
+                key={item.path || idx}
                 to={item.path}
+                title={
+                  !sidebarHovered
+                    ? item.label
+                    : undefined
+                }
                 className={`
-                  flex items-center
+                  flex
+                  items-center
                   gap-3
-                  px-4
                   py-2.5
                   rounded-lg
                   text-sm
                   transition-all
                   duration-200
+                  w-full
+
+                  ${
+                    sidebarHovered
+                      ? 'px-3 justify-start'
+                      : 'px-3 justify-center'
+                  }
+
                   ${
                     isActive
                       ? `
@@ -434,21 +1231,35 @@ const DashboardLayout = ({ children }) => {
                       : `
                         text-slate-400
                         hover:text-white
-                        hover:bg-slate-800
+                        hover:bg-white/10
                       `
                   }
                 `}
               >
 
-                <span className={isActive ? 'text-white' : 'text-slate-400'}>
+                <span
+                  className={
+                    isActive
+                      ? 'text-white shrink-0'
+                      : 'text-slate-400 shrink-0'
+                  }
+                >
                   {item.icon}
                 </span>
 
-                <span className="flex-1 font-medium">
-                  {item.label}
-                </span>
+                {sidebarHovered && (
+                  <span
+                    className="
+                      flex-1
+                      font-medium
+                      whitespace-nowrap
+                    "
+                  >
+                    {item.label}
+                  </span>
+                )}
 
-                {badgeCount > 0 && (
+                {sidebarHovered && badgeCount > 0 && (
                   <span
                     className="
                       bg-rose-500
@@ -459,6 +1270,7 @@ const DashboardLayout = ({ children }) => {
                       py-0.5
                       rounded-full
                       shadow-sm
+                      shrink-0
                     "
                   >
                     {badgeCount}
@@ -471,17 +1283,34 @@ const DashboardLayout = ({ children }) => {
 
         </nav>
 
-        {/* Logout */}
+        {/* ===================================================
+            LOGOUT
+        =================================================== */}
 
-        <div className="p-4 border-t border-slate-800">
+        <div
+          className={`
+            border-t
+            border-white/10
+            transition-all
+            duration-300
+
+            ${
+              sidebarHovered
+                ? 'p-4'
+                : 'p-2'
+            }
+          `}
+        >
 
           <button
             onClick={handleLogout}
-            className="
+            title={!sidebarHovered ? 'Log Out' : undefined}
+            className={`
               w-full
-              bg-slate-900
+              bg-white/5
               hover:bg-rose-600
-              border border-slate-700
+              border
+              border-white/10
               hover:border-rose-500
               text-slate-300
               hover:text-white
@@ -489,14 +1318,28 @@ const DashboardLayout = ({ children }) => {
               rounded-md
               flex
               items-center
-              justify-center
-              gap-2
               transition-all
               duration-200
-            "
+
+              ${
+                sidebarHovered
+                  ? 'justify-center gap-2'
+                  : 'justify-center'
+              }
+            `}
           >
-            <LogOut size={16} />
-            Log Out
+
+            <LogOut
+              size={16}
+              className="shrink-0"
+            />
+
+            {sidebarHovered && (
+              <span className="whitespace-nowrap">
+                Log Out
+              </span>
+            )}
+
           </button>
 
         </div>
@@ -504,16 +1347,27 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       {/* =====================================================
-          MAIN
+          MAIN AREA
       ===================================================== */}
 
-      <div className="flex flex-col flex-1 min-w-0">
+      <div
+        className="
+          flex
+          flex-col
+          flex-1
+          min-w-0
+          ml-16
+        "
+      >
 
-        {/* Header */}
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
         <header
           className="
-            flex items-center
+            flex
+            items-center
             justify-between
             px-6
             py-4
@@ -523,29 +1377,9 @@ const DashboardLayout = ({ children }) => {
           "
         >
 
-          {/* Left */}
+          {/* LEFT */}
 
           <div className="flex items-center gap-3">
-
-            <button
-              onClick={() =>
-                setSidebarOpen(!sidebarOpen)
-              }
-              className="
-                p-1.5
-                hover:bg-slate-100
-                text-slate-600
-                hover:text-indigo-600
-                rounded-lg
-                transition
-              "
-            >
-              {sidebarOpen ? (
-                <X size={20} />
-              ) : (
-                <Menu size={20} />
-              )}
-            </button>
 
             <div>
 
@@ -575,13 +1409,22 @@ const DashboardLayout = ({ children }) => {
 
           </div>
 
-          {/* Right */}
+          {/* RIGHT */}
 
           <div className="flex items-center gap-4">
 
-            {/* Notification */}
+            {/* NOTIFICATION */}
 
-            <div className="relative text-slate-600 hover:text-indigo-600 transition cursor-pointer">
+            <div
+              className="
+                relative
+                text-slate-600
+                hover:text-indigo-600
+                transition
+                cursor-pointer
+              "
+              title="Notifications"
+            >
 
               <Bell size={20} />
 
@@ -603,11 +1446,11 @@ const DashboardLayout = ({ children }) => {
 
             </div>
 
-            {/* Divider */}
+            {/* DIVIDER */}
 
             <div className="w-px h-5 bg-slate-200" />
 
-            {/* Date */}
+            {/* DATE */}
 
             <span
               className="
@@ -630,7 +1473,9 @@ const DashboardLayout = ({ children }) => {
 
         </header>
 
-        {/* Content */}
+        {/* ===================================================
+            CONTENT
+        =================================================== */}
 
         <main
           className="
@@ -649,15 +1494,16 @@ const DashboardLayout = ({ children }) => {
           PAYMENT MODAL
       ===================================================== */}
 
-      {PAYMENTS_ENABLED && currentUser.role === 'OrgAdmin' && (
-        <PaymentAlertModal
-          subscription={orgSubscription}
-          planLabel={
-            SUBSCRIPTION_PLANS[orgPlanKey]?.label ||
-            currentOrg?.subPlan
-          }
-        />
-      )}
+      {PAYMENTS_ENABLED &&
+        currentUser.role === 'OrgAdmin' && (
+          <PaymentAlertModal
+            subscription={orgSubscription}
+            planLabel={
+              SUBSCRIPTION_PLANS[orgPlanKey]?.label ||
+              currentOrg?.subPlan
+            }
+          />
+        )}
 
     </div>
   );

@@ -1,4 +1,5 @@
 const supabase = require('../config/supabase');
+const { logAudit, AUDIT_ACTIONS } = require('../utils/auditLog');
 
 // ============================================================
 // Accessibility / Section Permissions
@@ -13,7 +14,16 @@ const ASSIGNABLE_SECTIONS = [
   { key: 'registration_requests', label: 'Registration Requests', description: 'Review and approve/reject incoming staff registration requests.' },
   { key: 'camps', label: 'Camps', description: 'Create, edit, and manage medical camps and staff availability.' },
   { key: 'events', label: 'Events', description: 'Create, edit, and manage organization events.' },
-  { key: 'meetings', label: 'Meetings', description: 'Create, edit, and manage organization meetings.' }
+  { key: 'meetings', label: 'Meetings', description: 'Create, edit, and manage organization meetings.' },
+  { key: 'projects', label: 'Projects', description: 'Create, edit, and manage organization projects and project teams.' },
+  { key: 'campaigns', label: 'Campaigns', description: 'Create, edit, and manage organization campaigns and campaign teams.' },
+  { key: 'donors', label: 'Donors', description: 'Manage donor records and log donations.' },
+  { key: 'volunteers', label: 'Volunteers', description: 'Manage volunteer profiles, skills and logged hours.' },
+  { key: 'sponsors', label: 'Sponsors', description: 'Manage sponsor records and sponsorship agreements.' },
+  { key: 'partners', label: 'Partners', description: 'Propose and manage partner organizations (approval stays with the Org Admin).' },
+  { key: 'beneficiaries', label: 'Beneficiaries', description: 'Register beneficiaries and manage program enrollment.' },
+  { key: 'expenses', label: 'Expenses', description: 'Submit project/campaign expenses (approval stays with the Org Admin).' },
+  { key: 'documents', label: 'Documents', description: 'Upload and manage organization documents.' }
   // Add more sections here as they become permission-aware, e.g.:
   // { key: 'tasks', label: 'Tasks', description: 'Assign and track staff tasks.' }
 ];
@@ -77,6 +87,17 @@ const grantPermission = async (req, res) => {
   if (error) return res.status(500).json({ success: false, error: 'Could not grant access.' });
 
   const sectionLabel = ASSIGNABLE_SECTIONS.find((s) => s.key === sectionKey)?.label || sectionKey;
+
+  await logAudit({
+    actor: req.user,
+    orgId: req.user.orgId,
+    action: AUDIT_ACTIONS.PERMISSION_GRANTED,
+    entityType: 'permission',
+    entityId: userId,
+    entityLabel: `${target.full_name} — ${sectionLabel}`,
+    newValue: { sectionKey }
+  });
+
   await supabase.from('notifications').insert({
     org_id: req.user.orgId,
     target_user_id: userId,
@@ -96,7 +117,7 @@ const revokePermission = async (req, res) => {
     return res.status(400).json({ success: false, error: 'userId and sectionKey are required.' });
   }
 
-  const { data: target } = await supabase.from('users').select('org_id').eq('id', userId).maybeSingle();
+  const { data: target } = await supabase.from('users').select('org_id, full_name').eq('id', userId).maybeSingle();
   if (!target || target.org_id !== req.user.orgId) {
     return res.status(403).json({ success: false, error: 'Not authorized for this user.' });
   }
@@ -107,6 +128,18 @@ const revokePermission = async (req, res) => {
     .eq('user_id', userId)
     .eq('section_key', sectionKey);
   if (error) return res.status(500).json({ success: false, error: 'Could not revoke access.' });
+
+  const sectionLabel = ASSIGNABLE_SECTIONS.find((s) => s.key === sectionKey)?.label || sectionKey;
+  await logAudit({
+    actor: req.user,
+    orgId: req.user.orgId,
+    action: AUDIT_ACTIONS.PERMISSION_REVOKED,
+    entityType: 'permission',
+    entityId: userId,
+    entityLabel: `${target.full_name} — ${sectionLabel}`,
+    previousValue: { sectionKey }
+  });
+
   return res.json({ success: true });
 };
 
