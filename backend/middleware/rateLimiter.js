@@ -57,31 +57,8 @@ const apiLimiter = rateLimit({
   skip: (req) => req.path === '/health'
 });
 
-/*
-|--------------------------------------------------------------------------
-| Login account lockout
-|--------------------------------------------------------------------------
-|
-| 5 failed attempts
-|        ↓
-| 15 minute temporary lock
-|
-| IMPORTANT:
-| This is stored in memory.
-| For multiple production servers/instances, use Redis instead.
-|
-*/
-
-const MAX_LOGIN_FAILURES = 5;
-const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
 
 const loginAttempts = new Map();
-
-/*
-|--------------------------------------------------------------------------
-| Normalize email
-|--------------------------------------------------------------------------
-*/
 
 const normalizeEmail = (email) => {
   return String(email || '')
