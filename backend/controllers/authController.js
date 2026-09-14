@@ -1,34 +1,37 @@
 const crypto = require('crypto');
-
 const bcrypt = require('bcryptjs');
-
 const jwt = require('jsonwebtoken');
 
 const supabase = require('../config/supabase');
 
 const { serializeUser } = require('../utils/serializers');
-
 const { sendPasswordResetEmail } = require('../utils/mailer');
-
 const { seedDefaultGroups } = require('./discussionController');
-
 const { getPlan } = require('../config/plans');
-
-const { logBillingEvent, BILLING_EVENTS } = require('../utils/billingAudit');
-
+const {
+  logBillingEvent,
+  BILLING_EVENTS
+} = require('../utils/billingAudit');
 const { getActiveGateway } = require('../utils/paymentGateways');
 
-const genTxnRefNo = () => `T${Date.now()}${Math.floor(Math.random() * 1000)}`;
+const {
+  recordLoginResult
+} = require('../middleware/rateLimiter');
 
-// NOTE: the 7-day free trial itself is started later, when a SuperAdmin
-// approves the organization (see organizationController.updateOrgStatus) —
-// not here at raw registration, since a still-Pending org can't log in or
-// use the platform yet and shouldn't burn trial days sitting in the queue.
+/*
+|--------------------------------------------------------------------------
+| Helpers
+|--------------------------------------------------------------------------
+*/
 
-// Roles selectable via the public self-registration form. "Executive
-// Director" is intentionally excluded here - that's a leadership title only
-// an Organization Admin can grant (via POST /api/users), never something an
-// anonymous visitor can request for themselves.
+const genTxnRefNo = () =>
+  `T${Date.now()}${Math.floor(Math.random() * 1000)}`;
+
+/*
+|--------------------------------------------------------------------------
+| Self-registerable roles
+|--------------------------------------------------------------------------
+*/
 
 const SELF_REGISTERABLE_ROLES = [
   'Employee',
@@ -37,19 +40,23 @@ const SELF_REGISTERABLE_ROLES = [
   'Membership'
 ];
 
+/*
+|--------------------------------------------------------------------------
+| Password / email settings
+|--------------------------------------------------------------------------
+*/
+
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
-// Password policy for the public staff self-registration form:
-// exactly 8 characters, with at least one letter and one number.
+// Password policy for public staff self-registration:
+// exactly 8 characters, at least one letter and one number.
 const STAFF_PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8}$/;
 
 const STAFF_PASSWORD_MESSAGE =
   'Password must be exactly 8 characters long and include at least one letter and one number.';
 
-// Password maximum length for all password creation/update endpoints.
 const PASSWORD_MAX_LENGTH = 8;
 
-// Email validation.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const EMAIL_MESSAGE = 'Please enter a valid email address.';
@@ -58,26 +65,53 @@ const PASSWORD_LENGTH_MESSAGE =
   'Password must not exceed 8 characters.';
 
 const isValidEmail = (email) => {
-  return typeof email === 'string' && EMAIL_REGEX.test(email.trim());
+  return (
+    typeof email === 'string' &&
+    EMAIL_REGEX.test(email.trim())
+  );
 };
 
 const isValidPasswordLength = (password) => {
-  return typeof password === 'string' && password.length <= PASSWORD_MAX_LENGTH;
+  return (
+    typeof password === 'string' &&
+    password.length <= PASSWORD_MAX_LENGTH
+  );
 };
 
-// Very small in-memory throttle to slow down abuse of the forgot-password
-// endpoint (e.g. someone hammering it to spam an inbox or brute-force
-// enumerate accounts). Keyed by email; resets automatically after the window.
+/*
+|--------------------------------------------------------------------------
+| Forgot-password throttle
+|--------------------------------------------------------------------------
+*/
 
-const forgotPasswordAttempts = new Map(); // email -> timestamp of last request
+const forgotPasswordAttempts = new Map();
+// email -> timestamp of last request
 
-const FORGOT_PASSWORD_COOLDOWN_MS = 60 * 1000; // 1 request per email per minute
+const {
+  FORGOT_PASSWORD_COOLDOWN_MS
+} = require('../config/security');
+// 1 request per email per minute
+
+/*
+|--------------------------------------------------------------------------
+| Password reset helpers
+|--------------------------------------------------------------------------
+*/
 
 const hashToken = (rawToken) =>
-  crypto.createHash('sha256').update(rawToken).digest('hex');
+  crypto
+    .createHash('sha256')
+    .update(rawToken)
+    .digest('hex');
 
-const signToken = (user) =>
-  jwt.sign(
+/*
+|--------------------------------------------------------------------------
+| JWT
+|--------------------------------------------------------------------------
+*/
+
+const signToken = (user) => {
+  return jwt.sign(
     {
       id: user.id,
       role: user.role,
@@ -85,482 +119,977 @@ const signToken = (user) =>
       email: user.email
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    {
+      expiresIn: process.env.JWT_EXPIRES_IN || '7d'
+    }
   );
+};
 
-// POST /api/auth/login
-// body: { email, password, roleDomain } roleDomain: 'SuperAdmin' | 'OrgAdmin' | 'Staff'
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/login
+|--------------------------------------------------------------------------
+| body:
+| {
+|   email,
+|   password,
+|   roleDomain
+| }
+|
+| roleDomain:
+|   SuperAdmin
+|   OrgAdmin
+|   Staff
+|--------------------------------------------------------------------------
+*/
 
 const login = async (req, res) => {
-  const { email, password, roleDomain } = req.body;
+  try {
+    const {
+      email,
+      password,
+      roleDomain
+    } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({
-      success: false,
-      error: 'Please enter both email and password.'
+    /*
+    |--------------------------------------------------------------------------
+    | Required fields
+    |--------------------------------------------------------------------------
+    */
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter both email and password.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: EMAIL_MESSAGE
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Normalize email
+    |--------------------------------------------------------------------------
+    */
+
+    const normalizedEmail = email
+      .trim()
+      .toLowerCase();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (error) {
+      console.error(
+        '[login] User lookup failed:',
+        error.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Server error. Please try again.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | User does not exist
+    |--------------------------------------------------------------------------
+    |
+    | Count as failed login attempt.
+    |
+    */
+
+    if (!user) {
+      recordLoginResult(
+        normalizedEmail,
+        false
+      );
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password verification
+    |--------------------------------------------------------------------------
+    */
+
+    const match = await bcrypt.compare(
+      password,
+      user.password_hash
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Wrong password
+    |--------------------------------------------------------------------------
+    */
+
+    if (!match) {
+      recordLoginResult(
+        normalizedEmail,
+        false
+      );
+
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Account status
+    |--------------------------------------------------------------------------
+    */
+
+    if (user.status === 'Pending') {
+      return res.status(403).json({
+        success: false,
+        error: 'Your account is pending Admin approval.'
+      });
+    }
+
+    if (
+      user.status === 'Suspended' ||
+      user.status === 'Rejected'
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Your account access has been restricted.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role/domain authorization
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      roleDomain === 'SuperAdmin' &&
+      user.role !== 'SuperAdmin'
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized access to Super Admin Portal.'
+      });
+    }
+
+    if (
+      roleDomain === 'OrgAdmin' &&
+      user.role !== 'OrgAdmin'
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized access to Organization Administration.'
+      });
+    }
+
+    if (
+      roleDomain === 'Staff' &&
+      ['SuperAdmin', 'OrgAdmin'].includes(user.role)
+    ) {
+      return res.status(403).json({
+        success: false,
+        error: 'Please use the Admin login page.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Successful login
+    |--------------------------------------------------------------------------
+    |
+    | Clear failed attempts and remove any lockout state.
+    |
+    */
+
+    recordLoginResult(
+      normalizedEmail,
+      true
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Generate JWT
+    |--------------------------------------------------------------------------
+    */
+
+    const token = signToken(user);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update last login
+    |--------------------------------------------------------------------------
+    |
+    | Fire-and-forget so login response isn't blocked.
+    |
+    */
+
+    supabase
+      .from('users')
+      .update({
+        last_login_at: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .then(({ error: loginErr }) => {
+        if (loginErr) {
+          console.error(
+            '[login] Failed to record last_login_at:',
+            loginErr.message
+          );
+        }
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    return res.json({
+      success: true,
+      token,
+      user: serializeUser(user)
     });
-  }
 
-  if (!isValidEmail(email)) {
-    return res.status(400).json({
-      success: false,
-      error: EMAIL_MESSAGE
-    });
-  }
+  } catch (error) {
+    console.error(
+      '[login] Unexpected error:',
+      error.message
+    );
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .ilike('email', email)
-    .maybeSingle();
-
-  if (error) {
     return res.status(500).json({
       success: false,
       error: 'Server error. Please try again.'
     });
   }
-
-  if (!user) {
-    return res.status(401).json({
-      success: false,
-      error: 'Invalid email or password.'
-    });
-  }
-
-  const match = await bcrypt.compare(password, user.password_hash);
-
-  if (!match) {
-    return res.status(401).json({
-      success: false,
-      error: 'Invalid email or password.'
-    });
-  }
-
-  if (user.status === 'Pending') {
-    return res.status(403).json({
-      success: false,
-      error: 'Your account is pending Admin approval.'
-    });
-  }
-
-  if (user.status === 'Suspended' || user.status === 'Rejected') {
-    return res.status(403).json({
-      success: false,
-      error: 'Your account access has been restricted.'
-    });
-  }
-
-  if (roleDomain === 'SuperAdmin' && user.role !== 'SuperAdmin') {
-    return res.status(403).json({
-      success: false,
-      error: 'Unauthorized access to Super Admin Portal.'
-    });
-  }
-
-  if (roleDomain === 'OrgAdmin' && user.role !== 'OrgAdmin') {
-    return res.status(403).json({
-      success: false,
-      error: 'Unauthorized access to Organization Administration.'
-    });
-  }
-
-  if (
-    roleDomain === 'Staff' &&
-    ['SuperAdmin', 'OrgAdmin'].includes(user.role)
-  ) {
-    return res.status(403).json({
-      success: false,
-      error: 'Please use the Admin login page.'
-    });
-  }
-
-  const token = signToken(user);
-
-  // Fire-and-forget: never let login-tracking block the actual login.
-  supabase
-    .from('users')
-    .update({
-      last_login_at: new Date().toISOString()
-    })
-    .eq('id', user.id)
-    .then(({ error: loginErr }) => {
-      if (loginErr) {
-        console.error(
-          '[login] Failed to record last_login_at:',
-          loginErr.message
-        );
-      }
-    });
-
-  return res.json({
-    success: true,
-    token,
-    user: serializeUser(user)
-  });
 };
 
-// POST /api/auth/register-organization
-// body: { orgName, adminName, email, password, plan }
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/register-organization
+|--------------------------------------------------------------------------
+| body:
+| {
+|   orgName,
+|   adminName,
+|   email,
+|   password,
+|   plan
+| }
+|--------------------------------------------------------------------------
+*/
 
 const registerOrganization = async (req, res) => {
-  const { orgName, adminName, email, password, plan } = req.body;
-
-  if (!orgName || !adminName || !email || !password) {
-    return res.status(400).json({
-      success: false,
-      error: 'Please fill in all required fields.'
-    });
-  }
-
-  // Backend email validation.
-  if (!isValidEmail(email)) {
-    return res.status(400).json({
-      success: false,
-      error: EMAIL_MESSAGE
-    });
-  }
-
-  // Backend password maximum-length protection.
-  if (!isValidPasswordLength(password)) {
-    return res.status(400).json({
-      success: false,
-      error: PASSWORD_LENGTH_MESSAGE
-    });
-  }
-
-  const planConfig = getPlan(plan) || getPlan('Basic');
-
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle();
-
-  if (existing) {
-    return res.status(409).json({
-      success: false,
-      error: 'Email already registered.'
-    });
-  }
-
-  // The org sits in 'Pending' until a SuperAdmin approves it — the 7-day
-  // free trial (trial_start_date/trial_end_date/payment_due_at) is only
-  // set at that approval step, not here.
-
-  const now = new Date();
-
-  const { data: org, error: orgErr } = await supabase
-    .from('organizations')
-    .insert({
-      name: orgName,
-      email,
-      sub_plan: planConfig.key,
-      status: 'Pending',
-      payment_status: 'Unpaid',
-      subscription_status: 'TrialPending',
-      registration_date: now.toISOString(),
-      amount_due: planConfig.price,
-      plan_price: planConfig.price,
-      billing_cycle: planConfig.billingCycle
-    })
-    .select()
-    .single();
-
-  if (orgErr) {
-    return res.status(500).json({
-      success: false,
-      error: 'Registration failed. Please try again.'
-    });
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const { data: adminUser, error: userErr } = await supabase
-    .from('users')
-    .insert({
-      full_name: adminName,
-      email,
-      password_hash: passwordHash,
-      role: 'OrgAdmin',
-      org_id: org.id,
-      status: 'Pending'
-    })
-    .select()
-    .single();
-
-  if (userErr) {
-    return res.status(500).json({
-      success: false,
-      error: 'Registration failed. Please try again.'
-    });
-  }
-
-  // Seed the 3 default discussion channels.
-  await seedDefaultGroups(org.id, adminUser.id);
-
-  // Create the org's very first payment record.
-  const gateway = getActiveGateway();
-
-  const txnRefNo = genTxnRefNo();
-
-  const { error: paymentErr } = await supabase
-    .from('payments')
-    .insert({
-      org_id: org.id,
-      plan: planConfig.key,
-      amount: planConfig.price,
-      currency: planConfig.currency,
-      method: gateway.name,
-      gateway: gateway.name,
-      status: 'Pending',
-      txn_ref_no: txnRefNo,
-      org_snapshot_plan: planConfig.key,
-      initiated_by: adminUser.id
-    });
-
-  if (paymentErr) {
-    console.error(
-      '[authController] Failed to create initial payment record:',
-      paymentErr.message
-    );
-  }
-
-  await logBillingEvent({
-    orgId: org.id,
-    userId: adminUser.id,
-    eventType: BILLING_EVENTS.ORG_REGISTERED,
-    metadata: {
+  try {
+    const {
       orgName,
-      adminEmail: email
-    }
-  });
+      adminName,
+      email,
+      password,
+      plan
+    } = req.body;
 
-  await logBillingEvent({
-    orgId: org.id,
-    userId: adminUser.id,
-    eventType: BILLING_EVENTS.PLAN_SELECTED,
-    amount: planConfig.price,
-    currency: planConfig.currency,
-    newStatus: 'TrialPending',
-    metadata: {
-      plan: planConfig.key
+    if (
+      !orgName ||
+      !adminName ||
+      !email ||
+      !password
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill in all required fields.'
+      });
     }
-  });
 
-  if (!paymentErr) {
+    /*
+    |--------------------------------------------------------------------------
+    | Email validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: EMAIL_MESSAGE
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password maximum length
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidPasswordLength(password)) {
+      return res.status(400).json({
+        success: false,
+        error: PASSWORD_LENGTH_MESSAGE
+      });
+    }
+
+    const normalizedEmail = email
+      .trim()
+      .toLowerCase();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Plan
+    |--------------------------------------------------------------------------
+    */
+
+    const planConfig =
+      getPlan(plan) || getPlan('Basic');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check existing user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: existing,
+      error: existingError
+    } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error(
+        '[registerOrganization] Existing-user check failed:',
+        existingError.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email already registered.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create organization
+    |--------------------------------------------------------------------------
+    */
+
+    const now = new Date();
+
+    const {
+      data: org,
+      error: orgErr
+    } = await supabase
+      .from('organizations')
+      .insert({
+        name: orgName,
+        email: normalizedEmail,
+        sub_plan: planConfig.key,
+        status: 'Pending',
+        payment_status: 'Unpaid',
+        subscription_status: 'TrialPending',
+        registration_date: now.toISOString(),
+        amount_due: planConfig.price,
+        plan_price: planConfig.price,
+        billing_cycle: planConfig.billingCycle
+      })
+      .select()
+      .single();
+
+    if (orgErr) {
+      console.error(
+        '[registerOrganization] Organization creation failed:',
+        orgErr.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash password
+    |--------------------------------------------------------------------------
+    */
+
+    const passwordHash = await bcrypt.hash(
+      password,
+      10
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create admin user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: adminUser,
+      error: userErr
+    } = await supabase
+      .from('users')
+      .insert({
+        full_name: adminName,
+        email: normalizedEmail,
+        password_hash: passwordHash,
+        role: 'OrgAdmin',
+        org_id: org.id,
+        status: 'Pending'
+      })
+      .select()
+      .single();
+
+    if (userErr) {
+      console.error(
+        '[registerOrganization] User creation failed:',
+        userErr.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Seed default discussion groups
+    |--------------------------------------------------------------------------
+    */
+
+    await seedDefaultGroups(
+      org.id,
+      adminUser.id
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Initial payment record
+    |--------------------------------------------------------------------------
+    */
+
+    const gateway = getActiveGateway();
+
+    const txnRefNo = genTxnRefNo();
+
+    const {
+      error: paymentErr
+    } = await supabase
+      .from('payments')
+      .insert({
+        org_id: org.id,
+        plan: planConfig.key,
+        amount: planConfig.price,
+        currency: planConfig.currency,
+        method: gateway.name,
+        gateway: gateway.name,
+        status: 'Pending',
+        txn_ref_no: txnRefNo,
+        org_snapshot_plan: planConfig.key,
+        initiated_by: adminUser.id
+      });
+
+    if (paymentErr) {
+      console.error(
+        '[authController] Failed to create initial payment record:',
+        paymentErr.message
+      );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Billing events
+    |--------------------------------------------------------------------------
+    */
+
     await logBillingEvent({
       orgId: org.id,
       userId: adminUser.id,
-      eventType: BILLING_EVENTS.PAYMENT_REQUEST_CREATED,
+      eventType: BILLING_EVENTS.ORG_REGISTERED,
+      metadata: {
+        orgName,
+        adminEmail: normalizedEmail
+      }
+    });
+
+    await logBillingEvent({
+      orgId: org.id,
+      userId: adminUser.id,
+      eventType: BILLING_EVENTS.PLAN_SELECTED,
       amount: planConfig.price,
       currency: planConfig.currency,
-      txnRefNo,
-      gateway: gateway.name,
+      newStatus: 'TrialPending',
       metadata: {
         plan: planConfig.key
       }
     });
-  }
 
-  return res.json({
-    success: true,
-    orgId: org.id,
-    plan: planConfig.key,
-    amountDue: planConfig.price
-  });
-};
+    if (!paymentErr) {
+      await logBillingEvent({
+        orgId: org.id,
+        userId: adminUser.id,
+        eventType:
+          BILLING_EVENTS.PAYMENT_REQUEST_CREATED,
+        amount: planConfig.price,
+        currency: planConfig.currency,
+        txnRefNo,
+        gateway: gateway.name,
+        metadata: {
+          plan: planConfig.key
+        }
+      });
+    }
 
-// POST /api/auth/register-staff
-// public self-registration -> goes Pending
-// body: { fullName, email, password, role, orgId }
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
 
-const registerStaff = async (req, res) => {
-  const { fullName, email, password, role, orgId } = req.body;
-
-  if (!fullName || !email || !password || !role || !orgId) {
-    return res.status(400).json({
-      success: false,
-      error: 'Please fill in all fields.'
-    });
-  }
-
-  // Backend email validation.
-  if (!isValidEmail(email)) {
-    return res.status(400).json({
-      success: false,
-      error: EMAIL_MESSAGE
-    });
-  }
-
-  if (!SELF_REGISTERABLE_ROLES.includes(role)) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid role selected.'
-    });
-  }
-
-  // Staff password must be exactly 8 characters,
-  // with at least one letter and one number.
-  if (!STAFF_PASSWORD_REGEX.test(password)) {
-    return res.status(400).json({
-      success: false,
-      error: STAFF_PASSWORD_MESSAGE
-    });
-  }
-
-  // Extra backend max-length protection.
-  if (!isValidPasswordLength(password)) {
-    return res.status(400).json({
-      success: false,
-      error: PASSWORD_LENGTH_MESSAGE
-    });
-  }
-
-  const { data: org } = await supabase
-    .from('organizations')
-    .select('id, status')
-    .eq('id', orgId)
-    .maybeSingle();
-
-  if (!org || org.status !== 'Active') {
-    return res.status(400).json({
-      success: false,
-      error: 'Please select a currently active organization.'
-    });
-  }
-
-  const { data: existing } = await supabase
-    .from('users')
-    .select('id')
-    .ilike('email', email)
-    .maybeSingle();
-
-  if (existing) {
-    return res.status(409).json({
-      success: false,
-      error: 'Email already registered.'
-    });
-  }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const { error } = await supabase
-    .from('users')
-    .insert({
-      full_name: fullName,
-      email,
-      password_hash: passwordHash,
-      role,
-      org_id: orgId,
-      status: 'Pending'
+    return res.json({
+      success: true,
+      orgId: org.id,
+      plan: planConfig.key,
+      amountDue: planConfig.price
     });
 
-  if (error) {
+  } catch (error) {
+    console.error(
+      '[registerOrganization] Unexpected error:',
+      error.message
+    );
+
     return res.status(500).json({
       success: false,
       error: 'Registration failed. Please try again.'
     });
   }
-
-  return res.json({
-    success: true
-  });
 };
 
-// POST /api/auth/change-password (protected)
-// body: { currentPassword, newPassword }
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/register-staff
+|--------------------------------------------------------------------------
+| body:
+| {
+|   fullName,
+|   email,
+|   password,
+|   role,
+|   orgId
+| }
+|--------------------------------------------------------------------------
+*/
+
+const registerStaff = async (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      password,
+      role,
+      orgId
+    } = req.body;
+
+    if (
+      !fullName ||
+      !email ||
+      !password ||
+      !role ||
+      !orgId
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please fill in all fields.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({
+        success: false,
+        error: EMAIL_MESSAGE
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Role validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!SELF_REGISTERABLE_ROLES.includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid role selected.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (!STAFF_PASSWORD_REGEX.test(password)) {
+      return res.status(400).json({
+        success: false,
+        error: STAFF_PASSWORD_MESSAGE
+      });
+    }
+
+    if (!isValidPasswordLength(password)) {
+      return res.status(400).json({
+        success: false,
+        error: PASSWORD_LENGTH_MESSAGE
+      });
+    }
+
+    const normalizedEmail = email
+      .trim()
+      .toLowerCase();
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check organization
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: org,
+      error: orgError
+    } = await supabase
+      .from('organizations')
+      .select('id, status')
+      .eq('id', orgId)
+      .maybeSingle();
+
+    if (orgError) {
+      console.error(
+        '[registerStaff] Organization lookup failed:',
+        orgError.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    if (!org || org.status !== 'Active') {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Please select a currently active organization.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check existing user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: existing,
+      error: existingError
+    } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error(
+        '[registerStaff] Existing-user check failed:',
+        existingError.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email already registered.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash password
+    |--------------------------------------------------------------------------
+    */
+
+    const passwordHash = await bcrypt.hash(
+      password,
+      10
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create staff user
+    |--------------------------------------------------------------------------
+    */
+
+    const { error } = await supabase
+      .from('users')
+      .insert({
+        full_name: fullName,
+        email: normalizedEmail,
+        password_hash: passwordHash,
+        role,
+        org_id: orgId,
+        status: 'Pending'
+      });
+
+    if (error) {
+      console.error(
+        '[registerStaff] User creation failed:',
+        error.message
+      );
+
+      return res.status(500).json({
+        success: false,
+        error: 'Registration failed. Please try again.'
+      });
+    }
+
+    return res.json({
+      success: true
+    });
+
+  } catch (error) {
+    console.error(
+      '[registerStaff] Unexpected error:',
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error: 'Registration failed. Please try again.'
+    });
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/change-password
+|--------------------------------------------------------------------------
+| Protected route
+| body: { currentPassword, newPassword }
+|--------------------------------------------------------------------------
+*/
 
 const changePassword = async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+  try {
+    const {
+      currentPassword,
+      newPassword
+    } = req.body;
 
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({
-      success: false,
-      error: 'Please provide your current and new password.'
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Please provide your current and new password.'
+      });
+    }
+
+    if (
+      newPassword.length < 6 ||
+      newPassword.length > 8
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'New password must be between 6 and 8 characters.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Get current user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Verify current password
+    |--------------------------------------------------------------------------
+    */
+
+    const match = await bcrypt.compare(
+      currentPassword,
+      user.password_hash
+    );
+
+    if (!match) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update password
+    |--------------------------------------------------------------------------
+    */
+
+    const newHash = await bcrypt.hash(
+      newPassword,
+      10
+    );
+
+    const {
+      error: updateErr
+    } = await supabase
+      .from('users')
+      .update({
+        password_hash: newHash
+      })
+      .eq('id', user.id);
+
+    if (updateErr) {
+      return res.status(500).json({
+        success: false,
+        error:
+          'Could not update password. Please try again.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully.'
     });
-  }
 
-  // Preserve existing minimum of 6 characters,
-  // but now enforce maximum of 8 characters.
-  if (newPassword.length < 6 || newPassword.length > 8) {
-    return res.status(400).json({
-      success: false,
-      error: 'New password must be between 6 and 8 characters.'
-    });
-  }
+  } catch (error) {
+    console.error(
+      '[changePassword] Unexpected error:',
+      error.message
+    );
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', req.user.id)
-    .single();
-
-  if (error || !user) {
-    return res.status(404).json({
-      success: false,
-      error: 'User not found.'
-    });
-  }
-
-  const match = await bcrypt.compare(
-    currentPassword,
-    user.password_hash
-  );
-
-  if (!match) {
-    return res.status(401).json({
-      success: false,
-      error: 'Current password is incorrect.'
-    });
-  }
-
-  const newHash = await bcrypt.hash(newPassword, 10);
-
-  const { error: updateErr } = await supabase
-    .from('users')
-    .update({
-      password_hash: newHash
-    })
-    .eq('id', user.id);
-
-  if (updateErr) {
     return res.status(500).json({
       success: false,
       error: 'Could not update password. Please try again.'
     });
   }
-
-  return res.json({
-    success: true,
-    message: 'Password updated successfully.'
-  });
 };
 
-// GET /api/auth/me (protected) - refetch current user
+/*
+|--------------------------------------------------------------------------
+| GET /api/auth/me
+|--------------------------------------------------------------------------
+| Protected
+|--------------------------------------------------------------------------
+*/
 
 const me = async (req, res) => {
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', req.user.id)
-    .single();
+  try {
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', req.user.id)
+      .single();
 
-  if (error || !user) {
-    return res.status(404).json({
+    if (error || !user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found.'
+      });
+    }
+
+    return res.json({
+      success: true,
+      user: serializeUser(user)
+    });
+
+  } catch (error) {
+    console.error(
+      '[me] Unexpected error:',
+      error.message
+    );
+
+    return res.status(500).json({
       success: false,
-      error: 'User not found.'
+      error: 'Server error. Please try again.'
     });
   }
-
-  return res.json({
-    success: true,
-    user: serializeUser(user)
-  });
 };
 
-// POST /api/auth/forgot-password
-// body: { email }
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/forgot-password
+|--------------------------------------------------------------------------
+| body: { email }
+|--------------------------------------------------------------------------
+*/
 
 const GENERIC_FORGOT_PASSWORD_MESSAGE =
   "If an account exists for that email, we've sent a password reset link to it.";
@@ -575,7 +1104,12 @@ const forgotPassword = async (req, res) => {
     });
   }
 
-  // Backend email validation.
+  /*
+  |--------------------------------------------------------------------------
+  | Email validation
+  |--------------------------------------------------------------------------
+  */
+
   if (!isValidEmail(email)) {
     return res.status(400).json({
       success: false,
@@ -583,44 +1117,85 @@ const forgotPassword = async (req, res) => {
     });
   }
 
-  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedEmail = email
+    .trim()
+    .toLowerCase();
 
-  // Basic per-email cooldown to prevent spamming an inbox / brute-force probing.
-  const lastAttempt = forgotPasswordAttempts.get(normalizedEmail);
+  /*
+  |--------------------------------------------------------------------------
+  | Per-email cooldown
+  |--------------------------------------------------------------------------
+  */
+
+  const lastAttempt =
+    forgotPasswordAttempts.get(normalizedEmail);
 
   if (
     lastAttempt &&
-    Date.now() - lastAttempt < FORGOT_PASSWORD_COOLDOWN_MS
+    Date.now() - lastAttempt <
+      FORGOT_PASSWORD_COOLDOWN_MS
   ) {
-    // Still return the generic message.
     return res.json({
       success: true,
-      message: GENERIC_FORGOT_PASSWORD_MESSAGE
+      message:
+        GENERIC_FORGOT_PASSWORD_MESSAGE
     });
   }
 
-  forgotPasswordAttempts.set(normalizedEmail, Date.now());
+  forgotPasswordAttempts.set(
+    normalizedEmail,
+    Date.now()
+  );
 
   try {
-    const { data: user, error } = await supabase
+    /*
+    |--------------------------------------------------------------------------
+    | Find user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: user,
+      error
+    } = await supabase
       .from('users')
       .select('*')
-      .ilike('email', normalizedEmail)
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
-    // Only accounts that can actually log in should be able to reset a password.
-    if (user && user.status !== 'Rejected') {
-      const rawToken = crypto.randomBytes(32).toString('hex');
+    /*
+    |--------------------------------------------------------------------------
+    | Generate reset token
+    |--------------------------------------------------------------------------
+    */
 
-      const tokenHash = hashToken(rawToken);
+    if (
+      user &&
+      user.status !== 'Rejected'
+    ) {
+      const rawToken =
+        crypto.randomBytes(32).toString('hex');
+
+      const tokenHash =
+        hashToken(rawToken);
 
       const expiresAt = new Date(
         Date.now() + RESET_TOKEN_TTL_MS
       ).toISOString();
 
-      const { error: updateErr } = await supabase
+      /*
+      |--------------------------------------------------------------------------
+      | Save hashed token
+      |--------------------------------------------------------------------------
+      */
+
+      const {
+        error: updateErr
+      } = await supabase
         .from('users')
         .update({
           reset_token_hash: tokenHash,
@@ -628,13 +1203,28 @@ const forgotPassword = async (req, res) => {
         })
         .eq('id', user.id);
 
-      if (updateErr) throw updateErr;
+      if (updateErr) {
+        throw updateErr;
+      }
+
+      /*
+      |--------------------------------------------------------------------------
+      | Build reset URL
+      |--------------------------------------------------------------------------
+      */
 
       const clientUrl =
-        process.env.CLIENT_URL || 'http://localhost:5173';
+        process.env.CLIENT_URL ||
+        'http://localhost:5173';
 
       const resetUrl =
         `${clientUrl.replace(/\/$/, '')}/reset-password/${rawToken}`;
+
+      /*
+      |--------------------------------------------------------------------------
+      | Send reset email
+      |--------------------------------------------------------------------------
+      */
 
       try {
         await sendPasswordResetEmail({
@@ -650,10 +1240,18 @@ const forgotPassword = async (req, res) => {
       }
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Always return generic response
+    |--------------------------------------------------------------------------
+    */
+
     return res.json({
       success: true,
-      message: GENERIC_FORGOT_PASSWORD_MESSAGE
+      message:
+        GENERIC_FORGOT_PASSWORD_MESSAGE
     });
+
   } catch (err) {
     console.error(
       '[Forgot Password] error:',
@@ -662,130 +1260,248 @@ const forgotPassword = async (req, res) => {
 
     return res.json({
       success: true,
-      message: GENERIC_FORGOT_PASSWORD_MESSAGE
+      message:
+        GENERIC_FORGOT_PASSWORD_MESSAGE
     });
   }
 };
 
-// GET /api/auth/reset-password/:token/validate
+/*
+|--------------------------------------------------------------------------
+| GET /api/auth/reset-password/:token/validate
+|--------------------------------------------------------------------------
+*/
 
 const validateResetToken = async (req, res) => {
-  const { token } = req.params;
+  try {
+    const { token } = req.params;
 
-  if (!token) {
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid reset link.'
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid reset link.'
+      });
+    }
+
+    const tokenHash = hashToken(token);
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from('users')
+      .select(
+        'id, reset_token_expires'
+      )
+      .eq('reset_token_hash', tokenHash)
+      .maybeSingle();
+
+    if (error || !user) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'This reset link is invalid or has already been used.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Expiration
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      new Date(
+        user.reset_token_expires
+      ).getTime() < Date.now()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'This reset link has expired. Please request a new one.'
+      });
+    }
+
+    return res.json({
+      success: true
     });
-  }
 
-  const tokenHash = hashToken(token);
+  } catch (error) {
+    console.error(
+      '[validateResetToken] Unexpected error:',
+      error.message
+    );
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, reset_token_expires')
-    .eq('reset_token_hash', tokenHash)
-    .maybeSingle();
-
-  if (error || !user) {
-    return res.status(400).json({
-      success: false,
-      error: 'This reset link is invalid or has already been used.'
-    });
-  }
-
-  if (
-    new Date(user.reset_token_expires).getTime() < Date.now()
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: 'This reset link has expired. Please request a new one.'
-    });
-  }
-
-  return res.json({
-    success: true
-  });
-};
-
-// POST /api/auth/reset-password
-// body: { token, newPassword }
-
-const resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  if (!token || !newPassword) {
-    return res.status(400).json({
-      success: false,
-      error: 'Missing reset token or new password.'
-    });
-  }
-
-  // Preserve existing minimum of 6 characters,
-  // but enforce maximum of 8 characters.
-  if (newPassword.length < 6 || newPassword.length > 8) {
-    return res.status(400).json({
-      success: false,
-      error: 'Password must be between 6 and 8 characters.'
-    });
-  }
-
-  const tokenHash = hashToken(token);
-
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('reset_token_hash', tokenHash)
-    .maybeSingle();
-
-  if (error) {
     return res.status(500).json({
       success: false,
       error: 'Server error. Please try again.'
     });
   }
+};
 
-  if (!user) {
-    return res.status(400).json({
-      success: false,
-      error: 'This reset link is invalid or has already been used.'
+/*
+|--------------------------------------------------------------------------
+| POST /api/auth/reset-password
+|--------------------------------------------------------------------------
+| body: { token, newPassword }
+|--------------------------------------------------------------------------
+*/
+
+const resetPassword = async (req, res) => {
+  try {
+    const {
+      token,
+      newPassword
+    } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Missing reset token or new password.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Password validation
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      newPassword.length < 6 ||
+      newPassword.length > 8
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Password must be between 6 and 8 characters.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash token
+    |--------------------------------------------------------------------------
+    */
+
+    const tokenHash = hashToken(token);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Find user
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      data: user,
+      error
+    } = await supabase
+      .from('users')
+      .select('*')
+      .eq('reset_token_hash', tokenHash)
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({
+        success: false,
+        error: 'Server error. Please try again.'
+      });
+    }
+
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'This reset link is invalid or has already been used.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check expiration
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+      new Date(
+        user.reset_token_expires
+      ).getTime() < Date.now()
+    ) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'This reset link has expired. Please request a new one.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Hash new password
+    |--------------------------------------------------------------------------
+    */
+
+    const newHash = await bcrypt.hash(
+      newPassword,
+      10
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Update password + clear reset token
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      error: updateErr
+    } = await supabase
+      .from('users')
+      .update({
+        password_hash: newHash,
+        reset_token_hash: null,
+        reset_token_expires: null
+      })
+      .eq('id', user.id);
+
+    if (updateErr) {
+      return res.status(500).json({
+        success: false,
+        error:
+          'Could not reset password. Please try again.'
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Response
+    |--------------------------------------------------------------------------
+    */
+
+    return res.json({
+      success: true,
+      message:
+        'Your password has been reset. You can now log in with your new password.'
     });
-  }
 
-  if (
-    new Date(user.reset_token_expires).getTime() < Date.now()
-  ) {
-    return res.status(400).json({
-      success: false,
-      error: 'This reset link has expired. Please request a new one.'
-    });
-  }
+  } catch (error) {
+    console.error(
+      '[resetPassword] Unexpected error:',
+      error.message
+    );
 
-  const newHash = await bcrypt.hash(newPassword, 10);
-
-  // Clear the token (single use) at the same time the password is updated.
-  const { error: updateErr } = await supabase
-    .from('users')
-    .update({
-      password_hash: newHash,
-      reset_token_hash: null,
-      reset_token_expires: null
-    })
-    .eq('id', user.id);
-
-  if (updateErr) {
     return res.status(500).json({
       success: false,
-      error: 'Could not reset password. Please try again.'
+      error:
+        'Could not reset password. Please try again.'
     });
   }
-
-  return res.json({
-    success: true,
-    message:
-      'Your password has been reset. You can now log in with your new password.'
-  });
 };
+
+/*
+|--------------------------------------------------------------------------
+| Exports
+|--------------------------------------------------------------------------
+*/
 
 module.exports = {
   login,

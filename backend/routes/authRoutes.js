@@ -6,7 +6,13 @@ const {
   forgotPassword, validateResetToken, resetPassword
 } = require('../controllers/authController');
 
-router.post('/login', login);
+router.post(
+  '/login',
+  authLimiter,
+  checkAccountThrottle,
+  validate(loginValidation),
+  login
+);
 router.post('/register-organization', registerOrganization);
 router.post('/register-staff', registerStaff);
 router.post('/change-password', requireAuth, changePassword);
