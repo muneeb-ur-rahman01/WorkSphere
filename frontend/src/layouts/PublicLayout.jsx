@@ -195,7 +195,7 @@ const PublicLayout = ({ children }) => {
           </h2>
 
           <span className="text-[9px] text-indigo-100 font-semibold italic">
-            Hopefelt Foundation
+            Hopefelt Foundation's Flagship Management Platform
           </span>
         </div>
       </Link>
