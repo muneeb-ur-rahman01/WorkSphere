@@ -125,23 +125,6 @@ const signToken = (user) => {
   );
 };
 
-/*
-|--------------------------------------------------------------------------
-| POST /api/auth/login
-|--------------------------------------------------------------------------
-| body:
-| {
-|   email,
-|   password,
-|   roleDomain
-| }
-|
-| roleDomain:
-|   SuperAdmin
-|   OrgAdmin
-|   Staff
-|--------------------------------------------------------------------------
-*/
 
 const login = async (req, res) => {
   try {
@@ -151,11 +134,6 @@ const login = async (req, res) => {
       roleDomain
     } = req.body;
 
-    /*
-    |--------------------------------------------------------------------------
-    | Required fields
-    |--------------------------------------------------------------------------
-    */
 
     if (!email || !password) {
       return res.status(400).json({
@@ -164,11 +142,6 @@ const login = async (req, res) => {
       });
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Email validation
-    |--------------------------------------------------------------------------
-    */
 
     if (!isValidEmail(email)) {
       return res.status(400).json({
@@ -394,20 +367,7 @@ const login = async (req, res) => {
   }
 };
 
-/*
-|--------------------------------------------------------------------------
-| POST /api/auth/register-organization
-|--------------------------------------------------------------------------
-| body:
-| {
-|   orgName,
-|   adminName,
-|   email,
-|   password,
-|   plan
-| }
-|--------------------------------------------------------------------------
-*/
+
 
 const registerOrganization = async (req, res) => {
   try {
@@ -981,10 +941,19 @@ const changePassword = async (req, res) => {
     |--------------------------------------------------------------------------
     */
 
-    const match = await bcrypt.compare(
-      currentPassword,
-      user.password_hash
-    );
+  const match = await bcrypt.compare(
+  password,
+  user.password_hash
+);
+
+console.log('[login debug]', {
+  email: normalizedEmail,
+  role: user.role,
+  status: user.status,
+  passwordMatch: match
+});
+
+
 
     if (!match) {
       return res.status(401).json({
