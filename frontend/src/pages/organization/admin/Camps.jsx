@@ -36,14 +36,31 @@ const Camps = () => {
   } = useContext(AppContext);
 
   const confirm = useConfirm();
+
   const [requestingVisibilityId, setRequestingVisibilityId] = useState(null);
 
-  // Reachable by OrgAdmin always, or by a staff member granted the 'camps'
-  // Accessibility permission (see Accessibility.jsx). Anyone else is
-  // redirected back to their own dashboard.
-  if (currentUser.role !== 'OrgAdmin' && !hasAccess('camps')) {
-    return <Navigate to="/staff/dashboard" replace />;
-  }
+  // Toast
+  const [toast, setToast] = useState({
+    show: false,
+    message: '',
+    type: 'success'
+  });
+
+  const showToast = (message, type = 'success') => {
+    setToast({
+      show: true,
+      message,
+      type
+    });
+
+    setTimeout(() => {
+      setToast({
+        show: false,
+        message: '',
+        type: 'success'
+      });
+    }, 3000);
+  };
 
   // Modal states
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,16 +76,29 @@ const Camps = () => {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   // Selected camp availability details
-  const [activeCampForAvailability, setActiveCampForAvailability] = useState(null);
+  const [activeCampForAvailability, setActiveCampForAvailability] =
+    useState(null);
   const [availModalOpen, setAvailModalOpen] = useState(false);
 
-  // Filter camps belonging to this organization
-  const orgCamps = camps.filter(c => c.orgId === currentUser.orgId);
+  if (currentUser.role !== 'OrgAdmin' && !hasAccess('camps')) {
+    return <Navigate to="/staff/dashboard" replace />;
+  }
 
-  // Quick analytics for this independent Camps section
+  // Filter camps belonging to this organization
+  const orgCamps = camps.filter(
+    c => c.orgId === currentUser.orgId
+  );
+
+  // Quick analytics
   const totalCamps = orgCamps.length;
-  const upcomingCount = orgCamps.filter(c => c.status === 'Upcoming').length;
-  const completedCount = orgCamps.filter(c => c.status === 'Completed').length;
+
+  const upcomingCount = orgCamps.filter(
+    c => c.status === 'Upcoming'
+  ).length;
+
+  const completedCount = orgCamps.filter(
+    c => c.status === 'Completed'
+  ).length;
 
   // ============================================================
   // CUSTOM CALENDAR
@@ -97,7 +127,7 @@ const Camps = () => {
     return days;
   };
 
-  const formatDateForInput = (date) => {
+  const formatDateForInput = date => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -105,7 +135,7 @@ const Camps = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const formatSelectedDate = (dateValue) => {
+  const formatSelectedDate = dateValue => {
     if (!dateValue) return 'Select camp date';
 
     const date = new Date(`${dateValue}T00:00:00`);
@@ -118,7 +148,7 @@ const Camps = () => {
     });
   };
 
-  const selectCampDate = (date) => {
+  const selectCampDate = date => {
     setCampDate(formatDateForInput(date));
     setCalendarOpen(false);
   };
@@ -158,7 +188,7 @@ const Camps = () => {
     setCalendarOpen(false);
   };
 
-  const isToday = (date) => {
+  const isToday = date => {
     const today = new Date();
 
     return (
@@ -169,7 +199,7 @@ const Camps = () => {
     );
   };
 
-  const isSelectedDate = (date) => {
+  const isSelectedDate = date => {
     if (!date || !campDate) return false;
 
     return formatDateForInput(date) === campDate;
@@ -200,7 +230,7 @@ const Camps = () => {
     setModalOpen(true);
   };
 
-  const openEditModal = (camp) => {
+  const openEditModal = camp => {
     setEditingCampId(camp.id);
     setCampTitle(camp.title);
     setCampLocation(camp.location);
@@ -209,7 +239,9 @@ const Camps = () => {
     setCampStatus(camp.status || 'Upcoming');
 
     if (camp.date) {
-      const selectedDate = new Date(`${camp.date}T00:00:00`);
+      const selectedDate = new Date(
+        `${camp.date}T00:00:00`
+      );
 
       setCalendarMonth(
         new Date(
@@ -226,8 +258,9 @@ const Camps = () => {
     setModalOpen(true);
   };
 
-  const handleSubmitCamp = async (e) => {
+  const handleSubmitCamp = async e => {
     e.preventDefault();
+
     if (!campTitle || !campLocation || !campDate) return;
 
     if (editingCampId) {
@@ -245,9 +278,11 @@ const Camps = () => {
         campDate,
         campDesc
       );
+
+      // GREEN TOAST
+      showToast('Camp Created', 'success');
     }
 
-    // Reset and close
     setEditingCampId(null);
     setCampTitle('');
     setCampLocation('');
@@ -258,7 +293,7 @@ const Camps = () => {
     setModalOpen(false);
   };
 
-  const handleDeleteCamp = async (camp) => {
+  const handleDeleteCamp = async camp => {
     const ok = await confirm({
       title: 'Delete this camp?',
       message: `"${camp.title}" will be permanently removed. This cannot be undone.`,
@@ -269,21 +304,23 @@ const Camps = () => {
     if (!ok) return;
 
     await deleteCamp(camp.id);
+
+    // RED TOAST
+    showToast('Camp Deleted', 'error');
   };
 
-  // One-click shortcut to mark a camp Completed without opening the modal
-  const handleMarkComplete = async (camp) => {
+  const handleMarkComplete = async camp => {
     await updateCamp(camp.id, {
       status: 'Completed'
     });
   };
 
-  const handleViewAvailability = (camp) => {
+  const handleViewAvailability = camp => {
     setActiveCampForAvailability(camp);
     setAvailModalOpen(true);
   };
 
-  const handleRequestVisibility = async (camp) => {
+  const handleRequestVisibility = async camp => {
     setRequestingVisibilityId(camp.id);
 
     await requestVisibility(
@@ -294,26 +331,26 @@ const Camps = () => {
     setRequestingVisibilityId(null);
   };
 
-  // Get availability stats for a specific camp
-  const getAvailabilityStats = (campId) => {
+  // ============================================================
+  // AVAILABILITY
+  // ============================================================
+
+  const getAvailabilityStats = campId => {
     const campAvails = availability.filter(
       a => a.campId === campId
     );
 
-    const available =
-      campAvails.filter(
-        a => a.status === 'Available'
-      ).length;
+    const available = campAvails.filter(
+      a => a.status === 'Available'
+    ).length;
 
-    const maybe =
-      campAvails.filter(
-        a => a.status === 'Maybe'
-      ).length;
+    const maybe = campAvails.filter(
+      a => a.status === 'Maybe'
+    ).length;
 
-    const notAvailable =
-      campAvails.filter(
-        a => a.status === 'NotAvailable'
-      ).length;
+    const notAvailable = campAvails.filter(
+      a => a.status === 'NotAvailable'
+    ).length;
 
     return {
       available,
@@ -322,11 +359,9 @@ const Camps = () => {
     };
   };
 
-  // Get list of personnel with their availability status for the active camp
   const getCampAvailabilityList = () => {
     if (!activeCampForAvailability) return [];
 
-    // Get all active staff of this organization
     const orgStaff = users.filter(
       u =>
         u.orgId === currentUser.orgId &&
@@ -357,6 +392,52 @@ const Camps = () => {
 
   return (
     <DashboardLayout>
+
+      {/* ========================================================
+          TOAST MESSAGE
+      ======================================================== */}
+
+      {toast.show && (
+        <div className="fixed top-6 right-6 z-[9999]">
+          <div
+            className={`flex items-center gap-3 bg-white shadow-xl rounded-xl px-5 py-4 min-w-[240px] border ${
+              toast.type === 'error'
+                ? 'border-red-200'
+                : 'border-green-200'
+            }`}
+          >
+            <div
+              className={`w-9 h-9 rounded-full flex items-center justify-center ${
+                toast.type === 'error'
+                  ? 'bg-red-100'
+                  : 'bg-green-100'
+              }`}
+            >
+              <CheckCircle2
+                size={20}
+                className={
+                  toast.type === 'error'
+                    ? 'text-red-600'
+                    : 'text-green-600'
+                }
+              />
+            </div>
+
+            <div>
+              <p className="font-bold text-gray-900">
+                {toast.message}
+              </p>
+
+              <p className="text-xs text-gray-500 mt-0.5">
+                {toast.type === 'error'
+                  ? 'Camp deleted successfully'
+                  : 'Camp created successfully'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
@@ -365,8 +446,8 @@ const Camps = () => {
           </h1>
 
           <p className="text-gray-600 mt-2">
-            Schedule new camp locations, inspect upcoming sites, and monitor
-            staff availability rosters.
+            Schedule new camp locations, inspect upcoming sites,
+            and monitor staff availability rosters.
           </p>
         </div>
 
@@ -415,7 +496,7 @@ const Camps = () => {
       {/* Camp Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {orgCamps.length > 0 ? (
-          orgCamps.map((camp) => {
+          orgCamps.map(camp => {
             const {
               available,
               maybe,
@@ -594,7 +675,7 @@ const Camps = () => {
         )}
       </div>
 
-      {/* Create Camp Modal */}
+      {/* Create / Edit Camp Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl p-6">
@@ -628,7 +709,7 @@ const Camps = () => {
                 <input
                   type="text"
                   value={campTitle}
-                  onChange={(e) =>
+                  onChange={e =>
                     setCampTitle(e.target.value)
                   }
                   placeholder="Flood Relief General Medicine Clinic"
@@ -645,7 +726,7 @@ const Camps = () => {
                 <input
                   type="text"
                   value={campLocation}
-                  onChange={(e) =>
+                  onChange={e =>
                     setCampLocation(e.target.value)
                   }
                   placeholder="Swat Valley Relief Camps"
@@ -705,7 +786,6 @@ const Camps = () => {
 
                 {calendarOpen && (
                   <div className="absolute z-50 left-0 right-0 mt-3 bg-white border border-gray-200 rounded-2xl shadow-2xl overflow-hidden">
-                    {/* Calendar Header */}
                     <div className="bg-gradient-to-br from-indigo-700 via-indigo-600 to-purple-700 px-5 py-5 text-white">
                       <div className="flex items-center justify-between">
                         <div>
@@ -726,7 +806,6 @@ const Camps = () => {
                       </div>
                     </div>
 
-                    {/* Month Navigation */}
                     <div className="px-5 pt-5">
                       <div className="flex items-center justify-between mb-4">
                         <button
@@ -750,7 +829,6 @@ const Camps = () => {
                         </button>
                       </div>
 
-                      {/* Weekdays */}
                       <div className="grid grid-cols-7 mb-2">
                         {[
                           'Sun',
@@ -760,7 +838,7 @@ const Camps = () => {
                           'Thu',
                           'Fri',
                           'Sat'
-                        ].map((day) => (
+                        ].map(day => (
                           <div
                             key={day}
                             className="text-center text-[11px] font-bold uppercase text-gray-400 py-2"
@@ -770,7 +848,6 @@ const Camps = () => {
                         ))}
                       </div>
 
-                      {/* Calendar Days */}
                       <div className="grid grid-cols-7 gap-1 pb-4">
                         {calendarDays.map(
                           (date, index) => {
@@ -816,7 +893,6 @@ const Camps = () => {
                         )}
                       </div>
 
-                      {/* Calendar Footer */}
                       <div className="border-t border-gray-100 px-0 py-3 flex items-center justify-between">
                         <button
                           type="button"
@@ -849,7 +925,7 @@ const Camps = () => {
                 <textarea
                   rows={4}
                   value={campDesc}
-                  onChange={(e) =>
+                  onChange={e =>
                     setCampDesc(e.target.value)
                   }
                   placeholder="Specify medication, target demographic etc..."
@@ -865,29 +941,29 @@ const Camps = () => {
 
                   <select
                     value={campStatus}
-                    onChange={(e) =>
+                    onChange={e =>
                       setCampStatus(e.target.value)
                     }
                     className="w-full border border-gray-300 rounded-lg px-4 py-3 bg-white text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {CAMP_STATUSES.map(
-                      (status) => (
-                        <option
-                          key={status}
-                          value={status}
-                        >
-                          {status}
-                        </option>
-                      )
-                    )}
+                    {CAMP_STATUSES.map(status => (
+                      <option
+                        key={status}
+                        value={status}
+                      >
+                        {status}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-700">
-                📢 <strong>Availability Trigger:</strong> Saving this camp will
-                automatically broadcast an availability request to all registered
-                staff (Employees, Interns, Volunteers, Members & Executive Directors).
+                📢 <strong>Availability Trigger:</strong>{' '}
+                Saving this camp will automatically broadcast
+                an availability request to all registered staff
+                (Employees, Interns, Volunteers, Members &
+                Executive Directors).
               </div>
 
               <div className="flex justify-end gap-3">
@@ -908,7 +984,7 @@ const Camps = () => {
                 >
                   {editingCampId
                     ? 'Save Changes'
-                    : 'Create & Broadcast Alert'}
+                    : 'Create Camp'}
                 </button>
               </div>
             </form>
@@ -967,75 +1043,73 @@ const Camps = () => {
                     </thead>
 
                     <tbody>
-                      {campAvailsList.map(
-                        (staff) => {
-                          let badge =
-                            'bg-gray-100 text-gray-700';
+                      {campAvailsList.map(staff => {
+                        let badge =
+                          'bg-gray-100 text-gray-700';
 
-                          let icon = (
-                            <HelpCircle size={16} />
-                          );
+                        let icon = (
+                          <HelpCircle size={16} />
+                        );
 
-                          if (
-                            staff.status ===
-                            'Available'
-                          ) {
-                            badge =
-                              'bg-green-100 text-green-700';
+                        if (
+                          staff.status ===
+                          'Available'
+                        ) {
+                          badge =
+                            'bg-green-100 text-green-700';
 
-                            icon = (
-                              <UserCheck size={16} />
-                            );
-                          }
-
-                          if (
-                            staff.status === 'Maybe'
-                          ) {
-                            badge =
-                              'bg-yellow-100 text-yellow-700';
-
-                            icon = (
-                              <HelpCircle size={16} />
-                            );
-                          }
-
-                          if (
-                            staff.status ===
-                            'NotAvailable'
-                          ) {
-                            badge =
-                              'bg-red-100 text-red-700';
-
-                            icon = (
-                              <UserX size={16} />
-                            );
-                          }
-
-                          return (
-                            <tr
-                              key={staff.id}
-                              className="border-t border-gray-200"
-                            >
-                              <td className="px-5 py-4 font-semibold text-black">
-                                {staff.fullName}
-                              </td>
-
-                              <td className="px-5 py-4 text-gray-700">
-                                {staff.role}
-                              </td>
-
-                              <td className="px-5 py-4">
-                                <span
-                                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold ${badge}`}
-                                >
-                                  {icon}
-                                  {staff.status}
-                                </span>
-                              </td>
-                            </tr>
+                          icon = (
+                            <UserCheck size={16} />
                           );
                         }
-                      )}
+
+                        if (
+                          staff.status === 'Maybe'
+                        ) {
+                          badge =
+                            'bg-yellow-100 text-yellow-700';
+
+                          icon = (
+                            <HelpCircle size={16} />
+                          );
+                        }
+
+                        if (
+                          staff.status ===
+                          'NotAvailable'
+                        ) {
+                          badge =
+                            'bg-red-100 text-red-700';
+
+                          icon = (
+                            <UserX size={16} />
+                          );
+                        }
+
+                        return (
+                          <tr
+                            key={staff.id}
+                            className="border-t border-gray-200"
+                          >
+                            <td className="px-5 py-4 font-semibold text-black">
+                              {staff.fullName}
+                            </td>
+
+                            <td className="px-5 py-4 text-gray-700">
+                              {staff.role}
+                            </td>
+
+                            <td className="px-5 py-4">
+                              <span
+                                className={`inline-flex items-center gap-2 px-3 py-1 rounded-full font-bold ${badge}`}
+                              >
+                                {icon}
+                                {staff.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1058,6 +1132,7 @@ const Camps = () => {
             </div>
           </div>
         )}
+
     </DashboardLayout>
   );
 };
