@@ -216,22 +216,81 @@ const sendRegistrationAcceptedEmail = async ({
   fullName,
   orgName
 }) => {
-  const subject = 'Your WorkSphere registration has been accepted';
+  const subject = 'Your WorkSphere registration has been approved';
 
   const text =
-    `Hi ${fullName || 'there'},\n\n` +
-    `Your request to register${orgName ? ` for ${orgName}` : ''} on WorkSphere has been accepted. ` +
-    `You can now log in using your credentials.\n\n` +
-    `— The WorkSphere Team`;
+    `Hello ${fullName || 'there'},\n\n` +
+    `Your registration request for ${orgName || 'your organization'} has been approved.\n\n` +
+    `You can now log in to WorkSphere using the credentials you provided during registration.\n\n` +
+    `Organization: ${orgName || 'N/A'}\n` +
+    `Email: ${to}\n` +
+    `Login: Please visit WorkSphere to log in.\n\n` +
+    `Your account is now active and ready to use.\n\n` +
+    `This is an automated message from WorkSphere. Please do not reply to this email.\n\n` +
+    `Best Regards,\n` +
+    `WorkSphere\n` +
+    `Workforce Management & Organizational Operations Platform`;
 
   const html = `
-    <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #111;">
-      <h2 style="color:#4338ca; margin-bottom: 4px;">Request Accepted</h2>
-      <p>Hi ${fullName ? escapeHtml(fullName) : 'there'},</p>
-      <p>Your request to register${orgName ? ` for <strong>${escapeHtml(orgName)}</strong>` : ''} on WorkSphere has been accepted.
-      You can now log in using your credentials.</p>
-      <hr style="border:none;border-top:1px solid #eee;margin:28px 0;"/>
-      <p style="font-size: 12px; color: #999;">WorkSphere Management</p>
+    <div style="margin:0;padding:0;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
+      <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+        
+        <div style="background:#ffffff;border-radius:14px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
+          
+          <h2 style="margin:0 0 24px;color:#4338ca;font-size:24px;">
+            Registration Approved
+          </h2>
+
+          <p style="font-size:15px;line-height:1.7;margin:0 0 18px;">
+            Hello ${fullName ? escapeHtml(fullName) : 'there'},
+          </p>
+
+          <p style="font-size:15px;line-height:1.7;margin:0 0 18px;">
+            Your registration request for
+            <strong>${orgName ? escapeHtml(orgName) : 'your organization'}</strong>
+            has been approved.
+          </p>
+
+          <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
+            You can now log in to WorkSphere using the credentials you provided during registration.
+          </p>
+
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin:24px 0;">
+            <p style="margin:0 0 12px;font-size:14px;">
+              <strong>Organization:</strong>
+              ${orgName ? escapeHtml(orgName) : 'N/A'}
+            </p>
+
+            <p style="margin:0 0 12px;font-size:14px;">
+              <strong>Email:</strong>
+              ${escapeHtml(to)}
+            </p>
+
+            <p style="margin:0;font-size:14px;">
+              <strong>Login:</strong>
+              Please visit WorkSphere to log in.
+            </p>
+          </div>
+
+          <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
+            Your account is now active and ready to use.
+          </p>
+
+          <p style="font-size:12px;line-height:1.6;color:#6b7280;margin:0 0 28px;">
+            This is an automated message from WorkSphere.
+            Please do not reply to this email.
+          </p>
+
+          <div style="border-top:1px solid #e5e7eb;padding-top:20px;">
+            <p style="font-size:14px;line-height:1.6;margin:0;color:#374151;">
+              Best Regards,<br/>
+              <strong>WorkSphere</strong><br/>
+              Workforce Management &amp; Organizational Operations Platform
+            </p>
+          </div>
+
+        </div>
+      </div>
     </div>
   `;
 
