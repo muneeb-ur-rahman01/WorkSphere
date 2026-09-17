@@ -21,14 +21,19 @@ const isConfigured = !!(
 
 if (isConfigured) {
   transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: Number(process.env.SMTP_PORT) === 465,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: Number(process.env.SMTP_PORT) === 465,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS
+  },
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 30000,
+  logger: true,
+  debug: true
+});
 } else {
   console.warn(
     '[WorkSphere] WARNING: SMTP_HOST / SMTP_USER / SMTP_PASS are not set. ' +
@@ -163,15 +168,23 @@ WorkSphere Team
       reason: 'SMTP_NOT_CONFIGURED'
     };
   }
-
+console.log('[WorkSphere] About to call transporter.sendMail...');
   try {
-    const info = await transporter.sendMail({
-      from: FROM_ADDRESS,
-      to,
-      subject,
-      text,
-      html
-    });
+    const info = await Promise.race([
+  transporter.sendMail({
+    from: FROM_ADDRESS,
+    to,
+    subject,
+    text,
+    html
+  }),
+  new Promise((_, reject) =>
+    setTimeout(
+      () => reject(new Error('SMTP sendMail timeout after 30 seconds')),
+      30000
+    )
+  )
+]);
 
     console.log('[WorkSphere] Password reset email SMTP response:', {
       messageId: info.messageId,
