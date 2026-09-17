@@ -1,6 +1,7 @@
 
 import React, { useContext, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import logo from '../assets/Images/logo.png';
 
 import {
   Heart,
@@ -793,77 +794,75 @@ const DashboardLayout = ({ children }) => {
             BRAND
         =================================================== */}
 
-        <div
-          className={`
-            flex
-            items-center
-            gap-3
-            py-5
-            border-b
-            border-white/10
-            transition-all
-            duration-300
+              <div
+              className={`
+                flex
+                items-center
+                gap-3
+                py-5
+                border-b
+                border-white/10
+                transition-all
+                duration-300
 
-            ${
-              sidebarHovered
-                ? 'px-5 justify-start'
-                : 'px-3 justify-center'
-            }
-          `}
-        >
-
-          <div
-            className="
-              shrink-0
-              bg-gradient-to-br
-              from-indigo-500
-              to-violet-600
-              text-white
-              p-2
-              rounded-lg
-              shadow-lg
-              shadow-indigo-500/20
-            "
-            title="WorkSphere"
-          >
-            <Heart
-              size={18}
-              fill="currentColor"
-            />
-          </div>
-
-          {sidebarHovered && (
-            <>
-              <span
+                ${
+                  sidebarHovered
+                    ? 'px-5 justify-start'
+                    : 'px-3 justify-center'
+                }
+              `}
+            >
+              <div
                 className="
-                  font-bold
-                  text-lg
-                  tracking-tight
-                  whitespace-nowrap
+                  shrink-0
+                  w-10
+                  h-10
+                  flex
+                  items-center
+                  justify-center
+                  rounded-lg
+                  overflow-hidden
                 "
+                title="WorkSphere"
               >
-                WorkSphere
-              </span>
+                <img
+                  src={logo}
+                  alt="WorkSphere"
+                  className="w-full h-full object-contain"
+                />
+              </div>
 
-              <span
-                className="
-                  text-xs
-                  bg-white/10
-                  border
-                  border-white/10
-                  px-2
-                  py-0.5
-                  rounded
-                  text-slate-300
-                  whitespace-nowrap
-                "
-              >
-                v1.0
-              </span>
-            </>
-          )}
+              {sidebarHovered && (
+                <>
+                  <span
+                    className="
+                      font-bold
+                      text-lg
+                      tracking-tight
+                      whitespace-nowrap
+                    "
+                  >
+                    WorkSphere
+                  </span>
 
-        </div>
+                  <span
+                    className="
+                      text-xs
+                      bg-white/10
+                      border
+                      border-white/10
+                      px-2
+                      py-0.5
+                      rounded
+                      text-slate-300
+                      whitespace-nowrap
+                    "
+                  >
+                    v1.0
+                  </span>
+                </>
+              )}
+            </div>
 
         {/* ===================================================
             USER INFO
