@@ -218,6 +218,8 @@ const sendRegistrationAcceptedEmail = async ({
 }) => {
   const subject = 'Your WorkSphere registration has been approved';
 
+  const LOGO_URL = 'https://your-domain.com/logo.png';
+
   const text =
     `Hello ${fullName || 'there'},\n\n` +
     `Your registration request for ${orgName || 'your organization'} has been approved.\n\n` +
@@ -234,10 +236,19 @@ const sendRegistrationAcceptedEmail = async ({
   const html = `
     <div style="margin:0;padding:0;background:#f5f7fb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#111827;">
       <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
-        
+
         <div style="background:#ffffff;border-radius:14px;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,0.06);">
-          
-          <h2 style="margin:0 0 24px;color:#4338ca;font-size:24px;">
+
+          <!-- LOGO -->
+          <div style="text-align:center;margin-bottom:28px;">
+            <img
+              src="${LOGO_URL}"
+              alt="WorkSphere"
+              style="display:block;width:90px;height:90px;object-fit:contain;margin:0 auto;"
+            />
+          </div>
+
+          <h2 style="margin:0 0 24px;color:#4338ca;font-size:24px;text-align:center;">
             Registration Approved
           </h2>
 
@@ -256,6 +267,7 @@ const sendRegistrationAcceptedEmail = async ({
           </p>
 
           <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:10px;padding:20px;margin:24px 0;">
+
             <p style="margin:0 0 12px;font-size:14px;">
               <strong>Organization:</strong>
               ${orgName ? escapeHtml(orgName) : 'N/A'}
@@ -270,6 +282,7 @@ const sendRegistrationAcceptedEmail = async ({
               <strong>Login:</strong>
               Please visit WorkSphere to log in.
             </p>
+
           </div>
 
           <p style="font-size:15px;line-height:1.7;margin:0 0 24px;">
