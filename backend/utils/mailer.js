@@ -218,7 +218,7 @@ const sendRegistrationAcceptedEmail = async ({
 }) => {
   const subject = 'Your WorkSphere registration has been approved';
 
-  const LOGO_URL = 'https://your-domain.com/logo.png';
+  const LOGO_URL = 'https://work-sphere-self.vercel.app/logo.png';
 
   const text =
     `Hello ${fullName || 'there'},\n\n` +
