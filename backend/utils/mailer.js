@@ -1,82 +1,118 @@
-const nodemailer = require('nodemailer');
-const dns = require('dns');
+const { BrevoClient } = require('@getbrevo/brevo');
 
-// Force IPv4 first.
-// This helps on hosting environments where IPv6 routing is unavailable.
-dns.setDefaultResultOrder('ipv4first');
+require('dotenv').config();
 
 // ============================================================
-// Mailer
-// Sends transactional emails (currently: password reset) via SMTP.
-// Configure SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / SMTP_FROM
-// in backend/.env (see .env.example). Works with any standard SMTP
-// provider (Gmail App Password, SendGrid, Mailgun, Postmark, AWS SES, etc).
-//
-// If SMTP isn't configured yet (e.g. local dev), we don't crash the
-// app - we just log the email (and the reset link) to the console so
-// the flow is still testable end-to-end without real credentials.
+// WorkSphere Mailer
+// Sends transactional emails via Brevo HTTPS API.
+// Configure:
+// BREVO_API_KEY
+// BREVO_FROM_EMAIL
+// BREVO_FROM_NAME
+// in backend/.env
 // ============================================================
 
-let transporter = null;
+const brevoApiKey = process.env.BREVO_API_KEY;
 
-const isConfigured = !!(
-  process.env.SMTP_HOST &&
-  process.env.SMTP_USER &&
-  process.env.SMTP_PASS
-);
+const FROM_EMAIL =
+  process.env.BREVO_FROM_EMAIL || 'worksphere.thf@gmail.com';
+
+const FROM_NAME =
+  process.env.BREVO_FROM_NAME || 'WorkSphere';
+
+const isConfigured = !!brevoApiKey;
+
+let brevo = null;
 
 if (isConfigured) {
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT),
-    secure: Number(process.env.SMTP_PORT) === 465,
-    family: 4,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-    logger: true,
-    debug: true
+  brevo = new BrevoClient({
+    apiKey: brevoApiKey
+  });
+
+  console.log('[WorkSphere] Brevo config check:', {
+    apiKey: 'SET',
+    fromEmail: FROM_EMAIL,
+    fromName: FROM_NAME
   });
 } else {
   console.warn(
-    '[WorkSphere] WARNING: SMTP_HOST / SMTP_USER / SMTP_PASS are not set. ' +
-    'Password-reset emails will be logged to the console instead of actually sent. ' +
-    'Copy backend/.env.example to backend/.env and fill in your SMTP credentials to send real emails.'
+    '[WorkSphere] WARNING: BREVO_API_KEY is not set. ' +
+    'Emails will be logged to the console instead of actually being sent.'
   );
 }
 
-console.log('[WorkSphere] SMTP config check:', {
-  host: process.env.SMTP_HOST || 'MISSING',
-  port: process.env.SMTP_PORT || 'MISSING',
-  user: process.env.SMTP_USER ? 'SET' : 'MISSING',
-  pass: process.env.SMTP_PASS ? 'SET' : 'MISSING',
-  from: process.env.SMTP_FROM || 'MISSING'
-});
+// ============================================================
+// Common Brevo sender
+// ============================================================
 
-if (transporter) {
-  transporter.verify()
-    .then(() => {
-      console.log('[WorkSphere] SMTP connection verified successfully.');
-    })
-    .catch((error) => {
-      console.error('[WorkSphere] SMTP verification FAILED:', {
-        message: error.message,
-        code: error.code,
-        response: error.response,
-        responseCode: error.responseCode,
-        command: error.command
-      });
+const sendEmail = async ({
+  to,
+  subject,
+  text,
+  html
+}) => {
+  if (!isConfigured) {
+    console.log('\n[WorkSphere] Brevo not configured — email will not be sent:');
+    console.log(`  To: ${to}`);
+    console.log(`  Subject: ${subject}\n`);
+
+    return {
+      delivered: false,
+      reason: 'BREVO_NOT_CONFIGURED'
+    };
+  }
+
+  try {
+    console.log('[WorkSphere] Sending email via Brevo:', {
+      to,
+      subject
     });
-}
 
-const FROM_ADDRESS =
-  process.env.SMTP_FROM || 'WorkSphere <no-reply@WorkSphere.app>';
+    const result = await brevo.transactionalEmails.sendTransacEmail({
+      sender: {
+        name: FROM_NAME,
+        email: FROM_EMAIL
+      },
+      to: [
+        {
+          email: to
+        }
+      ],
+      subject,
+      textContent: text,
+      htmlContent: html
+    });
 
-const sendPasswordResetEmail = async ({ to, fullName, resetUrl }) => {
+    console.log('[WorkSphere] Brevo email sent successfully:', {
+      messageId: result?.messageId || result?.message_id || 'UNKNOWN'
+    });
+
+    return {
+      delivered: true,
+      messageId: result?.messageId || result?.message_id
+    };
+  } catch (error) {
+    console.error('[WorkSphere] Brevo email FAILED:', {
+      message: error.message,
+      code: error.code,
+      statusCode: error.statusCode,
+      response: error.response,
+      body: error.body
+    });
+
+    throw error;
+  }
+};
+
+// ============================================================
+// Password reset email
+// ============================================================
+
+const sendPasswordResetEmail = async ({
+  to,
+  fullName,
+  resetUrl
+}) => {
   const subject = 'Reset your WorkSphere password';
 
   const text = `
@@ -113,7 +149,7 @@ WorkSphere Team
     </h2>
 
     <p style="color:#4b5563;font-size:15px;">
-      Hello ${fullName || 'there'},
+      Hello ${fullName ? escapeHtml(fullName) : 'there'},
     </p>
 
     <p style="color:#4b5563;font-size:15px;line-height:1.6;">
@@ -161,68 +197,17 @@ WorkSphere Team
 </html>
 `;
 
-  if (!isConfigured) {
-    console.log(
-      '\n[WorkSphere] SMTP not configured — printing password reset email instead of sending it:'
-    );
-
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Reset URL: ${resetUrl}\n`);
-
-    return {
-      delivered: false,
-      reason: 'SMTP_NOT_CONFIGURED'
-    };
-  }
-
-  console.log('[WorkSphere] About to call transporter.sendMail...');
-
-  try {
-    const info = await Promise.race([
-      transporter.sendMail({
-        from: FROM_ADDRESS,
-        to,
-        subject,
-        text,
-        html
-      }),
-      new Promise((_, reject) =>
-        setTimeout(
-          () => reject(new Error('SMTP sendMail timeout after 30 seconds')),
-          30000
-        )
-      )
-    ]);
-
-    console.log('[WorkSphere] Password reset email SMTP response:', {
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      response: info.response,
-      envelope: info.envelope
-    });
-
-    return {
-      delivered: true,
-      messageId: info.messageId,
-      accepted: info.accepted,
-      rejected: info.rejected,
-      response: info.response
-    };
-
-  } catch (error) {
-    console.error('[WorkSphere] Password reset email FAILED:', {
-      message: error.message,
-      code: error.code,
-      response: error.response,
-      responseCode: error.responseCode,
-      command: error.command
-    });
-
-    throw error;
-  }
+  return sendEmail({
+    to,
+    subject,
+    text,
+    html
+  });
 };
+
+// ============================================================
+// Registration accepted
+// ============================================================
 
 // Sent when an OrgAdmin approves a pending staff registration request
 // (Employee/Intern/Volunteer/Membership signing up for a specific org).
@@ -250,24 +235,17 @@ const sendRegistrationAcceptedEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured printing registration-accepted email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Message: Your request has been accepted. You can now log in using your credentials.\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
+
+// ============================================================
+// Registration rejected
+// ============================================================
 
 // Sent when an OrgAdmin rejects a pending staff registration request.
 const sendRegistrationRejectedEmail = async ({
@@ -298,22 +276,12 @@ const sendRegistrationRejectedEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured printing registration rejected email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
 
 // ============================================================
@@ -328,6 +296,10 @@ const formatDate = (d) =>
         year: 'numeric'
       })
     : '';
+
+// ============================================================
+// Trial started
+// ============================================================
 
 // Sent the moment a SuperAdmin approves an organization and its 7-day
 // trial begins.
@@ -359,23 +331,17 @@ const sendTrialStartedEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing trial-started email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
+
+// ============================================================
+// Trial expiring
+// ============================================================
 
 // Sent once, 2 days (and again with 1 day left is fine too — dedupe is
 // handled by the scheduler) before a trial ends.
@@ -409,25 +375,19 @@ const sendTrialExpiringEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing trial-expiring email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
 
-// Sent the moment a trial expires without an active paid subscription —
+// ============================================================
+// Trial expired
+// ============================================================
+
+// Sent the moment a trial expires without an active paid subscription.
 const sendTrialExpiredEmail = async ({
   to,
   fullName,
@@ -455,22 +415,12 @@ const sendTrialExpiredEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing trial-expired email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
 
 // ============================================================
@@ -501,23 +451,17 @@ const sendQueryReceivedEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing query-received email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${emailSubject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject: emailSubject,
     text,
     html
   });
-
-  return { delivered: true };
 };
+
+// ============================================================
+// Query response
+// ============================================================
 
 // Sent when a Super Admin replies to a query.
 const sendQueryResponseEmail = async ({
@@ -543,23 +487,12 @@ const sendQueryResponseEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing query-response email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}`);
-    console.log(`  Message: ${responseText}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
 
 // ============================================================
@@ -591,23 +524,17 @@ const sendOpportunityApplicationReceivedEmail = async ({
     </div>
   `;
 
-  if (!isConfigured) {
-    console.log('\n[WorkSphere] SMTP not configured — printing application-received email instead of sending it:');
-    console.log(`  To: ${to}`);
-    console.log(`  Subject: ${subject}\n`);
-    return { delivered: false };
-  }
-
-  await transporter.sendMail({
-    from: FROM_ADDRESS,
+  return sendEmail({
     to,
     subject,
     text,
     html
   });
-
-  return { delivered: true };
 };
+
+// ============================================================
+// HTML escape helper
+// ============================================================
 
 function escapeHtml(str) {
   return String(str)
@@ -617,6 +544,10 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// ============================================================
+// Exports
+// ============================================================
 
 module.exports = {
   sendPasswordResetEmail,
