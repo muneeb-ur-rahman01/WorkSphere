@@ -37,7 +37,7 @@ const PaymentResult = () => {
           </p>
 
           <div className="flex flex-col gap-3">
-            <Link to="/login-choice">
+            <Link to="/login/org">
               <Button variant="primary" fullWidth>
                 Go to Login
               </Button>

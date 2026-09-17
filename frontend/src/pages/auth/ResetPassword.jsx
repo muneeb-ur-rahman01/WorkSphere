@@ -200,7 +200,7 @@ const ResetPassword = () => {
               </p>
 
               <button
-                onClick={() => navigate('/login-choice')}
+                onClick={() => navigate('/login/org')}
                 className="mt-8 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-xl transition-all duration-300"
               >
                 Go to Login

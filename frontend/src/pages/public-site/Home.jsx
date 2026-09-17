@@ -66,7 +66,7 @@
                 </button>
               </Link>
 
-              <Link to="/login-choice">
+              <Link to="/login/org">
                 <button
                   type="button"
                   className="group flex items-center justify-center px-8 py-4 font-bold text-lg text-gray-900 bg-white border-2 border-indigo-600 hover:bg-indigo-50 shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl"

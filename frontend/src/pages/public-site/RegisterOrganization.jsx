@@ -115,19 +115,19 @@ const RegisterOrganization = () => {
               fullWidth
               disabled={payLoading}
               onClick={handlePayNow}
-              className="flex items-center justify-center gap-2"
+   className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
             >
-              {payLoading ? 'Redirecting to secure checkout…' : `Pay Now — ${SUBSCRIPTION_PLANS[formData.plan]?.priceLabel}`}
+              {payLoading ? 'Redirecting to secure checkout…' : `Pay Now  ${SUBSCRIPTION_PLANS[formData.plan]?.priceLabel}`}
             </Button>
 
-                      <div className="flex flex-col gap-3">
-            <Link to="/login-choice">
+             <div className="flex flex-col gap-3">
+            <Link to="/login/org">
               <Button
                 variant="primary"
                 fullWidth
                 className="!rounded-2xl !bg-gradient-to-r !from-indigo-600 !via-indigo-500 !to-violet-600 !text-white !font-bold !shadow-lg !shadow-indigo-500/25 hover:!from-indigo-700 hover:!via-indigo-600 hover:!to-violet-700 hover:!shadow-xl hover:!shadow-indigo-500/30 transition-all duration-300"
               >
-                Pay Later — Go to Login Page
+                Pay Later  Go to Login Page
               </Button>
             </Link>
 
@@ -279,7 +279,7 @@ const RegisterOrganization = () => {
           <div className="mt-6 text-center text-sm text-gray-600">
             Already registered?{" "}
             <Link
-              to="/login-choice"
+              to="/login/org"
               className="font-semibold text-black hover:text-indigo-600 transition"
             >
               Login here

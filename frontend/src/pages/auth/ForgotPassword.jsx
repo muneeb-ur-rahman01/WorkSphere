@@ -66,7 +66,7 @@ const ForgotPassword = () => {
               </p>
 
               <Link
-                to="/login-choice"
+                to="/login/org"
                 className="inline-flex items-center gap-2 mt-8 text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition"
               >
                 <ArrowLeft size={16} />
@@ -119,7 +119,7 @@ const ForgotPassword = () => {
 
               <div className="mt-6 text-center text-sm text-gray-600">
                 <Link
-                  to="/login-choice"
+                  to="/login/org"
                   className="inline-flex items-center gap-2 font-semibold text-indigo-600 hover:text-indigo-700 transition"
                 >
                   <ArrowLeft size={16} />

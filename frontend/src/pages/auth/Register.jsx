@@ -192,7 +192,7 @@ const Register = () => {
 
                 <div className="mt-6 space-y-3">
                   <Link
-                    to="/login-choice"
+                    to="/login/org"
                     className="flex h-12 w-full items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700 hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-100"
                   >
                     Go to Login Page
@@ -502,7 +502,7 @@ const Register = () => {
                 <div className="mt-7 border-t border-slate-100 pt-5 text-center text-sm text-slate-500">
                   Already registered?{' '}
                   <Link
-                    to="/login-choice"
+                    to="/login/org"
                     className="font-bold text-indigo-600 transition hover:text-indigo-700 hover:underline"
                   >
                     Login here

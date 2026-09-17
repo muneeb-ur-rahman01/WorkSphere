@@ -1,82 +1,97 @@
-const supabase = require('../config/supabase');
-const { serializeCamp } = require('../utils/serializers');
+const campService = require('../services/campService');
 
-
-// GET /api/camps
 const getCamps = async (req, res) => {
-  const orgId = req.user.role === 'SuperAdmin' ? req.query.orgId : req.user.orgId;
-  let query = supabase.from('camps').select('*').order('date', { ascending: false });
-  if (orgId) query = query.eq('org_id', orgId);
+  try {
+    const orgId =
+      req.user.role === 'SuperAdmin'
+        ? req.query.orgId
+        : req.user.orgId;
 
-  const { data, error } = await query;
-  if (error) return res.status(500).json({ success: false, error: 'Could not fetch camps.' });
-  return res.json({ success: true, camps: data.map(serializeCamp) });
-};
+    const camps = await campService.getCamps({
+      user: req.user,
+      orgId
+    });
 
-// POST /api/camps (OrgAdmin)  body: { title, location, date, time, description, imageUrl }
-// Also creates a broadcast notification to the org's staff, mirroring the original app.
-const createCamp = async (req, res) => {
-  const { title, location, date, time, description, imageUrl } = req.body;
-  if (!title || !location || !date) {
-    return res.status(400).json({ success: false, error: 'Title, location and date are required.' });
+    return res.json({
+      success: true,
+      camps
+    });
+  } catch (error) {
+    console.error('getCamps:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'Could not fetch camps.'
+    });
   }
-
-  const { data: camp, error } = await supabase
-    .from('camps')
-    .insert({ org_id: req.user.orgId, title, location, date, time, description, image_url: imageUrl, status: 'Upcoming' })
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ success: false, error: 'Could not create camp.' });
-
-  await supabase.from('notifications').insert({
-    org_id: req.user.orgId,
-    title: `${title} - Availability Requested`,
-    message: `A new medical camp "${title}" is scheduled at ${location} on ${date}. Admin requested your availability status. Please update it immediately.`,
-    type: 'CampAlert',
-    target_role: 'All'
-  });
-
-  return res.json({ success: true, camp: serializeCamp(camp) });
 };
 
-// PATCH /api/camps/:id (OrgAdmin)  body: { title, location, date, time, description, status, imageUrl }
+const createCamp = async (req, res) => {
+  try {
+    const camp = await campService.createCamp({
+      user: req.user,
+      ...req.campData
+    });
+
+    return res.json({
+      success: true,
+      camp
+    });
+  } catch (error) {
+    console.error('createCamp:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'Could not create camp.'
+    });
+  }
+};
+
 const updateCamp = async (req, res) => {
-  const { id } = req.params;
-  const { title, location, date, time, description, status, imageUrl } = req.body;
+  try {
+    const camp = await campService.updateCamp({
+      user: req.user,
+      id: req.params.id,
+      ...req.campData
+    });
 
-  const updates = {};
-  if (title !== undefined) updates.title = title;
-  if (location !== undefined) updates.location = location;
-  if (date !== undefined) updates.date = date;
-  if (time !== undefined) updates.time = time;
-  if (description !== undefined) updates.description = description;
-  if (status !== undefined) updates.status = status;
-  if (imageUrl !== undefined) updates.image_url = imageUrl;
+    return res.json({
+      success: true,
+      camp
+    });
+  } catch (error) {
+    console.error('updateCamp:', error);
 
-  const { data: camp, error } = await supabase
-    .from('camps')
-    .update(updates)
-    .eq('id', id)
-    .eq('org_id', req.user.orgId)
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ success: false, error: 'Could not update camp.' });
-  return res.json({ success: true, camp: serializeCamp(camp) });
+    return res.status(500).json({
+      success: false,
+      error: 'Could not update camp.'
+    });
+  }
 };
 
-// DELETE /api/camps/:id (OrgAdmin)
 const deleteCamp = async (req, res) => {
-  const { id } = req.params;
-  const { error } = await supabase
-    .from('camps')
-    .delete()
-    .eq('id', id)
-    .eq('org_id', req.user.orgId);
+  try {
+    await campService.deleteCamp({
+      user: req.user,
+      id: req.params.id
+    });
 
-  if (error) return res.status(500).json({ success: false, error: 'Could not delete camp.' });
-  return res.json({ success: true });
+    return res.json({
+      success: true
+    });
+  } catch (error) {
+    console.error('deleteCamp:', error);
+
+    return res.status(500).json({
+      success: false,
+      error: 'Could not delete camp.'
+    });
+  }
 };
 
-module.exports = { getCamps, createCamp, updateCamp, deleteCamp };
+module.exports = {
+  getCamps,
+  createCamp,
+  updateCamp,
+  deleteCamp
+};

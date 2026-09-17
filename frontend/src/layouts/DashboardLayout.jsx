@@ -83,7 +83,7 @@ const DashboardLayout = ({ children }) => {
   };
 
   if (!currentUser) {
-    navigate('/login-choice');
+    navigate('/login/org');
     return null;
   }
 

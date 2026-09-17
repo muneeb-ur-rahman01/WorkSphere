@@ -1,37 +1,67 @@
-const supabase = require('../config/supabase');
-const { serializeAvailability } = require('../utils/serializers');
+const availabilityService = require(
+  '../services/availabilityService'
+);
 
-// GET /api/availability
+
 const getAvailability = async (req, res) => {
-  let query = supabase.from('availability').select('*, camps!inner(org_id)');
+  try {
+    const availability =
+      await availabilityService.getAvailability({
+        user: req.user
+      });
 
-  if (req.user.role !== 'SuperAdmin') {
-    query = query.eq('camps.org_id', req.user.orgId);
+    return res.json({
+      success: true,
+      availability
+    });
+  } catch (error) {
+    console.error(
+      '[getAvailability controller]',
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        error.message ||
+        'Could not fetch availability.'
+    });
   }
-
-  const { data, error } = await query;
-  if (error) return res.status(500).json({ success: false, error: 'Could not fetch availability.' });
-  return res.json({ success: true, availability: data.map(serializeAvailability) });
 };
-
-// POST /api/availability (upsert)  body: { campId, status }  userId = current user
 const updateAvailability = async (req, res) => {
-  const { campId, status } = req.body;
-  if (!campId || !status) {
-    return res.status(400).json({ success: false, error: 'Camp and status are required.' });
+  try {
+    const {
+      campId,
+      status
+    } = req.availabilityData;
+
+    const availability =
+      await availabilityService.updateAvailability({
+        userId: req.user.id,
+        campId,
+        status
+      });
+
+    return res.json({
+      success: true,
+      availability
+    });
+  } catch (error) {
+    console.error(
+      '[updateAvailability controller]',
+      error.message
+    );
+
+    return res.status(500).json({
+      success: false,
+      error:
+        error.message ||
+        'Could not update availability.'
+    });
   }
-
-  const { data, error } = await supabase
-    .from('availability')
-    .upsert(
-      { camp_id: campId, user_id: req.user.id, status, updated_at: new Date().toISOString() },
-      { onConflict: 'camp_id,user_id' }
-    )
-    .select()
-    .single();
-
-  if (error) return res.status(500).json({ success: false, error: 'Could not update availability.' });
-  return res.json({ success: true, availability: serializeAvailability(data) });
 };
 
-module.exports = { getAvailability, updateAvailability };
+module.exports = {
+  getAvailability,
+  updateAvailability
+};

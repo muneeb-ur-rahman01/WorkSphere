@@ -535,7 +535,7 @@ const AdminDashboard = () => {
                 </button>
               </div>
               {announceStatus === 'sent' && (
-                <p className="text-green-600 text-xs font-semibold">Announcement posted to staff dashboards.</p>
+                <p className="text-green-600 text-xs font-semibold">Announcement posted</p>
               )}
               {announceStatus && announceStatus !== 'sent' && (
                 <p className="text-red-600 text-xs">{announceStatus}</p>

@@ -2,22 +2,6 @@ const express = require('express');
 
 const router = express.Router();
 
-const { requireAuth } = require('../middleware/auth');
-
-const {
-  authLimiter,
-  checkAccountThrottle
-} = require('../middleware/rateLimiter');
-
-const {
-  loginValidator,
-  registerOrganizationValidator,
-  registerStaffValidator,
-  changePasswordValidator,
-  forgotPasswordValidator,
-  resetPasswordValidator
-} = require('../validators/authValidators');
-
 const {
   login,
   registerOrganization,
@@ -29,51 +13,86 @@ const {
   resetPassword
 } = require('../controllers/authController');
 
+const {
+  requireAuth
+} = require('../middleware/auth');
+
+/*
+|--------------------------------------------------------------------------
+| Public Auth Routes
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * POST /api/auth/login
+ */
 router.post(
   '/login',
-  authLimiter,
-  loginValidator,
-  checkAccountThrottle,
   login
 );
 
+/*
+ * POST /api/auth/register-organization
+ */
 router.post(
   '/register-organization',
-  registerOrganizationValidator,
   registerOrganization
 );
 
+/*
+ * POST /api/auth/register-staff
+ */
 router.post(
   '/register-staff',
-  registerStaffValidator,
   registerStaff
 );
 
-router.post(
-  '/change-password',
-  requireAuth,
-  changePasswordValidator,
-  changePassword
-);
-
-router.get('/me', requireAuth, me);
-
-// Forgot / Reset Password
+/*
+ * POST /api/auth/forgot-password
+ */
 router.post(
   '/forgot-password',
-  forgotPasswordValidator,
   forgotPassword
 );
 
+/*
+ * GET /api/auth/reset-password/:token/validate
+ */
 router.get(
   '/reset-password/:token/validate',
   validateResetToken
 );
 
+/*
+ * POST /api/auth/reset-password
+ */
 router.post(
   '/reset-password',
-  resetPasswordValidator,
   resetPassword
+);
+
+/*
+|--------------------------------------------------------------------------
+| Protected Auth Routes
+|--------------------------------------------------------------------------
+*/
+
+/*
+ * POST /api/auth/change-password
+ */
+router.post(
+  '/change-password',
+  requireAuth,
+  changePassword
+);
+
+/*
+ * GET /api/auth/me
+ */
+router.get(
+  '/me',
+  requireAuth,
+  me
 );
 
 module.exports = router;

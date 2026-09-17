@@ -7,7 +7,6 @@ import Home from '../pages/public-site/Home';
 import About from '../pages/public-site/About';
 import PublicOpportunities from '../pages/public-site/Opportunities';
 import RegisterOrganization from '../pages/public-site/RegisterOrganization';
-import LoginChoice from '../pages/public-site/LoginChoice';
 
 // Auth pages
 import Login from '../pages/auth/Login';
@@ -57,6 +56,12 @@ import Impact from '../pages/organization/admin/Impact';
 import OrganizationDirectory from '../pages/organization/admin/OrganizationDirectory';
 import Connections from '../pages/organization/admin/Connections';
 import OrgProfile from '../pages/organization/admin/OrgProfile';
+import Documentation from '../pages/public-site/Documentation';
+import TermsAndConditions from '../pages/public-site/TermsAndConditions';
+import PrivacyPolicy from '../pages/public-site/PrivacyPolicy';
+import Security from '../pages/public-site/Security';
+import FAQs from '../pages/public-site/FAQs';
+import HelpSupport from '../pages/public-site/HelpSupport';
 
 // Staff pages
 import StaffDashboard from '../pages/organization/staff/StaffDashboard';
@@ -77,7 +82,7 @@ const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { currentUser } = useContext(AppContext);
 
   if (!currentUser) {
-    return <Navigate to="/login-choice" replace />;
+    return <Navigate to="/login/org" replace />;
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(currentUser.role)) {
@@ -99,8 +104,15 @@ const AppRoutes = () => {
         <Route path="/about" element={<About />} />
         <Route path="/opportunities" element={<PublicOpportunities />} />
         <Route path="/register-org" element={<RegisterOrganization />} />
-        <Route path="/login-choice" element={<LoginChoice />} />
         <Route path="/payment/result" element={<PaymentResult />} />
+        <Route path="/documentation" element={<Documentation />} />
+        <Route path="/terms" element={<TermsAndConditions />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/security" element={<Security />} />
+        <Route path="/faqs" element={<FAQs />} />
+        <Route path="/help-support" element={<HelpSupport />} />
+        <Route path="/payment/result" element={<PaymentResult />} />
+
         
         {/* Authentication Routes */}
         <Route path="/login/:type" element={<Login />} />

@@ -155,7 +155,7 @@ const PublicLayout = ({ children }) => {
         ) : (
           <>
             <Link
-              to="/login-choice"
+              to="/login/org"
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white text-indigo-600 text-sm font-bold shadow hover:bg-indigo-50 transition whitespace-nowrap"
             >
               <LogIn size={15} />
@@ -268,7 +268,7 @@ const PublicLayout = ({ children }) => {
             <div className="pt-2 flex flex-col gap-3">
 
               <Link
-                to="/login-choice"
+                to="/login/org"
                 onClick={() => setMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-white text-indigo-600 font-bold"
               >
@@ -414,7 +414,7 @@ const PublicLayout = ({ children }) => {
 
                 <li>
                   <Link
-                    to="/login-choice"
+                    to="/login/org"
                     className="text-white hover:text-indigo-200 transition"
                   >
                     Enter Workspace
@@ -423,7 +423,7 @@ const PublicLayout = ({ children }) => {
               </ul>
             </div>
 
-            {/* Resources */}
+             {/* Resources */}
             <div>
               <h3 className="text-lg font-black text-white mb-5">
                 Resources
@@ -431,21 +431,15 @@ const PublicLayout = ({ children }) => {
 
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    Documentation
-                  </a>
+                  <Link to="/documentation" className="text-white hover:text-indigo-200 transition">Documentation</Link>
                 </li>
 
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    FAQs
-                  </a>
+                  <Link to="/faqs" className="text-white hover:text-indigo-200 transition">FAQs</Link>
                 </li>
 
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    Help & Support
-                  </a>
+                  <Link to="/help-support" className="text-white hover:text-indigo-200 transition">Help & Support</Link>
                 </li>
               </ul>
             </div>
@@ -458,24 +452,19 @@ const PublicLayout = ({ children }) => {
 
               <ul className="space-y-3 text-sm">
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    Privacy Policy
-                  </a>
+                  <Link to="/privacy" className="text-white hover:text-indigo-200 transition">Privacy Policy</Link>
                 </li>
 
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    Terms & Conditions
-                  </a>
+                  <Link to="/terms" className="text-white hover:text-indigo-200 transition">Terms & Conditions</Link>
                 </li>
 
                 <li>
-                  <a href="#" className="text-white hover:text-indigo-200 transition">
-                    Security
-                  </a>
+                  <Link to="/security" className="text-white hover:text-indigo-200 transition">Security</Link>
                 </li>
               </ul>
             </div>
+
 
           </div>
         </div>

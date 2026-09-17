@@ -23,8 +23,8 @@ api.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem("token");
             localStorage.removeItem("campos_current_user");
-            if (window.location.pathname !== '/login-choice' && !window.location.pathname.startsWith('/login')) {
-                window.location.href = '/login-choice';
+            if (!window.location.pathname.startsWith('/login')) {
+                window.location.href = '/login/org';
             }
         }
         return Promise.reject(error);

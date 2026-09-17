@@ -221,7 +221,7 @@ const About = () => {
                   </Button>
                 </Link>
 
-                <Link to="/login-choice">
+                <Link to="/login/org">
                   <Button
                     size="large"
                     variant="secondary"
@@ -1090,7 +1090,7 @@ const About = () => {
               </Button>
             </Link>
 
-            <Link to="/login-choice">
+            <Link to="/login/org">
               <Button
                 size="large"
                 variant="secondary"

@@ -22,6 +22,7 @@ const queryRoutes = require('./routes/queryRoutes');
 const visibilityRoutes = require('./routes/visibilityRoutes');
 const publicRoutes = require('./routes/publicRoutes');
 const opportunityRoutes = require('./routes/opportunityRoutes');
+const publicOpportunityRoutes = require('./routes/publicOpportunityRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
 const platformSettingsRoutes = require('./routes/platformSettingsRoutes');
 const projectRoutes = require('./routes/projectRoutes');
@@ -36,16 +37,64 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const directoryRoutes = require('./routes/directoryRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
-const { checkExpiringSubscriptions } = require('./controllers/notificationController');
-const { suspendOverdueOrganizations, notifyExpiringTrials } = require('./utils/subscriptionScheduler');
+
+const {
+  checkExpiringSubscriptions
+} = require('./services/notificationService');
+
+const {
+  suspendOverdueOrganizations,
+  notifyExpiringTrials
+} = require('./utils/subscriptionScheduler');
 
 const app = express();
+
+console.log('ROUTE TYPES:');
+console.log('authRoutes:', typeof authRoutes);
+console.log('organizationRoutes:', typeof organizationRoutes);
+console.log('userRoutes:', typeof userRoutes);
+console.log('campRoutes:', typeof campRoutes);
+console.log('eventRoutes:', typeof eventRoutes);
+console.log('meetingRoutes:', typeof meetingRoutes);
+console.log('analyticsRoutes:', typeof analyticsRoutes);
+console.log('taskRoutes:', typeof taskRoutes);
+console.log('notificationRoutes:', typeof notificationRoutes);
+console.log('availabilityRoutes:', typeof availabilityRoutes);
+console.log('prescriptionRoutes:', typeof prescriptionRoutes);
+console.log('paymentRoutes:', typeof paymentRoutes);
+console.log('billingRoutes:', typeof billingRoutes);
+console.log('discussionRoutes:', typeof discussionRoutes);
+console.log('permissionRoutes:', typeof permissionRoutes);
+console.log('queryRoutes:', typeof queryRoutes);
+console.log('visibilityRoutes:', typeof visibilityRoutes);
+console.log('publicRoutes:', typeof publicRoutes);
+console.log('opportunityRoutes:', typeof opportunityRoutes);
+console.log('publicOpportunityRoutes:', typeof publicOpportunityRoutes);
+console.log('auditLogRoutes:', typeof auditLogRoutes);
+console.log('platformSettingsRoutes:', typeof platformSettingsRoutes);
+console.log('projectRoutes:', typeof projectRoutes);
+console.log('campaignRoutes:', typeof campaignRoutes);
+console.log('donorRoutes:', typeof donorRoutes);
+console.log('donationRoutes:', typeof donationRoutes);
+console.log('volunteerRoutes:', typeof volunteerRoutes);
+console.log('sponsorRoutes:', typeof sponsorRoutes);
+console.log('partnerRoutes:', typeof partnerRoutes);
+console.log('beneficiaryRoutes:', typeof beneficiaryRoutes);
+console.log('expenseRoutes:', typeof expenseRoutes);
+console.log('documentRoutes:', typeof documentRoutes);
+console.log('directoryRoutes:', typeof directoryRoutes);
+console.log('connectionRoutes:', typeof connectionRoutes);
 
 app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.get('/api/health', (req, res) => res.json({ success: true, message: 'CampOS API is running.' }));
+app.get('/api/health', (req, res) =>
+  res.json({
+    success: true,
+    message: 'WorkSphere API is running.'
+  })
+);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/organizations', organizationRoutes);
@@ -66,6 +115,7 @@ app.use('/api/queries', queryRoutes);
 app.use('/api/visibility-requests', visibilityRoutes);
 app.use('/api/public', publicRoutes);
 app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/public/opportunities', publicOpportunityRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/platform-settings', platformSettingsRoutes);
 app.use('/api/projects', projectRoutes);
@@ -82,40 +132,86 @@ app.use('/api/directory', directoryRoutes);
 app.use('/api/connections', connectionRoutes);
 
 // 404 handler
-app.use((req, res) => res.status(404).json({ success: false, error: 'Route not found.' }));
+app.use((req, res) =>
+  res.status(404).json({
+    success: false,
+    error: 'Route not found.'
+  })
+);
 
-// Global error handler (also catches Multer upload errors, e.g. file too large)
+// Global error handler
 app.use((err, req, res, next) => {
   console.error(err);
-  if (err.name === 'MulterError' || /audio files/i.test(err.message || '')) {
-    return res.status(400).json({ success: false, error: err.message });
+
+  if (
+    err.name === 'MulterError' ||
+    /audio files/i.test(err.message || '')
+  ) {
+    return res.status(400).json({
+      success: false,
+      error: err.message
+    });
   }
-  res.status(500).json({ success: false, error: 'Something went wrong on the server.' });
+
+  res.status(500).json({
+    success: false,
+    error: 'Something went wrong on the server.'
+  });
 });
 
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`CampOS backend running on http://localhost:${PORT}`);
 
-  // Subscription expiry watcher: notifies OrgAdmins + SuperAdmin when a
-  // plan is about to expire. Runs once on boot, then every hour.
-  checkExpiringSubscriptions().catch((err) => console.error('[Subscription Watcher] initial run failed:', err.message));
+  // Subscription expiry watcher
+  checkExpiringSubscriptions().catch((err) =>
+    console.error(
+      '[Subscription Watcher] initial run failed:',
+      err.message
+    )
+  );
+
   setInterval(() => {
-    checkExpiringSubscriptions().catch((err) => console.error('[Subscription Watcher] run failed:', err.message));
+    checkExpiringSubscriptions().catch((err) =>
+      console.error(
+        '[Subscription Watcher] run failed:',
+        err.message
+      )
+    );
   }, 60 * 60 * 1000);
 
-  // 7-day free trial / renewal overdue sweep — see
-  // backend/utils/subscriptionScheduler.js. Restoration only ever happens
-  // via a verified payment (paymentController.handleCallback), never here.
-  suspendOverdueOrganizations().catch((err) => console.error('[Subscription Scheduler] initial run failed:', err.message));
+  // 7-day free trial / renewal overdue sweep
+  suspendOverdueOrganizations().catch((err) =>
+    console.error(
+      '[Subscription Scheduler] initial run failed:',
+      err.message
+    )
+  );
+
   setInterval(() => {
-    suspendOverdueOrganizations().catch((err) => console.error('[Subscription Scheduler] run failed:', err.message));
+    suspendOverdueOrganizations().catch((err) =>
+      console.error(
+        '[Subscription Scheduler] run failed:',
+        err.message
+      )
+    );
   }, 60 * 60 * 1000);
 
-  // Trial-ending-soon reminder (email + in-app), 2 days out — see
-  // backend/utils/subscriptionScheduler.js.
-  notifyExpiringTrials().catch((err) => console.error('[Trial Reminder] initial run failed:', err.message));
+  // Trial-ending-soon reminder
+  notifyExpiringTrials().catch((err) =>
+    console.error(
+      '[Trial Reminder] initial run failed:',
+      err.message
+    )
+  );
+
   setInterval(() => {
-    notifyExpiringTrials().catch((err) => console.error('[Trial Reminder] run failed:', err.message));
+    notifyExpiringTrials().catch((err) =>
+      console.error(
+        '[Trial Reminder] run failed:',
+        err.message
+      )
+    );
   }, 60 * 60 * 1000);
 });
