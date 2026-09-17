@@ -45,7 +45,7 @@ const STAFF_PASSWORD_REGEX =
 const STAFF_PASSWORD_MESSAGE =
   'Password must be exactly 8 characters long and include at least one letter and one number.';
 
-const PASSWORD_MAX_LENGTH = 8;
+const PASSWORD_MAX_LENGTH = 16;
 
 const EMAIL_REGEX =
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
