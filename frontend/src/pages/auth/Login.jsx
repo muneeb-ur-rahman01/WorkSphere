@@ -55,7 +55,7 @@ const Login = () => {
         navigate('/staff/dashboard');
       }
     } else {
-      setError(res.error || 'Authentication failed.');
+      setError(res.error || 'Login failed.');
     }
   };
 
@@ -166,7 +166,7 @@ const Login = () => {
             className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-xl bg-indigo-600 text-white font-bold shadow-md hover:bg-indigo-700 hover:shadow-xl hover:scale-105 transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <LogIn size={18} />
-            {submitting ? 'Authenticating...' : 'Authenticate Session'}
+            {submitting ? 'Processing...' : 'Login Session'}
           </button>
 
         </form>
