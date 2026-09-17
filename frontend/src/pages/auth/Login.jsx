@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { LogIn, Eye, EyeOff } from 'lucide-react';
 import { AppContext } from '../../context/AppContext';
 import PublicLayout from '../../layouts/PublicLayout';
 
@@ -17,6 +17,9 @@ const Login = () => {
 
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Password show/hide state
+  const [showPassword, setShowPassword] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState({
@@ -93,7 +96,6 @@ const Login = () => {
       if (res.success) {
         showToast('success', 'Login Successful');
 
-        // Small delay so user can see success popup
         setTimeout(() => {
           if (res.user.role === 'SuperAdmin') {
             navigate('/super-admin/dashboard');
@@ -131,7 +133,6 @@ const Login = () => {
               : 'bg-red-50 border-red-300 text-red-800'
           }`}
         >
-          {/* Icon */}
           <div
             className={`w-9 h-9 rounded-full flex items-center justify-center text-lg font-bold
             ${
@@ -143,7 +144,6 @@ const Login = () => {
             {toast.type === 'success' ? '✓' : '✕'}
           </div>
 
-          {/* Message */}
           <div className="flex-1">
             <p className="font-bold text-sm">
               {toast.message}
@@ -252,16 +252,32 @@ const Login = () => {
 
               </div>
 
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                maxLength={8}
-                className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                required
-              />
+              {/* Password Input + Show/Hide Button */}
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  maxLength={8}
+                  className="w-full px-4 py-3 pr-12 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Login Button */}

@@ -58,7 +58,7 @@
                   type="button"
                   className="group flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
                 >
-                  Register Your NGO Now
+                  Register Your workspace
                   <ArrowRight
                     size={20}
                     className="transition-transform duration-300 group-hover:translate-x-1"

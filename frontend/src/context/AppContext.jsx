@@ -18,6 +18,7 @@ export const AppProvider = ({ children }) => {
   const [meetings, setMeetings] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [readNotificationIds, setReadNotificationIds] = useState([]);
   const [availability, setAvailability] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
   const [discussionGroups, setDiscussionGroups] = useState([]);
@@ -54,6 +55,70 @@ export const AppProvider = ({ children }) => {
   }, [currentUser]);
 
   // ===========================================================
+  // Notification Read State
+  // ===========================================================
+  const getNotificationKey = useCallback((notification) => {
+    if (
+      notification?.id !== undefined &&
+      notification?.id !== null
+    ) {
+      return `id:${String(notification.id)}`;
+    }
+
+    return [
+      notification?.orgId ?? '',
+      notification?.targetUserId ?? '',
+      notification?.targetRole ?? '',
+      notification?.title ?? '',
+      notification?.message ?? '',
+      notification?.createdAt ??
+        notification?.date ??
+        ''
+    ].join('|');
+  }, []);
+
+  const markNotificationAsRead = useCallback((notification) => {
+    const key = getNotificationKey(notification);
+
+    setReadNotificationIds((prev) => {
+      if (prev.includes(key)) {
+        return prev;
+      }
+
+      return [...prev, key];
+    });
+  }, [getNotificationKey]);
+
+  const markAllNotificationsAsRead = useCallback(
+    (notificationList = notifications) => {
+      setReadNotificationIds((prev) => {
+        const next = new Set(prev);
+
+        notificationList.forEach((notification) => {
+          next.add(getNotificationKey(notification));
+        });
+
+        return Array.from(next);
+      });
+    },
+    [notifications, getNotificationKey]
+  );
+
+  const isNotificationRead = useCallback(
+    (notification) => {
+      return readNotificationIds.includes(
+        getNotificationKey(notification)
+      );
+    },
+    [readNotificationIds, getNotificationKey]
+  );
+
+  const unreadNotifications = notifications.filter(
+    (notification) =>
+      !isNotificationRead(notification)
+  );
+
+  // ===========================================================
   // Real-time-ish data loading: fetch fresh data from the DB
   // whenever the logged-in user changes, then keep it in sync
   // by refetching after every mutation and via short polling.
@@ -72,6 +137,7 @@ export const AppProvider = ({ children }) => {
         api.get('/discussion-groups').then(r => setDiscussionGroups(r.data.groups)).catch(() => {}),
         api.get('/permissions/me').then(r => setMyPermissions(r.data.sections)).catch(() => {})
       ];
+
       // Projects / Campaigns / Donors / Donations / Volunteers: visible to
       // every org member (mutation is what's permission-gated), same as
       // Camps/Events/Tasks above. SuperAdmin doesn't have a single org in
@@ -92,6 +158,7 @@ export const AppProvider = ({ children }) => {
         requests.push(api.get('/expenses').then(r => setExpenses(r.data.expenses)).catch(() => {}));
         requests.push(api.get('/documents').then(r => setDocuments(r.data.documents)).catch(() => {}));
       }
+
       if (currentUser.role === 'SuperAdmin') {
         requests.push(api.get('/organizations').then(r => setOrganizations(r.data.organizations)).catch(() => {}));
         requests.push(api.get('/queries').then(r => setQueries(r.data.queries)).catch(() => {}));
@@ -102,16 +169,20 @@ export const AppProvider = ({ children }) => {
             .then(r => setOrganizations(r.data.organization ? [r.data.organization] : []))
             .catch(() => {})
         );
+
         if (currentUser.role === 'OrgAdmin') {
           requests.push(api.get('/visibility-requests/mine').then(r => setVisibilityRequests(r.data.requests)).catch(() => {}));
           requests.push(api.get('/opportunities').then(r => setOpportunities(r.data.opportunities)).catch(() => {}));
+
           // AI Module (prescription transcription) moved here from Staff/Intern
           // — see backend/routes/prescriptionRoutes.js, now OrgAdmin-only.
           requests.push(api.get('/prescriptions').then(r => setPrescriptions(r.data.prescriptions)).catch(() => {}));
+
           // Cross-Organization Connections (spec section 16) — OrgAdmin only.
           requests.push(api.get('/connections').then(r => setConnections(r.data.connections)).catch(() => {}));
         }
       }
+
       await Promise.all(requests);
     } finally {
       setLoading(false);
@@ -121,8 +192,10 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (currentUser) {
       refreshAll();
+
       // light polling so dashboards feel "real-time" without needing websockets
       const interval = setInterval(refreshAll, 15000);
+
       return () => clearInterval(interval);
     } else {
       setLoading(false);
@@ -134,10 +207,17 @@ export const AppProvider = ({ children }) => {
   // ===================
   const login = async (email, password, expectedRoleDomain) => {
     try {
-      const res = await api.post('/auth/login', { email, password, roleDomain: expectedRoleDomain });
+      const res = await api.post('/auth/login', {
+        email,
+        password,
+        roleDomain: expectedRoleDomain
+      });
+
       const { token, user } = res.data;
+
       localStorage.setItem('token', token);
       setCurrentUser(user);
+
       return { success: true, user };
     } catch (err) {
       return asError(err, 'Invalid email or password.');
@@ -153,6 +233,7 @@ export const AppProvider = ({ children }) => {
     setMeetings([]);
     setTasks([]);
     setNotifications([]);
+    setReadNotificationIds([]);
     setAvailability([]);
     setOrganizations([]);
     setDiscussionGroups([]);
@@ -161,7 +242,11 @@ export const AppProvider = ({ children }) => {
 
   const changePassword = async (currentPassword, newPassword) => {
     try {
-      await api.post('/auth/change-password', { currentPassword, newPassword });
+      await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword
+      });
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update password.');
@@ -189,8 +274,15 @@ export const AppProvider = ({ children }) => {
 
   const resetPassword = async (token, newPassword) => {
     try {
-      const res = await api.post('/auth/reset-password', { token, newPassword });
-      return { success: true, message: res.data.message };
+      const res = await api.post('/auth/reset-password', {
+        token,
+        newPassword
+      });
+
+      return {
+        success: true,
+        message: res.data.message
+      };
     } catch (err) {
       return asError(err, 'Could not reset password. Please try again.');
     }
@@ -199,10 +291,27 @@ export const AppProvider = ({ children }) => {
   // ===================
   // SaaS Operations (Super Admin)
   // ===================
-  const registerOrganization = async (orgName, adminName, email, password, plan = 'Basic') => {
+  const registerOrganization = async (
+    orgName,
+    adminName,
+    email,
+    password,
+    plan = 'Basic'
+  ) => {
     try {
-      const res = await api.post('/auth/register-organization', { orgName, adminName, email, password, plan });
-      return { success: true, orgId: res.data.orgId, amountDue: res.data.amountDue };
+      const res = await api.post('/auth/register-organization', {
+        orgName,
+        adminName,
+        email,
+        password,
+        plan
+      });
+
+      return {
+        success: true,
+        orgId: res.data.orgId,
+        amountDue: res.data.amountDue
+      };
     } catch (err) {
       return asError(err, 'Registration failed.');
     }
@@ -210,8 +319,12 @@ export const AppProvider = ({ children }) => {
 
   const updateOrgStatus = async (orgId, newStatus) => {
     try {
-      await api.patch(`/organizations/${orgId}/status`, { status: newStatus });
+      await api.patch(`/organizations/${orgId}/status`, {
+        status: newStatus
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update organization.');
@@ -222,6 +335,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.delete(`/organizations/${orgId}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete organization.');
@@ -230,8 +344,12 @@ export const AppProvider = ({ children }) => {
 
   const setPublicEventsEnabled = async (orgId, enabled) => {
     try {
-      await api.patch(`/organizations/${orgId}/public-events`, { enabled });
+      await api.patch(`/organizations/${orgId}/public-events`, {
+        enabled
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update public visibility setting.');
@@ -243,9 +361,22 @@ export const AppProvider = ({ children }) => {
   // ===================
 
   // Public self-registration -> account goes Pending until an OrgAdmin approves it
-  const registerStaff = async (fullName, email, password, role, orgId) => {
+  const registerStaff = async (
+    fullName,
+    email,
+    password,
+    role,
+    orgId
+  ) => {
     try {
-      await api.post('/auth/register-staff', { fullName, email, password, role, orgId });
+      await api.post('/auth/register-staff', {
+        fullName,
+        email,
+        password,
+        role,
+        orgId
+      });
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Registration failed.');
@@ -254,10 +385,22 @@ export const AppProvider = ({ children }) => {
 
   // Admin adds staff directly from the dashboard and sets their initial password;
   // the account is Active immediately (staff can change their password later in Settings).
-  const createStaffByAdmin = async (fullName, email, password, role) => {
+  const createStaffByAdmin = async (
+    fullName,
+    email,
+    password,
+    role
+  ) => {
     try {
-      await api.post('/users', { fullName, email, password, role });
+      await api.post('/users', {
+        fullName,
+        email,
+        password,
+        role
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not add staff member.');
@@ -266,8 +409,12 @@ export const AppProvider = ({ children }) => {
 
   const updateStaffStatus = async (userId, newStatus) => {
     try {
-      await api.patch(`/users/${userId}/status`, { status: newStatus });
+      await api.patch(`/users/${userId}/status`, {
+        status: newStatus
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update user status.');
@@ -278,6 +425,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.delete(`/users/${userId}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not remove staff member.');
@@ -286,8 +434,12 @@ export const AppProvider = ({ children }) => {
 
   const updateStaffRole = async (userId, role) => {
     try {
-      await api.patch(`/users/${userId}/role`, { role });
+      await api.patch(`/users/${userId}/role`, {
+        role
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update role.');
@@ -296,8 +448,12 @@ export const AppProvider = ({ children }) => {
 
   const assignMentor = async (internId, mentorName) => {
     try {
-      await api.patch(`/users/${internId}/mentor`, { mentorName });
+      await api.patch(`/users/${internId}/mentor`, {
+        mentorName
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not assign mentor.');
@@ -307,10 +463,24 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Camp Operations (independent from Events)
   // ===================
-  const createCamp = async (title, location, date, description, extra = {}) => {
+  const createCamp = async (
+    title,
+    location,
+    date,
+    description,
+    extra = {}
+  ) => {
     try {
-      const res = await api.post('/camps', { title, location, date, description, ...extra });
+      const res = await api.post('/camps', {
+        title,
+        location,
+        date,
+        description,
+        ...extra
+      });
+
       await refreshAll();
+
       return res.data.camp?.id;
     } catch (err) {
       return null;
@@ -321,6 +491,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.patch(`/camps/${campId}`, updates);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update camp.');
@@ -331,6 +502,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.delete(`/camps/${campId}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete camp.');
@@ -340,10 +512,26 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Event Operations (independent from Camps)
   // ===================
-  const createEvent = async (title, location, date, description, eventType, extra = {}) => {
+  const createEvent = async (
+    title,
+    location,
+    date,
+    description,
+    eventType,
+    extra = {}
+  ) => {
     try {
-      const res = await api.post('/events', { title, location, date, description, eventType, ...extra });
+      const res = await api.post('/events', {
+        title,
+        location,
+        date,
+        description,
+        eventType,
+        ...extra
+      });
+
       await refreshAll();
+
       return res.data.event?.id;
     } catch (err) {
       return null;
@@ -354,6 +542,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.patch(`/events/${eventId}`, updates);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update event.');
@@ -364,6 +553,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.delete(`/events/${eventId}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete event.');
@@ -373,11 +563,28 @@ export const AppProvider = ({ children }) => {
   // ===================
   // Meeting Operations (OrgAdmin schedules, visible org-wide once created)
   // ===================
-  const createMeeting = async (subject, meetingType, date, time, meetingLink) => {
+  const createMeeting = async (
+    subject,
+    meetingType,
+    date,
+    time,
+    meetingLink
+  ) => {
     try {
-      const res = await api.post('/meetings', { subject, meetingType, date, time, meetingLink });
+      const res = await api.post('/meetings', {
+        subject,
+        meetingType,
+        date,
+        time,
+        meetingLink
+      });
+
       await refreshAll();
-      return { success: true, id: res.data.meeting?.id };
+
+      return {
+        success: true,
+        id: res.data.meeting?.id
+      };
     } catch (err) {
       return asError(err, 'Could not create meeting.');
     }
@@ -387,6 +594,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.patch(`/meetings/${meetingId}`, updates);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update meeting.');
@@ -397,8 +605,13 @@ export const AppProvider = ({ children }) => {
   // meeting happened" action — also flips status to Completed if it wasn't already.
   const addMeetingSummary = async (meetingId, summary) => {
     try {
-      await api.patch(`/meetings/${meetingId}`, { summary, status: 'Completed' });
+      await api.patch(`/meetings/${meetingId}`, {
+        summary,
+        status: 'Completed'
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not save the meeting summary.');
@@ -409,6 +622,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.delete(`/meetings/${meetingId}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete meeting.');
@@ -421,7 +635,11 @@ export const AppProvider = ({ children }) => {
   const getAssignableSections = async () => {
     try {
       const res = await api.get('/permissions/sections');
-      return { success: true, sections: res.data.sections };
+
+      return {
+        success: true,
+        sections: res.data.sections
+      };
     } catch (err) {
       return asError(err, 'Could not load sections.');
     }
@@ -429,8 +647,14 @@ export const AppProvider = ({ children }) => {
 
   const getUserPermissions = async (userId) => {
     try {
-      const res = await api.get('/permissions', { params: { userId } });
-      return { success: true, sections: res.data.sections };
+      const res = await api.get('/permissions', {
+        params: { userId }
+      });
+
+      return {
+        success: true,
+        sections: res.data.sections
+      };
     } catch (err) {
       return asError(err, 'Could not load permissions.');
     }
@@ -438,8 +662,15 @@ export const AppProvider = ({ children }) => {
 
   const grantPermission = async (userId, sectionKey) => {
     try {
-      await api.post('/permissions', { userId, sectionKey });
-      if (currentUser?.id === userId) await refreshAll();
+      await api.post('/permissions', {
+        userId,
+        sectionKey
+      });
+
+      if (currentUser?.id === userId) {
+        await refreshAll();
+      }
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not grant access.');
@@ -448,8 +679,17 @@ export const AppProvider = ({ children }) => {
 
   const revokePermission = async (userId, sectionKey) => {
     try {
-      await api.delete('/permissions', { data: { userId, sectionKey } });
-      if (currentUser?.id === userId) await refreshAll();
+      await api.delete('/permissions', {
+        data: {
+          userId,
+          sectionKey
+        }
+      });
+
+      if (currentUser?.id === userId) {
+        await refreshAll();
+      }
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not revoke access.');
@@ -463,48 +703,72 @@ export const AppProvider = ({ children }) => {
     try {
       const res = await api.post('/projects', payload);
       await refreshAll();
-      return { success: true, project: res.data.project };
+
+      return {
+        success: true,
+        project: res.data.project
+      };
     } catch (err) {
       return asError(err, 'Could not create project.');
     }
   };
+
   const updateProject = async (id, payload) => {
     try {
       await api.patch(`/projects/${id}`, payload);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update project.');
     }
   };
+
   const deleteProject = async (id) => {
     try {
       await api.delete(`/projects/${id}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete project.');
     }
   };
+
   const getProjectTeam = async (id) => {
     try {
       const res = await api.get(`/projects/${id}/team`);
-      return { success: true, members: res.data.members };
+
+      return {
+        success: true,
+        members: res.data.members
+      };
     } catch (err) {
       return asError(err, 'Could not load project team.');
     }
   };
-  const addProjectTeamMember = async (id, userId, roleOnEntity) => {
+
+  const addProjectTeamMember = async (
+    id,
+    userId,
+    roleOnEntity
+  ) => {
     try {
-      await api.post(`/projects/${id}/team`, { userId, roleOnEntity });
+      await api.post(`/projects/${id}/team`, {
+        userId,
+        roleOnEntity
+      });
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not add team member.');
     }
   };
+
   const removeProjectTeamMember = async (id, userId) => {
     try {
       await api.delete(`/projects/${id}/team/${userId}`);
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not remove team member.');
@@ -518,48 +782,72 @@ export const AppProvider = ({ children }) => {
     try {
       const res = await api.post('/campaigns', payload);
       await refreshAll();
-      return { success: true, campaign: res.data.campaign };
+
+      return {
+        success: true,
+        campaign: res.data.campaign
+      };
     } catch (err) {
       return asError(err, 'Could not create campaign.');
     }
   };
+
   const updateCampaign = async (id, payload) => {
     try {
       await api.patch(`/campaigns/${id}`, payload);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update campaign.');
     }
   };
+
   const deleteCampaign = async (id) => {
     try {
       await api.delete(`/campaigns/${id}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete campaign.');
     }
   };
+
   const getCampaignTeam = async (id) => {
     try {
       const res = await api.get(`/campaigns/${id}/team`);
-      return { success: true, members: res.data.members };
+
+      return {
+        success: true,
+        members: res.data.members
+      };
     } catch (err) {
       return asError(err, 'Could not load campaign team.');
     }
   };
-  const addCampaignTeamMember = async (id, userId, roleOnEntity) => {
+
+  const addCampaignTeamMember = async (
+    id,
+    userId,
+    roleOnEntity
+  ) => {
     try {
-      await api.post(`/campaigns/${id}/team`, { userId, roleOnEntity });
+      await api.post(`/campaigns/${id}/team`, {
+        userId,
+        roleOnEntity
+      });
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not add team member.');
     }
   };
+
   const removeCampaignTeamMember = async (id, userId) => {
     try {
       await api.delete(`/campaigns/${id}/team/${userId}`);
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not remove team member.');
@@ -573,42 +861,57 @@ export const AppProvider = ({ children }) => {
     try {
       const res = await api.post('/donors', payload);
       await refreshAll();
-      return { success: true, donor: res.data.donor };
+
+      return {
+        success: true,
+        donor: res.data.donor
+      };
     } catch (err) {
       return asError(err, 'Could not create donor.');
     }
   };
+
   const updateDonor = async (id, payload) => {
     try {
       await api.patch(`/donors/${id}`, payload);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update donor.');
     }
   };
+
   const deleteDonor = async (id) => {
     try {
       await api.delete(`/donors/${id}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete donor.');
     }
   };
+
   const createDonation = async (payload) => {
     try {
       const res = await api.post('/donations', payload);
       await refreshAll();
-      return { success: true, donation: res.data.donation };
+
+      return {
+        success: true,
+        donation: res.data.donation
+      };
     } catch (err) {
       return asError(err, 'Could not record donation.');
     }
   };
+
   const deleteDonation = async (id) => {
     try {
       await api.delete(`/donations/${id}`);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not delete donation record.');
@@ -622,6 +925,7 @@ export const AppProvider = ({ children }) => {
     try {
       await api.put(`/volunteers/${userId}/profile`, payload);
       await refreshAll();
+
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not update volunteer profile.');
@@ -632,108 +936,295 @@ export const AppProvider = ({ children }) => {
   // Sponsors & Sponsorships
   // ===========================================================
   const createSponsor = async (payload) => {
-    try { const res = await api.post('/sponsors', payload); await refreshAll(); return { success: true, sponsor: res.data.sponsor }; }
-    catch (err) { return asError(err, 'Could not create sponsor.'); }
+    try {
+      const res = await api.post('/sponsors', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        sponsor: res.data.sponsor
+      };
+    } catch (err) {
+      return asError(err, 'Could not create sponsor.');
+    }
   };
+
   const updateSponsor = async (id, payload) => {
-    try { await api.patch(`/sponsors/${id}`, payload); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update sponsor.'); }
+    try {
+      await api.patch(`/sponsors/${id}`, payload);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update sponsor.');
+    }
   };
+
   const deleteSponsor = async (id) => {
-    try { await api.delete(`/sponsors/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete sponsor.'); }
+    try {
+      await api.delete(`/sponsors/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete sponsor.');
+    }
   };
+
   const createSponsorship = async (payload) => {
-    try { const res = await api.post('/sponsors/sponsorships', payload); await refreshAll(); return { success: true, sponsorship: res.data.sponsorship }; }
-    catch (err) { return asError(err, 'Could not record sponsorship.'); }
+    try {
+      const res = await api.post('/sponsors/sponsorships', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        sponsorship: res.data.sponsorship
+      };
+    } catch (err) {
+      return asError(err, 'Could not record sponsorship.');
+    }
   };
+
   const updateSponsorship = async (id, payload) => {
-    try { await api.patch(`/sponsors/sponsorships/${id}`, payload); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update sponsorship.'); }
+    try {
+      await api.patch(`/sponsors/sponsorships/${id}`, payload);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update sponsorship.');
+    }
   };
+
   const deleteSponsorship = async (id) => {
-    try { await api.delete(`/sponsors/sponsorships/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete sponsorship.'); }
+    try {
+      await api.delete(`/sponsors/sponsorships/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete sponsorship.');
+    }
   };
 
   // ===========================================================
   // Partners (Partnership Approval — OrgAdmin only)
   // ===========================================================
   const createPartner = async (payload) => {
-    try { const res = await api.post('/partners', payload); await refreshAll(); return { success: true, partner: res.data.partner }; }
-    catch (err) { return asError(err, 'Could not create partner.'); }
+    try {
+      const res = await api.post('/partners', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        partner: res.data.partner
+      };
+    } catch (err) {
+      return asError(err, 'Could not create partner.');
+    }
   };
+
   const updatePartner = async (id, payload) => {
-    try { await api.patch(`/partners/${id}`, payload); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update partner.'); }
+    try {
+      await api.patch(`/partners/${id}`, payload);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update partner.');
+    }
   };
+
   const updatePartnerStatus = async (id, status) => {
-    try { await api.patch(`/partners/${id}/status`, { status }); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update partner status.'); }
+    try {
+      await api.patch(`/partners/${id}/status`, { status });
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update partner status.');
+    }
   };
+
   const deletePartner = async (id) => {
-    try { await api.delete(`/partners/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete partner.'); }
+    try {
+      await api.delete(`/partners/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete partner.');
+    }
   };
 
   // ===========================================================
   // Beneficiaries & Program Enrollment
   // ===========================================================
   const createBeneficiary = async (payload) => {
-    try { const res = await api.post('/beneficiaries', payload); await refreshAll(); return { success: true, beneficiary: res.data.beneficiary }; }
-    catch (err) { return asError(err, 'Could not register beneficiary.'); }
+    try {
+      const res = await api.post('/beneficiaries', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        beneficiary: res.data.beneficiary
+      };
+    } catch (err) {
+      return asError(err, 'Could not register beneficiary.');
+    }
   };
+
   const updateBeneficiary = async (id, payload) => {
-    try { await api.patch(`/beneficiaries/${id}`, payload); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update beneficiary.'); }
+    try {
+      await api.patch(`/beneficiaries/${id}`, payload);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update beneficiary.');
+    }
   };
+
   const deleteBeneficiary = async (id) => {
-    try { await api.delete(`/beneficiaries/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete beneficiary.'); }
+    try {
+      await api.delete(`/beneficiaries/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete beneficiary.');
+    }
   };
+
   const createEnrollment = async (payload) => {
-    try { const res = await api.post('/beneficiaries/enrollments', payload); await refreshAll(); return { success: true, enrollment: res.data.enrollment }; }
-    catch (err) { return asError(err, 'Could not enroll beneficiary.'); }
+    try {
+      const res = await api.post(
+        '/beneficiaries/enrollments',
+        payload
+      );
+
+      await refreshAll();
+
+      return {
+        success: true,
+        enrollment: res.data.enrollment
+      };
+    } catch (err) {
+      return asError(err, 'Could not enroll beneficiary.');
+    }
   };
+
   const updateEnrollment = async (id, payload) => {
-    try { await api.patch(`/beneficiaries/enrollments/${id}`, payload); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update enrollment.'); }
+    try {
+      await api.patch(
+        `/beneficiaries/enrollments/${id}`,
+        payload
+      );
+
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update enrollment.');
+    }
   };
+
   const deleteEnrollment = async (id) => {
-    try { await api.delete(`/beneficiaries/enrollments/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not remove enrollment.'); }
+    try {
+      await api.delete(
+        `/beneficiaries/enrollments/${id}`
+      );
+
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not remove enrollment.');
+    }
   };
 
   // ===========================================================
   // Expenses (Expense Approval — OrgAdmin only)
   // ===========================================================
   const createExpense = async (payload) => {
-    try { const res = await api.post('/expenses', payload); await refreshAll(); return { success: true, expense: res.data.expense }; }
-    catch (err) { return asError(err, 'Could not submit expense.'); }
+    try {
+      const res = await api.post('/expenses', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        expense: res.data.expense
+      };
+    } catch (err) {
+      return asError(err, 'Could not submit expense.');
+    }
   };
+
   const updateExpenseStatus = async (id, status) => {
-    try { await api.patch(`/expenses/${id}/status`, { status }); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update expense status.'); }
+    try {
+      await api.patch(`/expenses/${id}/status`, {
+        status
+      });
+
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update expense status.');
+    }
   };
+
   const deleteExpense = async (id) => {
-    try { await api.delete(`/expenses/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete expense.'); }
+    try {
+      await api.delete(`/expenses/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete expense.');
+    }
   };
 
   // ===========================================================
   // Document Management (Document Approval — OrgAdmin only)
   // ===========================================================
   const createDocument = async (payload) => {
-    try { const res = await api.post('/documents', payload); await refreshAll(); return { success: true, document: res.data.document }; }
-    catch (err) { return asError(err, 'Could not upload document.'); }
+    try {
+      const res = await api.post('/documents', payload);
+      await refreshAll();
+
+      return {
+        success: true,
+        document: res.data.document
+      };
+    } catch (err) {
+      return asError(err, 'Could not upload document.');
+    }
   };
+
   const updateDocumentStatus = async (id, status) => {
-    try { await api.patch(`/documents/${id}/status`, { status }); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not update document status.'); }
+    try {
+      await api.patch(`/documents/${id}/status`, {
+        status
+      });
+
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not update document status.');
+    }
   };
+
   const deleteDocument = async (id) => {
-    try { await api.delete(`/documents/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not delete document.'); }
+    try {
+      await api.delete(`/documents/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(err, 'Could not delete document.');
+    }
   };
 
   // ===========================================================
@@ -741,21 +1232,37 @@ export const AppProvider = ({ children }) => {
   // ===========================================================
   const updateMyDirectoryProfile = async (payload) => {
     try {
-      await api.patch('/organizations/me/directory-profile', payload);
+      await api.patch(
+        '/organizations/me/directory-profile',
+        payload
+      );
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update organization profile.');
+      return asError(
+        err,
+        'Could not update organization profile.'
+      );
     }
   };
 
   const setMyCancellationRequest = async (cancel) => {
     try {
-      await api.patch('/organizations/me/cancellation', { cancel });
+      await api.patch(
+        '/organizations/me/cancellation',
+        { cancel }
+      );
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update cancellation request.');
+      return asError(
+        err,
+        'Could not update cancellation request.'
+      );
     }
   };
 
@@ -767,44 +1274,111 @@ export const AppProvider = ({ children }) => {
   const fetchDirectory = async (params = {}) => {
     try {
       const res = await api.get('/directory', { params });
+
       setDirectory(res.data.organizations);
-      return { success: true, organizations: res.data.organizations };
+
+      return {
+        success: true,
+        organizations: res.data.organizations
+      };
     } catch (err) {
-      return asError(err, 'Could not load the organization directory.');
+      return asError(
+        err,
+        'Could not load the organization directory.'
+      );
     }
   };
 
-  const createConnectionRequest = async (targetOrgId, message) => {
+  const createConnectionRequest = async (
+    targetOrgId,
+    message
+  ) => {
     try {
-      const res = await api.post('/connections', { targetOrgId, message });
+      const res = await api.post('/connections', {
+        targetOrgId,
+        message
+      });
+
       await refreshAll();
-      return { success: true, connection: res.data.connection };
+
+      return {
+        success: true,
+        connection: res.data.connection
+      };
     } catch (err) {
-      return asError(err, 'Could not send connection request.');
+      return asError(
+        err,
+        'Could not send connection request.'
+      );
     }
   };
+
   const respondToConnection = async (id, status) => {
-    try { await api.patch(`/connections/${id}/status`, { status }); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not respond to connection.'); }
+    try {
+      await api.patch(
+        `/connections/${id}/status`,
+        { status }
+      );
+
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(
+        err,
+        'Could not respond to connection.'
+      );
+    }
   };
+
   const withdrawConnection = async (id) => {
-    try { await api.delete(`/connections/${id}`); await refreshAll(); return { success: true }; }
-    catch (err) { return asError(err, 'Could not withdraw connection.'); }
+    try {
+      await api.delete(`/connections/${id}`);
+      await refreshAll();
+
+      return { success: true };
+    } catch (err) {
+      return asError(
+        err,
+        'Could not withdraw connection.'
+      );
+    }
   };
+
   const fetchConnectionMessages = async (id) => {
     try {
-      const res = await api.get(`/connections/${id}/messages`);
-      return { success: true, messages: res.data.messages };
+      const res = await api.get(
+        `/connections/${id}/messages`
+      );
+
+      return {
+        success: true,
+        messages: res.data.messages
+      };
     } catch (err) {
-      return asError(err, 'Could not load messages.');
+      return asError(
+        err,
+        'Could not load messages.'
+      );
     }
   };
+
   const sendConnectionMessage = async (id, message) => {
     try {
-      const res = await api.post(`/connections/${id}/messages`, { message });
-      return { success: true, message: res.data.message };
+      const res = await api.post(
+        `/connections/${id}/messages`,
+        { message }
+      );
+
+      return {
+        success: true,
+        message: res.data.message
+      };
     } catch (err) {
-      return asError(err, 'Could not send message.');
+      return asError(
+        err,
+        'Could not send message.'
+      );
     }
   };
 
@@ -818,9 +1392,16 @@ export const AppProvider = ({ children }) => {
   const fetchAuditLogs = async (params = {}) => {
     try {
       const res = await api.get('/audit-logs', { params });
-      return { success: true, logs: res.data.logs };
+
+      return {
+        success: true,
+        logs: res.data.logs
+      };
     } catch (err) {
-      return asError(err, 'Could not load audit logs.');
+      return asError(
+        err,
+        'Could not load audit logs.'
+      );
     }
   };
 
@@ -830,104 +1411,209 @@ export const AppProvider = ({ children }) => {
   const fetchPlatformSettings = async () => {
     try {
       const res = await api.get('/platform-settings');
-      return { success: true, settings: res.data.settings };
+
+      return {
+        success: true,
+        settings: res.data.settings
+      };
     } catch (err) {
-      return asError(err, 'Could not load platform settings.');
+      return asError(
+        err,
+        'Could not load platform settings.'
+      );
     }
   };
 
   const updatePlatformSetting = async (key, value) => {
     try {
-      await api.put(`/platform-settings/${key}`, { value });
+      await api.put(
+        `/platform-settings/${key}`,
+        { value }
+      );
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update setting.');
+      return asError(
+        err,
+        'Could not update setting.'
+      );
     }
   };
 
   // Role always has access; staff need an explicit grant for the section.
   const hasAccess = (sectionKey) =>
-    currentUser?.role === 'OrgAdmin' || currentUser?.role === 'SuperAdmin' || myPermissions.includes(sectionKey);
+    currentUser?.role === 'OrgAdmin' ||
+    currentUser?.role === 'SuperAdmin' ||
+    myPermissions.includes(sectionKey);
 
   // ===================
   // Analytics & Reports
   // ===================
   const getOrgAnalytics = async (range = 'weekly') => {
     try {
-      const res = await api.get('/analytics/org', { params: { range } });
-      return { success: true, data: res.data };
+      const res = await api.get('/analytics/org', {
+        params: { range }
+      });
+
+      return {
+        success: true,
+        data: res.data
+      };
     } catch (err) {
-      return asError(err, 'Could not load analytics.');
+      return asError(
+        err,
+        'Could not load analytics.'
+      );
     }
   };
 
   const getPlatformAnalytics = async (range = 'weekly') => {
     try {
-      const res = await api.get('/analytics/platform', { params: { range } });
-      return { success: true, data: res.data };
+      const res = await api.get('/analytics/platform', {
+        params: { range }
+      });
+
+      return {
+        success: true,
+        data: res.data
+      };
     } catch (err) {
-      return asError(err, 'Could not load platform analytics.');
+      return asError(
+        err,
+        'Could not load platform analytics.'
+      );
     }
   };
 
   // ===================
   // Task Operations
   // ===================
-  const createTask = async (title, description, assignedToId, priority, dueDate) => {
+  const createTask = async (
+    title,
+    description,
+    assignedToId,
+    priority,
+    dueDate
+  ) => {
     try {
-      await api.post('/tasks', { title, description, assignedToId, priority, dueDate });
+      await api.post('/tasks', {
+        title,
+        description,
+        assignedToId,
+        priority,
+        dueDate
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not create task.');
+      return asError(
+        err,
+        'Could not create task.'
+      );
     }
   };
 
-  const updateTaskStatus = async (taskId, newStatus) => {
+  const updateTaskStatus = async (
+    taskId,
+    newStatus
+  ) => {
     try {
-      await api.patch(`/tasks/${taskId}/status`, { status: newStatus });
+      await api.patch(
+        `/tasks/${taskId}/status`,
+        { status: newStatus }
+      );
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update task.');
+      return asError(
+        err,
+        'Could not update task.'
+      );
     }
   };
 
   // Task Comments / Discussion Thread
   const getTaskComments = async (taskId) => {
     try {
-      const res = await api.get(`/tasks/${taskId}/comments`);
-      return { success: true, comments: res.data.comments };
+      const res = await api.get(
+        `/tasks/${taskId}/comments`
+      );
+
+      return {
+        success: true,
+        comments: res.data.comments
+      };
     } catch (err) {
-      return asError(err, 'Could not load comments.');
+      return asError(
+        err,
+        'Could not load comments.'
+      );
     }
   };
 
-  const addTaskComment = async (taskId, message) => {
+  const addTaskComment = async (
+    taskId,
+    message
+  ) => {
     try {
-      const res = await api.post(`/tasks/${taskId}/comments`, { message });
+      const res = await api.post(
+        `/tasks/${taskId}/comments`,
+        { message }
+      );
+
       // Refresh in the background so unread badges elsewhere (task lists,
       // sidebar) update too - the modal itself updates instantly from the
       // returned comment without waiting on this.
       refreshAll();
-      return { success: true, comment: res.data.comment };
+
+      return {
+        success: true,
+        comment: res.data.comment
+      };
     } catch (err) {
-      return asError(err, 'Could not post comment.');
+      return asError(
+        err,
+        'Could not post comment.'
+      );
     }
   };
 
   const markTaskCommentsRead = async (taskId) => {
     try {
-      await api.patch(`/tasks/${taskId}/comments/read`);
+      await api.patch(
+        `/tasks/${taskId}/comments/read`
+      );
+
       // Silently sync the unread flag on the local task list too.
-      setTasks((prev) => prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const isAssignee = t.assignedToId === currentUser?.id;
-        return isAssignee ? { ...t, hasUnreadForAssignee: false } : { ...t, hasUnreadForAdmin: false };
-      }));
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== taskId) return t;
+
+          const isAssignee =
+            t.assignedToId === currentUser?.id;
+
+          return isAssignee
+            ? {
+                ...t,
+                hasUnreadForAssignee: false
+              }
+            : {
+                ...t,
+                hasUnreadForAdmin: false
+              };
+        })
+      );
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update read status.');
+      return asError(
+        err,
+        'Could not update read status.'
+      );
     }
   };
 
@@ -936,7 +1622,10 @@ export const AppProvider = ({ children }) => {
   // ===================
   const refreshDiscussionGroups = async () => {
     try {
-      const res = await api.get('/discussion-groups');
+      const res = await api.get(
+        '/discussion-groups'
+      );
+
       setDiscussionGroups(res.data.groups);
     } catch {
       // silent - the next poll cycle will retry
@@ -945,105 +1634,239 @@ export const AppProvider = ({ children }) => {
 
   const getGroupMessages = async (groupId) => {
     try {
-      const res = await api.get(`/discussion-groups/${groupId}/messages`);
-      return { success: true, messages: res.data.messages };
+      const res = await api.get(
+        `/discussion-groups/${groupId}/messages`
+      );
+
+      return {
+        success: true,
+        messages: res.data.messages
+      };
     } catch (err) {
-      return asError(err, 'Could not load messages.');
+      return asError(
+        err,
+        'Could not load messages.'
+      );
     }
   };
 
-  const sendGroupMessage = async (groupId, message) => {
+  const sendGroupMessage = async (
+    groupId,
+    message
+  ) => {
     try {
-      const res = await api.post(`/discussion-groups/${groupId}/messages`, { message });
+      const res = await api.post(
+        `/discussion-groups/${groupId}/messages`,
+        { message }
+      );
+
       // Lightweight refresh so the sidebar's unread/last-message preview
       // updates too - the chat pane itself updates instantly from the
       // returned message without waiting on this.
       refreshDiscussionGroups();
-      return { success: true, message: res.data.message };
+
+      return {
+        success: true,
+        message: res.data.message
+      };
     } catch (err) {
-      return asError(err, 'Could not send message.');
+      return asError(
+        err,
+        'Could not send message.'
+      );
     }
   };
 
   const markGroupRead = async (groupId) => {
     try {
-      await api.patch(`/discussion-groups/${groupId}/read`);
-      setDiscussionGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, unreadCount: 0 } : g)));
+      await api.patch(
+        `/discussion-groups/${groupId}/read`
+      );
+
+      setDiscussionGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                unreadCount: 0
+              }
+            : g
+        )
+      );
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update read status.');
+      return asError(
+        err,
+        'Could not update read status.'
+      );
     }
   };
 
-  const createDiscussionGroup = async (name, description, memberIds = []) => {
+  const createDiscussionGroup = async (
+    name,
+    description,
+    memberIds = []
+  ) => {
     try {
-      const res = await api.post('/discussion-groups', { name, description, memberIds });
+      const res = await api.post(
+        '/discussion-groups',
+        {
+          name,
+          description,
+          memberIds
+        }
+      );
+
       await refreshDiscussionGroups();
-      return { success: true, group: res.data.group };
+
+      return {
+        success: true,
+        group: res.data.group
+      };
     } catch (err) {
-      return asError(err, 'Could not create department.');
+      return asError(
+        err,
+        'Could not create department.'
+      );
     }
   };
 
-  const updateDiscussionGroup = async (groupId, updates) => {
+  const updateDiscussionGroup = async (
+    groupId,
+    updates
+  ) => {
     try {
-      const res = await api.patch(`/discussion-groups/${groupId}`, updates);
-      setDiscussionGroups((prev) => prev.map((g) => (g.id === groupId ? { ...g, ...res.data.group } : g)));
-      return { success: true, group: res.data.group };
+      const res = await api.patch(
+        `/discussion-groups/${groupId}`,
+        updates
+      );
+
+      setDiscussionGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId
+            ? {
+                ...g,
+                ...res.data.group
+              }
+            : g
+        )
+      );
+
+      return {
+        success: true,
+        group: res.data.group
+      };
     } catch (err) {
-      return asError(err, 'Could not update department.');
+      return asError(
+        err,
+        'Could not update department.'
+      );
     }
   };
 
-  const deleteDiscussionGroup = async (groupId) => {
+  const deleteDiscussionGroup = async (
+    groupId
+  ) => {
     try {
-      await api.delete(`/discussion-groups/${groupId}`);
-      setDiscussionGroups((prev) => prev.filter((g) => g.id !== groupId));
+      await api.delete(
+        `/discussion-groups/${groupId}`
+      );
+
+      setDiscussionGroups((prev) =>
+        prev.filter((g) => g.id !== groupId)
+      );
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not delete department.');
+      return asError(
+        err,
+        'Could not delete department.'
+      );
     }
   };
 
   const getGroupMembers = async (groupId) => {
     try {
-      const res = await api.get(`/discussion-groups/${groupId}/members`);
-      return { success: true, members: res.data.members };
+      const res = await api.get(
+        `/discussion-groups/${groupId}/members`
+      );
+
+      return {
+        success: true,
+        members: res.data.members
+      };
     } catch (err) {
-      return asError(err, 'Could not load members.');
+      return asError(
+        err,
+        'Could not load members.'
+      );
     }
   };
 
-  const addGroupMember = async (groupId, userId) => {
+  const addGroupMember = async (
+    groupId,
+    userId
+  ) => {
     try {
-      await api.post(`/discussion-groups/${groupId}/members`, { userId });
+      await api.post(
+        `/discussion-groups/${groupId}/members`,
+        { userId }
+      );
+
       await refreshDiscussionGroups();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not add member.');
+      return asError(
+        err,
+        'Could not add member.'
+      );
     }
   };
 
-  const removeGroupMember = async (groupId, userId) => {
+  const removeGroupMember = async (
+    groupId,
+    userId
+  ) => {
     try {
-      await api.delete(`/discussion-groups/${groupId}/members/${userId}`);
+      await api.delete(
+        `/discussion-groups/${groupId}/members/${userId}`
+      );
+
       await refreshDiscussionGroups();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not remove member.');
+      return asError(
+        err,
+        'Could not remove member.'
+      );
     }
   };
 
   // ===================
   // Availability Operations
   // ===================
-  const updateAvailability = async (campId, userId, status) => {
+  const updateAvailability = async (
+    campId,
+    userId,
+    status
+  ) => {
     try {
-      await api.post('/availability', { campId, status });
+      await api.post('/availability', {
+        campId,
+        status
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not update availability.');
+      return asError(
+        err,
+        'Could not update availability.'
+      );
     }
   };
 
@@ -1051,41 +1874,93 @@ export const AppProvider = ({ children }) => {
   // AI Prescription Voice-to-Text (Gemini)
   // ===================
   // audioBlob: a Blob recorded via the browser's MediaRecorder API
-  const transcribePrescription = async (audioBlob) => {
+  const transcribePrescription = async (
+    audioBlob
+  ) => {
     try {
       const formData = new FormData();
-      const extension = audioBlob.type.includes('ogg') ? 'ogg' : audioBlob.type.includes('wav') ? 'wav' : 'webm';
-      formData.append('audio', audioBlob, `dictation.${extension}`);
 
-      const res = await api.post('/prescriptions', formData, {
-        headers: { 'Content-Type': undefined }, // let the browser set the multipart boundary
-        timeout: 60000
-      });
+      const extension = audioBlob.type.includes('ogg')
+        ? 'ogg'
+        : audioBlob.type.includes('wav')
+          ? 'wav'
+          : 'webm';
 
-      setPrescriptions(prev => [res.data.prescription, ...prev]);
-      return { success: true, prescription: res.data.prescription };
+      formData.append(
+        'audio',
+        audioBlob,
+        `dictation.${extension}`
+      );
+
+      const res = await api.post(
+        '/prescriptions',
+        formData,
+        {
+          headers: {
+            'Content-Type': undefined
+          },
+          timeout: 60000
+        }
+      );
+
+      setPrescriptions((prev) => [
+        res.data.prescription,
+        ...prev
+      ]);
+
+      return {
+        success: true,
+        prescription: res.data.prescription
+      };
     } catch (err) {
-      return asError(err, 'AI transcription failed. Please try again.');
+      return asError(
+        err,
+        'AI transcription failed. Please try again.'
+      );
     }
   };
 
   // ===================
   // Admin Custom Alert / Announcements
   // ===================
-  const sendCustomAlert = async (title, message, targetRole, type) => {
+  const sendCustomAlert = async (
+    title,
+    message,
+    targetRole,
+    type
+  ) => {
     try {
-      await api.post('/notifications', { title, message, targetRole, type });
+      await api.post('/notifications', {
+        title,
+        message,
+        targetRole,
+        type
+      });
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not send notification.');
+      return asError(
+        err,
+        'Could not send notification.'
+      );
     }
   };
 
   // Convenience wrapper used by the Announcements section on every dashboard.
   // targetRole: 'All' | 'Employee' | 'Intern' | 'Volunteer' | 'Membership' | 'Executive Director'
-  const postAnnouncement = async (title, message, targetRole = 'All') => {
-    return sendCustomAlert(title, message, targetRole, 'Announcement');
+  const postAnnouncement = async (
+    title,
+    message,
+    targetRole = 'All'
+  ) => {
+    return sendCustomAlert(
+      title,
+      message,
+      targetRole,
+      'Announcement'
+    );
   };
 
   // ===================
@@ -1098,58 +1973,110 @@ export const AppProvider = ({ children }) => {
   // own payment page. On completion the gateway redirects back to
   // /payment/result. Card data is entered on the gateway's page and never
   // touches this app.
-  const payWithGateway = async (orgId, plan) => {
+  const payWithGateway = async (
+    orgId,
+    plan
+  ) => {
     try {
-      const res = await api.post('/payments/initiate', { orgId, plan });
-      const { postUrl, fields } = res.data;
+      const res = await api.post(
+        '/payments/initiate',
+        { orgId, plan }
+      );
 
-      const form = document.createElement('form');
+      const {
+        postUrl,
+        fields
+      } = res.data;
+
+      const form =
+        document.createElement('form');
+
       form.method = 'POST';
       form.action = postUrl;
 
-      Object.entries(fields).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value;
-        form.appendChild(input);
-      });
+      Object.entries(fields).forEach(
+        ([key, value]) => {
+          const input =
+            document.createElement('input');
+
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+
+          form.appendChild(input);
+        }
+      );
 
       document.body.appendChild(form);
       form.submit();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not start the payment gateway checkout.');
+      return asError(
+        err,
+        'Could not start the payment gateway checkout.'
+      );
     }
   };
 
   const getPayments = async () => {
     try {
       const res = await api.get('/payments');
-      return { success: true, payments: res.data.payments };
+
+      return {
+        success: true,
+        payments: res.data.payments
+      };
     } catch (err) {
-      return asError(err, 'Could not fetch payment history.');
+      return asError(
+        err,
+        'Could not fetch payment history.'
+      );
     }
   };
 
   // ===================
   // Billing dashboard (Super Admin overview + per-org audit history)
   // ===================
-  const getBillingOverview = async (filters = {}) => {
+  const getBillingOverview = async (
+    filters = {}
+  ) => {
     try {
-      const res = await api.get('/billing/overview', { params: filters });
-      return { success: true, organizations: res.data.organizations };
+      const res = await api.get(
+        '/billing/overview',
+        { params: filters }
+      );
+
+      return {
+        success: true,
+        organizations: res.data.organizations
+      };
     } catch (err) {
-      return asError(err, 'Could not fetch the billing overview.');
+      return asError(
+        err,
+        'Could not fetch the billing overview.'
+      );
     }
   };
 
-  const getOrgBillingHistory = async (orgId) => {
+  const getOrgBillingHistory = async (
+    orgId
+  ) => {
     try {
-      const res = await api.get(`/billing/organizations/${orgId}/history`);
-      return { success: true, events: res.data.events, payments: res.data.payments };
+      const res = await api.get(
+        `/billing/organizations/${orgId}/history`
+      );
+
+      return {
+        success: true,
+        events: res.data.events,
+        payments: res.data.payments
+      };
     } catch (err) {
-      return asError(err, 'Could not fetch billing history.');
+      return asError(
+        err,
+        'Could not fetch billing history.'
+      );
     }
   };
 
@@ -1160,167 +2087,339 @@ export const AppProvider = ({ children }) => {
   // Home page.
   const submitQuery = async (payload) => {
     try {
-      const res = await api.post('/queries', payload);
-      return { success: true, query: res.data.query };
+      const res = await api.post(
+        '/queries',
+        payload
+      );
+
+      return {
+        success: true,
+        query: res.data.query
+      };
     } catch (err) {
-      return asError(err, 'Could not submit your query. Please try again.');
+      return asError(
+        err,
+        'Could not submit your query. Please try again.'
+      );
     }
   };
 
-  const updateQueryStatus = async (queryId, status) => {
+  const updateQueryStatus = async (
+    queryId,
+    status
+  ) => {
     try {
-      const res = await api.patch(`/queries/${queryId}/status`, { status });
+      const res = await api.patch(
+        `/queries/${queryId}/status`,
+        { status }
+      );
+
       await refreshAll();
-      return { success: true, query: res.data.query };
+
+      return {
+        success: true,
+        query: res.data.query
+      };
     } catch (err) {
-      return asError(err, 'Could not update query status.');
+      return asError(
+        err,
+        'Could not update query status.'
+      );
     }
   };
 
-  const respondToQuery = async (queryId, message) => {
+  const respondToQuery = async (
+    queryId,
+    message
+  ) => {
     try {
-      const res = await api.post(`/queries/${queryId}/respond`, { message });
+      const res = await api.post(
+        `/queries/${queryId}/respond`,
+        { message }
+      );
+
       await refreshAll();
-      return { success: true, query: res.data.query, warning: res.data.warning };
+
+      return {
+        success: true,
+        query: res.data.query,
+        warning: res.data.warning
+      };
     } catch (err) {
-      return asError(err, 'Could not send the response.');
+      return asError(
+        err,
+        'Could not send the response.'
+      );
     }
   };
 
   // ===================
   // Event/Camp Public Visibility Requests
   // ===================
-  const requestVisibility = async (itemType, itemId) => {
+  const requestVisibility = async (
+    itemType,
+    itemId
+  ) => {
     try {
-      const res = await api.post('/visibility-requests', { itemType, itemId });
+      const res = await api.post(
+        '/visibility-requests',
+        {
+          itemType,
+          itemId
+        }
+      );
+
       await refreshAll();
-      return { success: true, item: res.data.item };
+
+      return {
+        success: true,
+        item: res.data.item
+      };
     } catch (err) {
-      return asError(err, 'Could not submit the visibility request.');
+      return asError(
+        err,
+        'Could not submit the visibility request.'
+      );
     }
   };
 
-  const reviewVisibilityRequest = async (itemType, itemId, decision, reason) => {
+  const reviewVisibilityRequest = async (
+    itemType,
+    itemId,
+    decision,
+    reason
+  ) => {
     try {
-      const res = await api.patch('/visibility-requests/review', { itemType, itemId, decision, reason });
+      const res = await api.patch(
+        '/visibility-requests/review',
+        {
+          itemType,
+          itemId,
+          decision,
+          reason
+        }
+      );
+
       await refreshAll();
-      return { success: true, item: res.data.item };
+
+      return {
+        success: true,
+        item: res.data.item
+      };
     } catch (err) {
-      return asError(err, 'Could not review the visibility request.');
+      return asError(
+        err,
+        'Could not review the visibility request.'
+      );
     }
   };
 
   // Public — no auth. Powers the Home Page "Events & Camps" section.
   const getPublicEventsAndCamps = async () => {
     try {
-      const res = await api.get('/public/events-camps');
-      return { success: true, items: res.data.items };
+      const res = await api.get(
+        '/public/events-camps'
+      );
+
+      return {
+        success: true,
+        items: res.data.items
+      };
     } catch (err) {
-      return asError(err, 'Could not load public events.');
+      return asError(
+        err,
+        'Could not load public events.'
+      );
     }
   };
 
   // ===================
   // Opportunity Management (Org Admin CRUD + public browse/apply)
   // ===================
-  const createOpportunity = async (payload) => {
+  const createOpportunity = async (
+    payload
+  ) => {
     try {
-      const res = await api.post('/opportunities', payload);
+      const res = await api.post(
+        '/opportunities',
+        payload
+      );
+
       await refreshAll();
-      return { success: true, opportunity: res.data.opportunity };
+
+      return {
+        success: true,
+        opportunity: res.data.opportunity
+      };
     } catch (err) {
-      return asError(err, 'Could not create opportunity.');
+      return asError(
+        err,
+        'Could not create opportunity.'
+      );
     }
   };
 
-  const updateOpportunity = async (id, payload) => {
+  const updateOpportunity = async (
+    id,
+    payload
+  ) => {
     try {
-      const res = await api.patch(`/opportunities/${id}`, payload);
+      const res = await api.patch(
+        `/opportunities/${id}`,
+        payload
+      );
+
       await refreshAll();
-      return { success: true, opportunity: res.data.opportunity };
+
+      return {
+        success: true,
+        opportunity: res.data.opportunity
+      };
     } catch (err) {
-      return asError(err, 'Could not update opportunity.');
+      return asError(
+        err,
+        'Could not update opportunity.'
+      );
     }
   };
 
-
-
-
-
-  const deleteOpportunity = async (id) => {
+  const deleteOpportunity = async (
+    id
+  ) => {
     try {
-      await api.delete(`/opportunities/${id}`);
+      await api.delete(
+        `/opportunities/${id}`
+      );
+
       await refreshAll();
+
       return { success: true };
     } catch (err) {
-      return asError(err, 'Could not delete opportunity.');
+      return asError(
+        err,
+        'Could not delete opportunity.'
+      );
     }
   };
 
-  const getOpportunityApplications = async (id) => {
+  const getOpportunityApplications = async (
+    id
+  ) => {
     try {
-      const res = await api.get(`/opportunities/${id}/applications`);
-      return { success: true, applications: res.data.applications };
+      const res = await api.get(
+        `/opportunities/${id}/applications`
+      );
+
+      return {
+        success: true,
+        applications: res.data.applications
+      };
     } catch (err) {
-      return asError(err, 'Could not load applications.');
+      return asError(
+        err,
+        'Could not load applications.'
+      );
     }
   };
 
   // Public — no auth. Home Page Opportunities browsing/apply.
   const getPublicOpportunities = async () => {
     try {
-      const res = await api.get('/public/opportunities');
-      return { success: true, opportunities: res.data.opportunities };
+      const res = await api.get(
+        '/public/opportunities'
+      );
+
+      return {
+        success: true,
+        opportunities: res.data.opportunities
+      };
     } catch (err) {
-      return asError(err, 'Could not load opportunities.');
+      return asError(
+        err,
+        'Could not load opportunities.'
+      );
     }
   };
 
-  const getPublicOpportunityById = async (id) => {
+  const getPublicOpportunityById = async (
+    id
+  ) => {
     try {
-      const res = await api.get(`/public/opportunities/${id}`);
-      return { success: true, opportunity: res.data.opportunity };
+      const res = await api.get(
+        `/public/opportunities/${id}`
+      );
+
+      return {
+        success: true,
+        opportunity: res.data.opportunity
+      };
     } catch (err) {
-      return asError(err, 'Could not load opportunity.');
+      return asError(
+        err,
+        'Could not load opportunity.'
+      );
     }
   };
-
 
   const getMyProjectAssignments = async () => {
-  try {
-    const res = await api.get('/projects/my/assignments');
-
-    return {
-      success: true,
-      projects: res.data.projects || []
-    };
-  } catch (err) {
-    return asError(err, 'Could not load project assignments.');
-  }
-};
-
-const updateProjectAssignmentStatus = async (projectId, status) => {
-  try {
-    const res = await api.patch(
-      `/projects/${projectId}/assignment-status`,
-      { status }
-    );
-
-    return {
-      success: true,
-      assignment: res.data.assignment
-    };
-  } catch (err) {
-    return asError(err, 'Could not update project status.');
-  }
-};
-
-  const applyToOpportunity = async (id, payload) => {
     try {
-      const res = await api.post(`/public/opportunities/${id}/apply`, payload);
-      return { success: true, application: res.data.application };
+      const res = await api.get(
+        '/projects/my/assignments'
+      );
+
+      return {
+        success: true,
+        projects: res.data.projects || []
+      };
     } catch (err) {
-      return asError(err, 'Could not submit your application.');
+      return asError(
+        err,
+        'Could not load project assignments.'
+      );
+    }
+  };
+
+  const updateProjectAssignmentStatus = async (
+    projectId,
+    status
+  ) => {
+    try {
+      const res = await api.patch(
+        `/projects/${projectId}/assignment-status`,
+        { status }
+      );
+
+      return {
+        success: true,
+        assignment: res.data.assignment
+      };
+    } catch (err) {
+      return asError(
+        err,
+        'Could not update project status.'
+      );
+    }
+  };
+
+  const applyToOpportunity = async (
+    id,
+    payload
+  ) => {
+    try {
+      const res = await api.post(
+        `/public/opportunities/${id}/apply`,
+        payload
+      );
+
+      return {
+        success: true,
+        application: res.data.application
+      };
+    } catch (err) {
+      return asError(
+        err,
+        'Could not submit your application.'
+      );
     }
   };
 
@@ -1332,7 +2431,15 @@ const updateProjectAssignmentStatus = async (projectId, status) => {
       events,
       meetings,
       tasks,
+
+      // Notifications
       notifications,
+      readNotificationIds,
+      unreadNotifications,
+      markNotificationAsRead,
+      markAllNotificationsAsRead,
+      isNotificationRead,
+
       availability,
       prescriptions,
       discussionGroups,

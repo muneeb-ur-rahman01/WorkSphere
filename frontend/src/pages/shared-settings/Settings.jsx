@@ -21,6 +21,36 @@ const Settings = () => {
     setSuccess('');
   };
 
+  const getPasswordStrength = (password) => {
+    if (!password) {
+      return { label: '', width: '0%' };
+    }
+
+    let score = 0;
+
+    if (password.length >= 6) score++;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 1) {
+      return { label: 'Weak', width: '25%' };
+    }
+
+    if (score === 2) {
+      return { label: 'Moderate', width: '50%' };
+    }
+
+    if (score === 3 || score === 4) {
+      return { label: 'Good', width: '75%' };
+    }
+
+    return { label: 'Perfect', width: '100%' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.newPassword);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -100,6 +130,7 @@ const Settings = () => {
               {error}
             </div>
           )}
+
           {success && (
             <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
               <ShieldCheck size={16} />
@@ -127,15 +158,58 @@ const Settings = () => {
               <label className="block text-sm font-semibold text-black mb-2">
                 New Password
               </label>
+
               <input
                 type="password"
                 name="newPassword"
                 value={formData.newPassword}
                 onChange={handleChange}
-                placeholder="Minimum 6 characters"
+                minLength={16}
+                maxLength={16}
+                placeholder="Exactly 8 characters"
                 className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
+
+              {/* Password Strength */}
+              {formData.newPassword && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-gray-500">
+                      Password strength
+                    </span>
+
+                    <span
+                      className={`text-xs font-bold ${
+                        passwordStrength.label === 'Weak'
+                          ? 'text-red-500'
+                          : passwordStrength.label === 'Moderate'
+                          ? 'text-orange-500'
+                          : passwordStrength.label === 'Good'
+                          ? 'text-blue-600'
+                          : 'text-green-600'
+                      }`}
+                    >
+                      {passwordStrength.label}
+                    </span>
+                  </div>
+
+                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-300 ${
+                        passwordStrength.label === 'Weak'
+                          ? 'bg-red-500'
+                          : passwordStrength.label === 'Moderate'
+                          ? 'bg-orange-500'
+                          : passwordStrength.label === 'Good'
+                          ? 'bg-blue-600'
+                          : 'bg-green-600'
+                      }`}
+                      style={{ width: passwordStrength.width }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="mb-6">

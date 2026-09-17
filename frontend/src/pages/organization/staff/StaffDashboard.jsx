@@ -19,8 +19,7 @@ import {
   AlertCircle,
   RefreshCw,
   CheckCircle2,
-  PlayCircle,
-  XCircle
+  PlayCircle
 } from 'lucide-react';
 
 const StaffDashboard = () => {
@@ -34,6 +33,7 @@ const StaffDashboard = () => {
     notifications,
     organizations,
     meetings,
+    events,
 
     // PROJECTS
     getMyProjectAssignments,
@@ -72,6 +72,21 @@ const StaffDashboard = () => {
   const upcomingCamps = camps.filter(
     (c) => c.status === 'Upcoming'
   );
+
+  // =========================
+  // EVENTS
+  // =========================
+  const upcomingEvents = (events || [])
+    .filter(
+      (e) =>
+        e.orgId === currentUser?.orgId &&
+        e.status === 'Upcoming'
+    )
+    .sort((a, b) =>
+      (a.date + (a.time || '')).localeCompare(
+        b.date + (b.time || '')
+      )
+    );
 
   // =========================
   // MEETINGS
@@ -809,6 +824,59 @@ const StaffDashboard = () => {
 
             </div>
 
+            {/* ===================================== */}
+            {/* NOTIFICATIONS */}
+            {/* ===================================== */}
+
+            {/* <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+
+              <div className="flex items-center gap-2 mb-4">
+
+                <div className="bg-gradient-to-br from-slate-500 to-slate-700 text-white rounded-lg p-1.5">
+                  <Bell size={16} />
+                </div>
+
+                <h2 className="text-lg font-semibold">
+                  Notifications
+                </h2>
+
+              </div>
+
+              <div className="space-y-3">
+
+                {myNotifications.length > 0 ? (
+
+                  myNotifications.map((n) => (
+
+                    <div
+                      key={n.id}
+                      className="p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition"
+                    >
+
+                      <p className="font-medium text-sm text-gray-900">
+                        {n.title}
+                      </p>
+
+                      <p className="text-xs text-gray-500 mt-1">
+                        {n.message}
+                      </p>
+
+                    </div>
+
+                  ))
+
+                ) : (
+
+                  <p className="text-sm text-gray-400 text-center py-6">
+                    No notifications
+                  </p>
+
+                )}
+
+              </div>
+
+            </div> */}
+
           </div>
 
           {/* ======================================= */}
@@ -964,6 +1032,109 @@ const StaffDashboard = () => {
             </div>
 
             {/* ===================================== */}
+            {/* UPCOMING EVENTS */}
+            {/* ===================================== */}
+
+            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+
+              <div className="flex items-center gap-2 mb-4">
+
+                <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-lg p-1.5">
+                  <Calendar size={16} />
+                </div>
+
+                <h2 className="text-lg font-semibold">
+                  Upcoming Events
+                </h2>
+
+              </div>
+
+              <div className="space-y-3">
+
+                {upcomingEvents.length > 0 ? (
+
+                  upcomingEvents.map((event) => (
+
+                    <div
+                      key={event.id}
+                      className="border border-gray-100 rounded-xl p-4 bg-gray-50 hover:shadow-sm transition"
+                    >
+
+                      <div className="flex items-start justify-between gap-2">
+
+                        <h3 className="font-medium text-gray-900">
+                          {event.title}
+                        </h3>
+
+                        {event.eventType && (
+                          <span className="text-xs font-semibold text-orange-700 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5 shrink-0">
+                            {event.eventType}
+                          </span>
+                        )}
+
+                      </div>
+
+                      {event.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                          {event.description}
+                        </p>
+                      )}
+
+                      <div className="mt-3 space-y-1.5">
+
+                        {event.date && (
+                          <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                            <Calendar size={12} />
+                            {formatDMY(event.date)}
+
+                            {event.time && (
+                              <>
+                                <span>•</span>
+                                <Clock size={12} />
+                                {formatTime(event.time)}
+                              </>
+                            )}
+                          </p>
+                        )}
+
+                        {event.location && (
+                          <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                            <MapPin size={12} />
+                            {event.location}
+                          </p>
+                        )}
+
+                      </div>
+
+                      {event.link && (
+                        <a
+                          href={event.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 mt-3 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline w-fit"
+                        >
+                          <ExternalLink size={12} />
+                          View Event
+                        </a>
+                      )}
+
+                    </div>
+
+                  ))
+
+                ) : (
+
+                  <p className="text-sm text-gray-400 text-center py-6">
+                    No upcoming events
+                  </p>
+
+                )}
+
+              </div>
+
+            </div>
+
+            {/* ===================================== */}
             {/* UPCOMING MEETINGS */}
             {/* ===================================== */}
 
@@ -1054,59 +1225,6 @@ const StaffDashboard = () => {
 
                   <p className="text-sm text-gray-400 text-center py-6">
                     No upcoming meetings
-                  </p>
-
-                )}
-
-              </div>
-
-            </div>
-
-            {/* ===================================== */}
-            {/* NOTIFICATIONS */}
-            {/* ===================================== */}
-
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <div className="bg-gradient-to-br from-slate-500 to-slate-700 text-white rounded-lg p-1.5">
-                  <Bell size={16} />
-                </div>
-
-                <h2 className="text-lg font-semibold">
-                  Notifications
-                </h2>
-
-              </div>
-
-              <div className="space-y-3">
-
-                {myNotifications.length > 0 ? (
-
-                  myNotifications.map((n) => (
-
-                    <div
-                      key={n.id}
-                      className="p-3 rounded-xl border border-gray-100 bg-gray-50 hover:bg-gray-100 transition"
-                    >
-
-                      <p className="font-medium text-sm text-gray-900">
-                        {n.title}
-                      </p>
-
-                      <p className="text-xs text-gray-500 mt-1">
-                        {n.message}
-                      </p>
-
-                    </div>
-
-                  ))
-
-                ) : (
-
-                  <p className="text-sm text-gray-400 text-center py-6">
-                    No notifications
                   </p>
 
                 )}

@@ -166,7 +166,7 @@ const PublicLayout = ({ children }) => {
               to="/register-org"
               className="px-4 py-2 rounded-lg border border-white text-white text-sm font-bold hover:bg-white hover:text-indigo-600 transition whitespace-nowrap"
             >
-              Register NGO
+              Register workspace
             </Link>
           </>
         )}
