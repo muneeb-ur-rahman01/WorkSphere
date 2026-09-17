@@ -771,103 +771,91 @@ const registerStaff = async ({
 |--------------------------------------------------------------------------
 */
 
-const changePassword = async ({
-  userId,
-  currentPassword,
-  newPassword
-}) => {
-  if (!currentPassword || !newPassword) {
-    return {
-      status: 400,
-      body: {
-        success: false,
-        error:
-          'Please provide your current and new password.'
-      }
-    };
-  }
+      const changePassword = async ({
+        userId,
+        currentPassword,
+        newPassword
+      }) => {
+        if (!currentPassword || !newPassword) {
+          return {
+            status: 400,
+            body: {
+              success: false,
+              error: 'Please provide your current and new password.'
+            }
+          };
+        }
 
-  if (
-    newPassword.length < 6 ||
-    newPassword.length > 8
-  ) {
-    return {
-      status: 400,
-      body: {
-        success: false,
-        error:
-          'New password must be between 6 and 8 characters.'
-      }
-    };
-  }
+        // Exactly 16 characters
+        if (newPassword.length !== 16) {
+          return {
+            status: 400,
+            body: {
+              success: false,
+              error: 'New password must be exactly 16 characters.'
+            }
+          };
+        }
 
-  const {
-    data: user,
-    error
-  } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single();
+        const {
+          data: user,
+          error
+        } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single();
 
-  if (error || !user) {
-    return {
-      status: 404,
-      body: {
-        success: false,
-        error: 'User not found.'
-      }
-    };
-  }
+        if (error || !user) {
+          return {
+            status: 404,
+            body: {
+              success: false,
+              error: 'User not found.'
+            }
+          };
+        }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Verify current password
-  |--------------------------------------------------------------------------
-  */
+        const match = await bcrypt.compare(
+          currentPassword,
+          user.password_hash
+        );
 
-  const match = await bcrypt.compare(
-    currentPassword,
-    user.password_hash
-  );
+        if (!match) {
+          return {
+            status: 401,
+            body: {
+              success: false,
+              error: 'Current password is incorrect.'
+            }
+          };
+        }
 
-  if (!match) {
-    return {
-      status: 401,
-      body: {
-        success: false,
-        error:
-          'Current password is incorrect.'
-      }
-    };
-  }
+        const newHash = await bcrypt.hash(newPassword, 10);
 
-  const newHash =
-    await bcrypt.hash(newPassword, 10);
+        const {
+          error: updateErr
+        } = await supabase
+          .from('users')
+          .update({
+            password_hash: newHash
+          })
+          .eq('id', user.id);
 
-  const {
-    error: updateErr
-  } = await supabase
-    .from('users')
-    .update({
-      password_hash: newHash
-    })
-    .eq('id', user.id);
+        if (updateErr) {
+          throw new Error(
+            'Could not update password. Please try again.'
+          );
+        }
 
-  if (updateErr) {
-    throw new Error(
-      'Could not update password. Please try again.'
-    );
-  }
-
-  return {
-    status: 200,
-    body: {
-      success: true,
-      message: 'Password updated successfully.'
-    }
-  };
-};
+        return {
+          status: 200,
+          body: {
+            success: true,
+            message: 'Password updated successfully.'
+          }
+        };
+      };
 
 /*
 |--------------------------------------------------------------------------

@@ -260,7 +260,7 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  maxLength={8}
+                  maxLength={16}
                   className="w-full px-4 py-3 pr-12 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   required
                 />

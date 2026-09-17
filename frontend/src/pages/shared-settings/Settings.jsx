@@ -60,8 +60,8 @@ const Settings = () => {
       setError('Please fill in all fields.');
       return;
     }
-    if (formData.newPassword.length < 6) {
-      setError('New password must be at least 6 characters.');
+    if (formData.newPassword.length !== 16) {
+      setError('New password must be exactly 16 characters.');
       return;
     }
     if (formData.newPassword !== formData.confirmPassword) {
@@ -166,7 +166,7 @@ const Settings = () => {
                 onChange={handleChange}
                 minLength={16}
                 maxLength={16}
-                placeholder="Exactly 8 characters"
+                placeholder="Exactly 16 characters"
                 className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -221,6 +221,8 @@ const Settings = () => {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                minLength={16}
+                maxLength={16}
                 placeholder="Re-enter new password"
                 className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
