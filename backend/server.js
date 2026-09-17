@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const net = require('net');
 
 const authRoutes = require('./routes/authRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
@@ -214,4 +215,34 @@ app.listen(PORT, () => {
       )
     );
   }, 60 * 60 * 1000);
+});
+
+// ============================================================
+// TEMPORARY SMTP CONNECTIVITY TEST
+// Remove this after testing
+// ============================================================
+
+
+const socket = net.createConnection({
+  host: '142.250.4.109',
+  port: 587,
+  family: 4,
+  timeout: 10000
+});
+
+socket.on('connect', () => {
+  console.log('[SMTP TEST] IPv4 port 587 CONNECTED');
+  socket.destroy();
+});
+
+socket.on('timeout', () => {
+  console.log('[SMTP TEST] IPv4 port 587 TIMEOUT');
+  socket.destroy();
+});
+
+socket.on('error', (err) => {
+  console.log('[SMTP TEST] IPv4 ERROR:', {
+    code: err.code,
+    message: err.message
+  });
 });
