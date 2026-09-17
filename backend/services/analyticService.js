@@ -3,6 +3,7 @@ const supabase = require('../config/supabase');
 const {
   VALID_RANGES,
   getBuckets,
+  getRowDate,
   countInRange,
   countBefore,
   countByKey
@@ -22,27 +23,50 @@ const EXTRA_MODULES = [
   { key: 'projects', label: 'Projects' },
   { key: 'campaigns', label: 'Campaigns' },
   { key: 'donors', label: 'Donors' },
-  { key: 'donations', label: 'Donations', amountField: 'amount' },
+  {
+    key: 'donations',
+    label: 'Donations',
+    amountField: 'amount'
+  },
   { key: 'sponsors', label: 'Sponsors' },
-  { key: 'sponsorships', label: 'Sponsorships', amountField: 'amount' },
+  {
+    key: 'sponsorships',
+    label: 'Sponsorships',
+    amountField: 'amount'
+  },
   { key: 'partners', label: 'Partners' },
   { key: 'beneficiaries', label: 'Beneficiaries' },
-  { key: 'expenses', label: 'Expenses', amountField: 'amount' },
+  {
+    key: 'expenses',
+    label: 'Expenses',
+    amountField: 'amount'
+  },
   { key: 'documents', label: 'Documents' }
 ];
 
 const normalizeRange = (range) => {
-  return VALID_RANGES.includes(range) ? range : 'weekly';
+  return VALID_RANGES.includes(range)
+    ? range
+    : 'weekly';
 };
 
 const capitalize = (value = '') => {
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return (
+    String(value).charAt(0).toUpperCase() +
+    String(value).slice(1)
+  );
 };
 
-const sumAmount = (rows = [], field = 'amount') => {
+const sumAmount = (
+  rows = [],
+  field = 'amount'
+) => {
   return rows.reduce((total, row) => {
     const value = Number(row?.[field] || 0);
-    return total + (Number.isFinite(value) ? value : 0);
+
+    return Number.isFinite(value)
+      ? total + value
+      : total;
   }, 0);
 };
 
@@ -59,13 +83,13 @@ const sumAmountInRange = (
       return total;
     }
 
-    const date = new Date(row.created_at);
+    const date = getRowDate(row);
 
-    if (
-      Number.isNaN(date.getTime()) ||
-      date < start ||
-      date > end
-    ) {
+    if (!date) {
+      return total;
+    }
+
+    if (date < start || date >= end) {
       return total;
     }
 
@@ -73,240 +97,497 @@ const sumAmountInRange = (
   }, 0);
 };
 
-const getOrgAnalytics = async ({ orgId, range = 'weekly' }) => {
-  if (!orgId) {
+// ============================================================
+// ORGANIZATION ANALYTICS
+// ============================================================
+
+const getOrgAnalytics = async ({
+  orgId,
+  organizationId,
+  range = 'weekly'
+}) => {
+  const finalOrgId =
+    orgId || organizationId;
+
+  if (!finalOrgId) {
     throw new Error('Organization ID is missing.');
   }
 
-  const normalizedRange = normalizeRange(range);
-  const buckets = getBuckets(normalizedRange);
+  const normalizedRange =
+    normalizeRange(range);
+
+  const buckets =
+    getBuckets(normalizedRange);
+
+  const rangeStart =
+    buckets[0]?.start;
+
+  const rangeEnd =
+    buckets[buckets.length - 1]?.end;
+
+  console.log(
+    '[Analytics] Organization:',
+    finalOrgId
+  );
+
+  console.log(
+    '[Analytics] Range:',
+    normalizedRange
+  );
+
+  // ============================================================
+  // FETCH CORE DATA
+  // ============================================================
 
   const [
     campsRes,
     eventsRes,
     usersRes,
-    tasksRes,
-    ...extraResults
+    tasksRes
   ] = await Promise.all([
     supabase
       .from('camps')
       .select('*')
-      .eq('org_id', orgId),
+      .eq('org_id', finalOrgId),
 
     supabase
       .from('events')
       .select('*')
-      .eq('org_id', orgId),
+      .eq('org_id', finalOrgId),
 
     supabase
       .from('users')
       .select('*')
-      .eq('org_id', orgId),
+      .eq('org_id', finalOrgId),
 
     supabase
       .from('tasks')
       .select('*')
-      .eq('org_id', orgId),
-
-    ...EXTRA_MODULES.map((module) =>
-      supabase
-        .from(module.key)
-        .select('*')
-        .eq('org_id', orgId)
-    )
+      .eq('org_id', finalOrgId)
   ]);
 
-  const responses = [
+  const coreResponses = [
     campsRes,
     eventsRes,
     usersRes,
-    tasksRes,
-    ...extraResults
+    tasksRes
   ];
 
-  const failedResponse = responses.find((result) => result.error);
+  const failedCoreResponse =
+    coreResponses.find(
+      (result) => result.error
+    );
 
-  if (failedResponse) {
-    throw new Error(failedResponse.error.message);
+  if (failedCoreResponse) {
+    console.error(
+      '[Analytics] Core Supabase error:',
+      failedCoreResponse.error
+    );
+
+    throw new Error(
+      failedCoreResponse.error.message
+    );
   }
 
-  const camps = campsRes.data || [];
-  const events = eventsRes.data || [];
+  const camps =
+    campsRes.data || [];
 
-  const users = (usersRes.data || []).filter(
-    (user) => user.role !== 'OrgAdmin'
+  const events =
+    eventsRes.data || [];
+
+  // IMPORTANT:
+  // Do NOT remove OrgAdmin here.
+  // Total Users should represent all users
+  // belonging to this organization.
+  const users =
+    usersRes.data || [];
+
+  const tasks =
+    tasksRes.data || [];
+
+  console.log(
+    '[Analytics] Raw organization data:',
+    {
+      orgId: finalOrgId,
+      camps: camps.length,
+      events: events.length,
+      users: users.length,
+      tasks: tasks.length
+    }
   );
 
-  const tasks = tasksRes.data || [];
+  // ============================================================
+  // FETCH EXTRA MODULES
+  // ============================================================
+
+  const extraResults = await Promise.all(
+    EXTRA_MODULES.map(async (module) => {
+      try {
+        const result = await supabase
+          .from(module.key)
+          .select('*')
+          .eq('org_id', finalOrgId);
+
+        if (result.error) {
+          console.warn(
+            `[Analytics] ${module.key} query failed:`,
+            result.error.message
+          );
+
+          return {
+            key: module.key,
+            data: []
+          };
+        }
+
+        return {
+          key: module.key,
+          data: result.data || []
+        };
+      } catch (error) {
+        console.warn(
+          `[Analytics] ${module.key} query exception:`,
+          error.message
+        );
+
+        return {
+          key: module.key,
+          data: []
+        };
+      }
+    })
+  );
 
   const extraData = {};
 
-  EXTRA_MODULES.forEach((module, index) => {
-    extraData[module.key] = extraResults[index].data || [];
+  extraResults.forEach((result) => {
+    extraData[result.key] =
+      result.data || [];
+
+    console.log(
+      `[Analytics] ${result.key}:`,
+      extraData[result.key].length
+    );
   });
 
-  /*
-   * ----------------------------------------
-   * KPI COUNTS
-   * ----------------------------------------
-   */
+  // ============================================================
+  // BASIC PERIOD COUNTS
+  // ============================================================
 
-  const kpis = {
-    camps: {
-      total: camps.length,
-      current: countInRange(camps, normalizedRange),
-      previous: countBefore(camps, normalizedRange)
-    },
+  const periodCamps =
+    countInRange(
+      camps,
+      rangeStart,
+      rangeEnd
+    );
 
-    events: {
-      total: events.length,
-      current: countInRange(events, normalizedRange),
-      previous: countBefore(events, normalizedRange)
-    },
+  const periodEvents =
+    countInRange(
+      events,
+      rangeStart,
+      rangeEnd
+    );
 
-    users: {
-      total: users.length,
-      current: countInRange(users, normalizedRange),
-      previous: countBefore(users, normalizedRange)
-    },
+  const periodNewUsers =
+    countInRange(
+      users,
+      rangeStart,
+      rangeEnd
+    );
 
-    tasks: {
-      total: tasks.length,
-      current: countInRange(tasks, normalizedRange),
-      previous: countBefore(tasks, normalizedRange)
-    }
-  };
+  const periodTasks =
+    countInRange(
+      tasks,
+      rangeStart,
+      rangeEnd
+    );
 
-  /*
-   * ----------------------------------------
-   * EXTRA MODULE KPIs
-   * ----------------------------------------
-   */
+  // Keep variable used for consistency.
+  void periodTasks;
+
+  // ============================================================
+  // USER STATUS
+  // ============================================================
+
+  const activeUsers =
+    users.filter((user) => {
+      const status =
+        String(user?.status || '')
+          .trim()
+          .toLowerCase();
+
+      return (
+        status === 'active' ||
+        status === 'approved'
+      );
+    }).length;
+
+  const pendingUsers =
+    users.filter((user) => {
+      const status =
+        String(user?.status || '')
+          .trim()
+          .toLowerCase();
+
+      return status === 'pending';
+    }).length;
+
+  // ============================================================
+  // TASK COMPLETION
+  // ============================================================
+
+  const completedTasks =
+    tasks.filter((task) => {
+      const status =
+        String(task?.status || '')
+          .trim()
+          .toLowerCase();
+
+      return (
+        status === 'completed' ||
+        status === 'complete'
+      );
+    }).length;
+
+  const taskCompletionRate =
+    tasks.length > 0
+      ? Math.round(
+          (completedTasks / tasks.length) * 100
+        )
+      : 0;
+
+  // ============================================================
+  // EXTRA MODULE KPI DATA
+  // ============================================================
+
+  const extraKpis = {};
 
   EXTRA_MODULES.forEach((module) => {
-    const rows = extraData[module.key];
+    const rows =
+      extraData[module.key] || [];
+
+    const capitalizedKey =
+      capitalize(module.key);
+
+    const totalKey =
+      `total${capitalizedKey}`;
+
+    const periodKey =
+      `period${capitalizedKey}`;
+
+    extraKpis[totalKey] =
+      rows.length;
+
+    extraKpis[periodKey] =
+      countInRange(
+        rows,
+        rangeStart,
+        rangeEnd
+      );
 
     if (module.amountField) {
-      kpis[module.key] = {
-        total: rows.length,
-        current: countInRange(rows, normalizedRange),
-        previous: countBefore(rows, normalizedRange),
-        amount: sumAmount(rows, module.amountField)
-      };
-    } else {
-      kpis[module.key] = {
-        total: rows.length,
-        current: countInRange(rows, normalizedRange),
-        previous: countBefore(rows, normalizedRange)
-      };
+      const totalAmountKey =
+        `total${capitalizedKey}Amount`;
+
+      const periodAmountKey =
+        `period${capitalizedKey}Amount`;
+
+      extraKpis[totalAmountKey] =
+        sumAmount(
+          rows,
+          module.amountField
+        );
+
+      extraKpis[periodAmountKey] =
+        sumAmountInRange(
+          rows,
+          module.amountField,
+          rangeStart,
+          rangeEnd
+        );
     }
   });
 
-  /*
-   * ----------------------------------------
-   * TREND
-   * ----------------------------------------
-   */
+  // ============================================================
+  // FINAL KPI STRUCTURE
+  // ============================================================
 
-  const trend = buckets.map((bucket) => {
-    const start = bucket.start;
-    const end = bucket.end;
+  const kpis = {
+    totalCamps:
+      camps.length,
 
-    const item = {
-      label: bucket.label,
+    periodCamps,
 
-      camps: camps.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length,
+    totalEvents:
+      events.length,
 
-      events: events.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length,
+    periodEvents,
 
-      users: users.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length,
+    totalUsers:
+      users.length,
 
-      tasks: tasks.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length
-    };
+    activeUsers,
 
-    EXTRA_MODULES.forEach((module) => {
-      const rows = extraData[module.key];
+    pendingUsers,
 
-      item[module.key] = rows.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length;
+    periodNewUsers,
 
-      if (module.amountField) {
-        item[`${module.key}Amount`] = sumAmountInRange(
-          rows,
-          module.amountField,
-          start,
-          end
-        );
-      }
+    totalTasks:
+      tasks.length,
+
+    completedTasks,
+
+    taskCompletionRate,
+
+    ...extraKpis
+  };
+
+  // ============================================================
+  // TREND
+  // ============================================================
+
+  const trend =
+    buckets.map((bucket) => {
+      const item = {
+        label: bucket.label,
+
+        camps:
+          countInRange(
+            camps,
+            bucket.start,
+            bucket.end
+          ),
+
+        events:
+          countInRange(
+            events,
+            bucket.start,
+            bucket.end
+          ),
+
+        newUsers:
+          countInRange(
+            users,
+            bucket.start,
+            bucket.end
+          ),
+
+        // Cumulative users up to this bucket.
+        totalUsers:
+          users.filter((user) => {
+            const date =
+              getRowDate(user);
+
+            return (
+              date &&
+              date < bucket.end
+            );
+          }).length
+      };
+
+      EXTRA_MODULES.forEach((module) => {
+        const rows =
+          extraData[module.key] || [];
+
+        item[module.key] =
+          countInRange(
+            rows,
+            bucket.start,
+            bucket.end
+          );
+
+        if (module.amountField) {
+          item[`${module.key}Amount`] =
+            sumAmountInRange(
+              rows,
+              module.amountField,
+              bucket.start,
+              bucket.end
+            );
+        }
+      });
+
+      return item;
     });
 
-    return item;
-  });
+  // ============================================================
+  // PERSONNEL BY ROLE
+  // ============================================================
 
-  /*
-   * ----------------------------------------
-   * PERSONNEL BY ROLE
-   * ----------------------------------------
-   */
+  const personnelByRole =
+    STAFF_ROLES.map((role) => ({
+      key: role,
+      count:
+        users.filter(
+          (user) =>
+            String(user?.role || '')
+              .trim()
+              .toLowerCase() ===
+            role.toLowerCase()
+        ).length
+    }));
 
-  const personnelByRole = STAFF_ROLES.map((role) => ({
-    role,
-    count: users.filter((user) => user.role === role).length
-  }));
+  // ============================================================
+  // EVENTS BY TYPE
+  // ============================================================
 
-  /*
-   * ----------------------------------------
-   * EVENTS BY TYPE
-   * ----------------------------------------
-   */
+  const eventsByType =
+    countByKey(
+      events,
+      'type'
+    );
 
-  const eventsByType = Object.entries(
-    countByKey(events, 'type')
-  ).map(([type, count]) => ({
-    type: capitalize(type),
-    count
-  }));
+  // ============================================================
+  // TASK STATUS
+  // ============================================================
 
-  /*
-   * ----------------------------------------
-   * TASK STATUS
-   * ----------------------------------------
-   */
+  const taskStatusBreakdown =
+    countByKey(
+      tasks,
+      'status'
+    );
 
-  const taskStatusBreakdown = Object.entries(
-    countByKey(tasks, 'status')
-  ).map(([status, count]) => ({
-    status: capitalize(status),
-    count
-  }));
+  // ============================================================
+  // FINAL RESPONSE
+  // ============================================================
 
   return {
     range: normalizedRange,
+
     kpis,
+
     trend,
+
     personnelByRole,
+
     eventsByType,
+
     taskStatusBreakdown
   };
 };
 
-const getPlatformAnalytics = async ({ range = 'weekly' }) => {
-  const normalizedRange = normalizeRange(range);
-  const buckets = getBuckets(normalizedRange);
+// ============================================================
+// PLATFORM ANALYTICS
+// ============================================================
+
+const getPlatformAnalytics = async ({
+  range = 'weekly'
+}) => {
+  const normalizedRange =
+    normalizeRange(range);
+
+  const buckets =
+    getBuckets(normalizedRange);
+
+  const rangeStart =
+    buckets[0]?.start;
+
+  const rangeEnd =
+    buckets[buckets.length - 1]?.end;
+
+  // ============================================================
+  // FETCH PLATFORM DATA
+  // ============================================================
 
   const [
     organizationsRes,
@@ -338,127 +619,287 @@ const getPlatformAnalytics = async ({ range = 'weekly' }) => {
     usersRes
   ];
 
-  const failedResponse = responses.find((result) => result.error);
+  const failedResponse =
+    responses.find(
+      (result) => result.error
+    );
 
   if (failedResponse) {
-    throw new Error(failedResponse.error.message);
+    console.error(
+      '[Analytics] Platform Supabase error:',
+      failedResponse.error
+    );
+
+    throw new Error(
+      failedResponse.error.message
+    );
   }
 
-  const organizations = organizationsRes.data || [];
-  const camps = campsRes.data || [];
-  const events = eventsRes.data || [];
+  const organizations =
+    organizationsRes.data || [];
 
-  const users = (usersRes.data || []).filter(
-    (user) => user.role !== 'SuperAdmin'
+  const camps =
+    campsRes.data || [];
+
+  const events =
+    eventsRes.data || [];
+
+  // SuperAdmin ko platform users mein count nahi karna
+  const users =
+    (usersRes.data || []).filter(
+      (user) =>
+        String(user?.role || '')
+          .toLowerCase() !== 'superadmin'
+    );
+
+  console.log(
+    '[Analytics] Platform data:',
+    {
+      organizations: organizations.length,
+      camps: camps.length,
+      events: events.length,
+      users: users.length
+    }
   );
 
-  /*
-   * ----------------------------------------
-   * PLATFORM KPIs
-   * ----------------------------------------
-   */
+  // ============================================================
+  // ORGANIZATION STATUS
+  // ============================================================
+
+  const activeOrganizations =
+    organizations.filter((org) => {
+      const status =
+        String(org?.status || '')
+          .trim()
+          .toLowerCase();
+
+      return (
+        status === 'active' ||
+        status === 'approved'
+      );
+    }).length;
+
+  const pendingOrganizations =
+    organizations.filter((org) => {
+      const status =
+        String(org?.status || '')
+          .trim()
+          .toLowerCase();
+
+      return status === 'pending';
+    }).length;
+
+  // ============================================================
+  // PERIOD COUNTS
+  // ============================================================
+
+  const periodOrganizations =
+    countInRange(
+      organizations,
+      rangeStart,
+      rangeEnd
+    );
+
+  const periodCamps =
+    countInRange(
+      camps,
+      rangeStart,
+      rangeEnd
+    );
+
+  const periodEvents =
+    countInRange(
+      events,
+      rangeStart,
+      rangeEnd
+    );
+
+  const periodNewUsers =
+    countInRange(
+      users,
+      rangeStart,
+      rangeEnd
+    );
+
+  // ============================================================
+  // KPI STRUCTURE
+  // ============================================================
 
   const kpis = {
-    organizations: {
-      total: organizations.length,
-      current: countInRange(organizations, normalizedRange),
-      previous: countBefore(organizations, normalizedRange)
-    },
+    totalOrganizations:
+      organizations.length,
 
-    camps: {
-      total: camps.length,
-      current: countInRange(camps, normalizedRange),
-      previous: countBefore(camps, normalizedRange)
-    },
+    activeOrganizations,
 
-    events: {
-      total: events.length,
-      current: countInRange(events, normalizedRange),
-      previous: countBefore(events, normalizedRange)
-    },
+    pendingOrganizations,
 
-    users: {
-      total: users.length,
-      current: countInRange(users, normalizedRange),
-      previous: countBefore(users, normalizedRange)
-    }
+    periodOrganizations,
+
+    totalCamps:
+      camps.length,
+
+    periodCamps,
+
+    totalEvents:
+      events.length,
+
+    periodEvents,
+
+    totalUsers:
+      users.length,
+
+    periodNewUsers
   };
 
-  /*
-   * ----------------------------------------
-   * PLATFORM TREND
-   * ----------------------------------------
-   */
+  // ============================================================
+  // TREND
+  // ============================================================
 
-  const trend = buckets.map((bucket) => {
-    const start = bucket.start;
-    const end = bucket.end;
+  const trend =
+    buckets.map((bucket) => {
+      const totalOrganizations =
+        organizations.filter((org) => {
+          const date =
+            getRowDate(org);
 
-    const countCreated = (rows) =>
-      rows.filter((row) => {
-        const date = new Date(row.created_at);
-        return date >= start && date <= end;
-      }).length;
+          return (
+            date &&
+            date < bucket.end
+          );
+        }).length;
 
-    return {
-      label: bucket.label,
-      organizations: countCreated(organizations),
-      camps: countCreated(camps),
-      events: countCreated(events),
-      users: countCreated(users)
-    };
-  });
+      const totalUsers =
+        users.filter((user) => {
+          const date =
+            getRowDate(user);
 
-  /*
-   * ----------------------------------------
-   * TOP ORGANIZATIONS
-   * ----------------------------------------
-   */
+          return (
+            date &&
+            date < bucket.end
+          );
+        }).length;
 
-  const topOrganizations = organizations
-    .map((org) => {
-      const orgCamps = camps.filter(
-        (camp) => camp.org_id === org.id
-      ).length;
+      const newOrganizations =
+        countInRange(
+          organizations,
+          bucket.start,
+          bucket.end
+        );
 
-      const orgEvents = events.filter(
-        (event) => event.org_id === org.id
-      ).length;
-
-      const orgUsers = users.filter(
-        (user) => user.org_id === org.id
-      ).length;
+      const newUsers =
+        countInRange(
+          users,
+          bucket.start,
+          bucket.end
+        );
 
       return {
-        id: org.id,
-        name: org.name,
-        camps: orgCamps,
-        events: orgEvents,
-        users: orgUsers,
-        activity: orgCamps + orgEvents + orgUsers
+        label: bucket.label,
+
+        camps:
+          countInRange(
+            camps,
+            bucket.start,
+            bucket.end
+          ),
+
+        events:
+          countInRange(
+            events,
+            bucket.start,
+            bucket.end
+          ),
+
+        newOrganizations,
+
+        totalOrganizations,
+
+        newUsers,
+
+        totalUsers
       };
-    })
-    .sort((a, b) => b.activity - a.activity)
-    .slice(0, 10);
+    });
 
-  /*
-   * ----------------------------------------
-   * ORGANIZATION STATUS
-   * ----------------------------------------
-   */
+  // ============================================================
+  // TOP ORGANIZATIONS
+  // ============================================================
 
-  const orgStatusBreakdown = Object.entries(
-    countByKey(organizations, 'status')
-  ).map(([status, count]) => ({
-    status: capitalize(status),
-    count
-  }));
+  const topOrganizations =
+    organizations
+      .map((org) => {
+        const orgCamps =
+          camps.filter(
+            (camp) =>
+              camp.org_id === org.id
+          ).length;
+
+        const orgEvents =
+          events.filter(
+            (event) =>
+              event.org_id === org.id
+          ).length;
+
+        const orgUsers =
+          users.filter(
+            (user) =>
+              user.org_id === org.id
+          ).length;
+
+        return {
+          id: org.id,
+
+          name:
+            org.name ||
+            org.organization_name ||
+            'Unnamed Organization',
+
+          status:
+            org.status ||
+            'Unknown',
+
+          camps:
+            orgCamps,
+
+          events:
+            orgEvents,
+
+          users:
+            orgUsers,
+
+          activity:
+            orgCamps +
+            orgEvents
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.activity - a.activity
+      )
+      .slice(0, 10);
+
+  // ============================================================
+  // ORGANIZATION STATUS BREAKDOWN
+  // ============================================================
+
+  const orgStatusBreakdown =
+    countByKey(
+      organizations,
+      'status'
+    );
+
+  // ============================================================
+  // FINAL RESPONSE
+  // ============================================================
 
   return {
     range: normalizedRange,
+
     kpis,
+
     trend,
+
     topOrganizations,
+
     orgStatusBreakdown
   };
 };
