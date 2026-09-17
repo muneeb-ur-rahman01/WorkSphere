@@ -916,8 +916,7 @@ const forgotPassword = async (email) => {
       status: 400,
       body: {
         success: false,
-        error:
-          'Please enter your email address.'
+        error: 'Please enter your email address.'
       }
     };
   }
@@ -932,25 +931,37 @@ const forgotPassword = async (email) => {
     };
   }
 
-  const normalizedEmail =
-    email.trim().toLowerCase();
+  const normalizedEmail = email.trim().toLowerCase();
 
-  const lastAttempt =
-    forgotPasswordAttempts.get(
-      normalizedEmail
-    );
+  console.log(
+    '[Forgot Password] Request received for:',
+    normalizedEmail
+  );
+
+  /*
+  |--------------------------------------------------------------------------
+  | Forgot password cooldown
+  |--------------------------------------------------------------------------
+  */
+
+  const lastAttempt = forgotPasswordAttempts.get(
+    normalizedEmail
+  );
 
   if (
     lastAttempt &&
-    Date.now() - lastAttempt <
-      FORGOT_PASSWORD_COOLDOWN_MS
+    Date.now() - lastAttempt < FORGOT_PASSWORD_COOLDOWN_MS
   ) {
+    console.log(
+      '[Forgot Password] Cooldown active for:',
+      normalizedEmail
+    );
+
     return {
       status: 200,
       body: {
         success: true,
-        message:
-          GENERIC_FORGOT_PASSWORD_MESSAGE
+        message: GENERIC_FORGOT_PASSWORD_MESSAGE
       }
     };
   }
@@ -961,94 +972,271 @@ const forgotPassword = async (email) => {
   );
 
   try {
+    /*
+    |--------------------------------------------------------------------------
+    | Find user
+    |--------------------------------------------------------------------------
+    */
+
     const {
       data: user,
       error
     } = await supabase
       .from('users')
-      .select('*')
+      .select('id, email, full_name, status')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
+    console.log(
+      '[Forgot Password] Normalized email:',
+      normalizedEmail
+    );
+
+    console.log(
+      '[Forgot Password] Supabase user lookup:',
+      {
+        found: !!user,
+        user: user
+          ? {
+              id: user.id,
+              email: user.email,
+              status: user.status
+            }
+          : null,
+        error: error
+          ? {
+              message: error.message,
+              code: error.code,
+              details: error.details,
+              hint: error.hint
+            }
+          : null
+      }
+    );
+
     if (error) {
+      console.error(
+        '[Forgot Password] User lookup failed:',
+        {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        }
+      );
+
       throw error;
     }
 
-    if (
-      user &&
-      user.status !== 'Rejected'
-    ) {
-      const rawToken =
-        crypto.randomBytes(32).toString('hex');
+    /*
+    |--------------------------------------------------------------------------
+    | User not found
+    |--------------------------------------------------------------------------
+    */
 
-      const tokenHash =
-        hashToken(rawToken);
+    if (!user) {
+      console.log(
+        '[Forgot Password] No user found for email:',
+        normalizedEmail
+      );
 
-      const expiresAt =
-        new Date(
-          Date.now() + RESET_TOKEN_TTL_MS
-        ).toISOString();
+      return {
+        status: 200,
+        body: {
+          success: true,
+          message: GENERIC_FORGOT_PASSWORD_MESSAGE
+        }
+      };
+    }
 
-      const {
-        error: updateErr
-      } = await supabase
-        .from('users')
-        .update({
-          reset_token_hash: tokenHash,
-          reset_token_expires: expiresAt
-        })
-        .eq('id', user.id);
+    /*
+    |--------------------------------------------------------------------------
+    | Rejected users cannot reset password
+    |--------------------------------------------------------------------------
+    */
 
-      if (updateErr) {
-        throw updateErr;
+    if (user.status === 'Rejected') {
+      console.log(
+        '[Forgot Password] User is rejected:',
+        {
+          id: user.id,
+          email: user.email,
+          status: user.status
+        }
+      );
+
+      return {
+        status: 200,
+        body: {
+          success: true,
+          message: GENERIC_FORGOT_PASSWORD_MESSAGE
+        }
+      };
+    }
+
+    console.log(
+      '[Forgot Password] Eligible user found:',
+      {
+        id: user.id,
+        email: user.email,
+        status: user.status
       }
+    );
 
-      const clientUrl =
-        process.env.CLIENT_URL ||
-        'http://localhost:5173';
+    /*
+    |--------------------------------------------------------------------------
+    | Generate reset token
+    |--------------------------------------------------------------------------
+    */
 
-      const resetUrl =
-        `${clientUrl.replace(/\/$/, '')}/reset-password/${rawToken}`;
+    const rawToken =
+      crypto.randomBytes(32).toString('hex');
 
-      try {
+    const tokenHash =
+      hashToken(rawToken);
+
+    const expiresAt =
+      new Date(
+        Date.now() + RESET_TOKEN_TTL_MS
+      ).toISOString();
+
+    console.log(
+      '[Forgot Password] Reset token generated.'
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Save reset token
+    |--------------------------------------------------------------------------
+    */
+
+    const {
+      error: updateErr
+    } = await supabase
+      .from('users')
+      .update({
+        reset_token_hash: tokenHash,
+        reset_token_expires: expiresAt
+      })
+      .eq('id', user.id);
+
+    if (updateErr) {
+      console.error(
+        '[Forgot Password] Failed to save reset token:',
+        {
+          message: updateErr.message,
+          code: updateErr.code,
+          details: updateErr.details,
+          hint: updateErr.hint
+        }
+      );
+
+      throw updateErr;
+    }
+
+    console.log(
+      '[Forgot Password] Reset token saved successfully for user:',
+      user.id
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create reset URL
+    |--------------------------------------------------------------------------
+    */
+
+    const clientUrl =
+      process.env.CLIENT_URL ||
+      'http://localhost:5173';
+
+    const resetUrl =
+      `${clientUrl.replace(/\/$/, '')}/reset-password/${rawToken}`;
+
+    console.log(
+      '[Forgot Password] Reset URL generated:',
+      resetUrl
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Send password reset email
+    |--------------------------------------------------------------------------
+    */
+
+    console.log(
+      '[Forgot Password] Calling sendPasswordResetEmail...'
+    );
+
+    try {
+      const mailResult =
         await sendPasswordResetEmail({
           to: user.email,
           fullName: user.full_name,
           resetUrl
         });
-      } catch (mailErr) {
-        console.error(
-          '[Forgot Password] Failed to send email:',
-          mailErr.message
-        );
-      }
+
+      console.log(
+        '[Forgot Password] Email function completed:',
+        mailResult
+      );
+
+    } catch (mailErr) {
+      console.error(
+        '[Forgot Password] Failed to send password reset email:',
+        {
+          message: mailErr.message,
+          code: mailErr.code,
+          response: mailErr.response,
+          responseCode: mailErr.responseCode,
+          command: mailErr.command
+        }
+      );
+
+      /*
+      Do not expose email/SMTP failure to the client.
+      */
     }
 
-    return {
-      status: 200,
-      body: {
-        success: true,
-        message:
-          GENERIC_FORGOT_PASSWORD_MESSAGE
-      }
-    };
-  } catch (error) {
-    console.error(
-      '[Forgot Password] error:',
-      error.message
-    );
+    /*
+    |--------------------------------------------------------------------------
+    | Generic success response
+    |--------------------------------------------------------------------------
+    */
 
     return {
       status: 200,
       body: {
         success: true,
-        message:
-          GENERIC_FORGOT_PASSWORD_MESSAGE
+        message: GENERIC_FORGOT_PASSWORD_MESSAGE
+      }
+    };
+
+  } catch (error) {
+    console.error(
+      '[Forgot Password] Unexpected error:',
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+        response: error.response,
+        responseCode: error.responseCode
+      }
+    );
+
+    /*
+    Keep response generic for security.
+    */
+
+    return {
+      status: 200,
+      body: {
+        success: true,
+        message: GENERIC_FORGOT_PASSWORD_MESSAGE
       }
     };
   }
 };
-
 /*
 |--------------------------------------------------------------------------
 | Validate Reset Token

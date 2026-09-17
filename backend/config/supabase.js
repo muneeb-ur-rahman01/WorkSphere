@@ -6,7 +6,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.warn(
-    '[CampOS] WARNING: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set. ' +
+    '[WorkSphere] WARNING: SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are not set. ' +
     'Copy backend/.env.example to backend/.env and fill in your Supabase project credentials.'
   );
 }
