@@ -12,7 +12,7 @@ const AuditLogs = () => {
             <History size={26} className="text-indigo-600" /> Audit Logs
           </h1>
           <p className="text-gray-600 mt-1">
-            Platform-wide record of who did what, when — organization approvals, user status/role
+            Platform wide record of who did what, when organization approvals, user status/role
             changes, access grants, and more.
           </p>
         </div>

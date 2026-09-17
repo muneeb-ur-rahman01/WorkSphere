@@ -146,7 +146,7 @@ const RegisterOrganization = () => {
       ) : (
         <Card
           title="Register Your Organization"
-          subtitle="Launch your dedicated CampOS Medical Camp management portal."
+          subtitle="Launch your dedicated WorkSphere Medical Camp management portal."
           className="animate-slide-up bg-white border border-gray-200 rounded-2xl shadow-xl p-8"
         >
           {error && (

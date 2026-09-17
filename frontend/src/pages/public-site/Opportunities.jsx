@@ -489,7 +489,7 @@ const OpportunitiesPage = () => {
 
           <p className="leading-7 text-gray-600">
             Opportunities published by organizations using
-            CampOS — browse, search, and apply directly.
+            WorkSphere browse, search, and apply directly.
           </p>
         </div>
 

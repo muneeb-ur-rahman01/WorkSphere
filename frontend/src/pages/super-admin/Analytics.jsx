@@ -94,7 +94,7 @@ const Analytics = () => {
             <div>
               <h1 className="text-3xl font-bold text-white">Analytics & Reports</h1>
               <p className="text-indigo-100 mt-1 max-w-xl">
-                Platform-wide activity across every organization on CampOS.
+                Platform-wide activity across every organization on WorkSphere.
               </p>
             </div>
           </div>

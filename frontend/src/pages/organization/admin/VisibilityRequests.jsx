@@ -40,7 +40,7 @@ const VisibilityRequests = () => {
           <Globe size={26} className="text-indigo-600" /> Event/Camp Visibility
         </h1>
         <p className="text-gray-600 mt-1">
-          Track requests to feature your camps and events on the public CampOS Home Page.
+          Track requests to feature your camps and events on the public WorkSphere Home Page.
           Submit a new request directly from a camp or event's card in{' '}
           <span className="font-semibold">Camps</span> or <span className="font-semibold">Events</span>.
         </p>

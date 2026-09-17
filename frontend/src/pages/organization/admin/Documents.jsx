@@ -121,7 +121,7 @@ const Documents = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-black mb-4">Add Document</h2>
-            <p className="text-xs text-gray-500 mb-4">Link to a file hosted elsewhere (Google Drive, Dropbox, etc.) — CampOS doesn't store the file itself.</p>
+            <p className="text-xs text-gray-500 mb-4">Link to a file hosted elsewhere (Google Drive, Dropbox, etc.) WorkSphere doesn't store the file itself.</p>
             {error && <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-4">{error}</div>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

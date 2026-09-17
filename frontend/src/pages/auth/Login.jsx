@@ -174,7 +174,7 @@ const Login = () => {
 
           <p className="text-center text-gray-600 mt-2 mb-8">
             {isSuperAdminMode
-              ? 'Global administration for CampOS.'
+              ? 'Global administration for WorkSphere.'
               : 'Enter your organization email to log in.'}
           </p>
 

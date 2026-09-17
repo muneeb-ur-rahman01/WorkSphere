@@ -407,7 +407,7 @@ const AdminDashboard = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-black">Subscription & Billing</h2>
-                <p className="text-sm text-gray-600 mt-1">Manage your CampOS plan</p>
+                <p className="text-sm text-gray-600 mt-1">Manage your WorkSphere plan</p>
               </div>
             </div>
             <Link

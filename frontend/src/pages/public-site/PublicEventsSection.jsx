@@ -498,7 +498,7 @@ const PublicEventsSection = () => {
               "
             >
               A live look at medical camps and community events
-              from organizations using CampOS. Discover dates,
+              from organizations using WorkSphere. Discover dates,
               locations, and the organizations behind every event.
             </p>
 
@@ -589,7 +589,7 @@ const PublicEventsSection = () => {
 
                 <div className="ml-2 flex-1 rounded-lg bg-gray-100 px-4 py-2">
                   <span className="text-[11px] text-gray-400">
-                    campos.org/events
+                    WorkSphere.org/events
                   </span>
                 </div>
               </div>
