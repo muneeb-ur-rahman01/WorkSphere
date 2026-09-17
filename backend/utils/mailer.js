@@ -37,6 +37,30 @@ if (isConfigured) {
   );
 }
 
+console.log('[WorkSphere] SMTP config check:', {
+  host: process.env.SMTP_HOST || 'MISSING',
+  port: process.env.SMTP_PORT || 'MISSING',
+  user: process.env.SMTP_USER ? 'SET' : 'MISSING',
+  pass: process.env.SMTP_PASS ? 'SET' : 'MISSING',
+  from: process.env.SMTP_FROM || 'MISSING'
+});
+
+if (transporter) {
+  transporter.verify()
+    .then(() => {
+      console.log('[WorkSphere] SMTP connection verified successfully.');
+    })
+    .catch((error) => {
+      console.error('[WorkSphere] SMTP verification FAILED:', {
+        message: error.message,
+        code: error.code,
+        response: error.response,
+        responseCode: error.responseCode,
+        command: error.command
+      });
+    });
+}
+
 const FROM_ADDRESS =
   process.env.SMTP_FROM || 'WorkSphere <no-reply@WorkSphere.app>';
 
