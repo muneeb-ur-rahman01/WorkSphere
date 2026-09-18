@@ -8,6 +8,11 @@ const {
 } = require('../middleware/auth');
 
 const {
+  expensiveLimiter,
+  publicLimiter
+} = require('../middleware/rateLimiter');
+
+const {
   validateInitiatePayment,
   validateRefund,
   validatePaymentId
@@ -25,14 +30,15 @@ const {
 router.get('/plans', getPlans);
 
 // Public: payment gateway callback
-router.get('/callback', handleCallback);
-router.post('/callback', handleCallback);
+router.get('/callback', publicLimiter, handleCallback);
+router.post('/callback', publicLimiter, handleCallback);
 
 // Protected: payment initiation.
 // Intentionally NOT gated by requireOperational.
 router.post(
   '/initiate',
   requireAuth,
+  expensiveLimiter,
   validateInitiatePayment,
   initiatePayment
 );

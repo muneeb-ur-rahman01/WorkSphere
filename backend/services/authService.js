@@ -21,6 +21,15 @@ const {
 } = require('../middleware/rateLimiter');
 
 const {
+  tryAcquireCooldown
+} = require('../gateway/cooldown');
+
+const {
+  SECURITY_EVENTS,
+  logSecurityEvent
+} = require('../gateway/securityEvents');
+
+const {
   FORGOT_PASSWORD_COOLDOWN_MS
 } = require('../config/security');
 
@@ -45,7 +54,7 @@ const STAFF_PASSWORD_REGEX =
 const STAFF_PASSWORD_MESSAGE =
   'Password must be exactly 8 characters long and include at least one letter and one number.';
 
-const PASSWORD_MAX_LENGTH = 16;
+const PASSWORD_MAX_LENGTH = 8;
 
 const EMAIL_REGEX =
   /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -58,14 +67,6 @@ const PASSWORD_LENGTH_MESSAGE =
 
 const GENERIC_FORGOT_PASSWORD_MESSAGE =
   "If an account exists for that email, we've sent a password reset link to it.";
-
-/*
-|--------------------------------------------------------------------------
-| Forgot password throttle
-|--------------------------------------------------------------------------
-*/
-
-const forgotPasswordAttempts = new Map();
 
 /*
 |--------------------------------------------------------------------------
@@ -123,7 +124,8 @@ const signToken = (user) => {
 const login = async ({
   email,
   password,
-  roleDomain
+  roleDomain,
+  req = null
 }) => {
   if (!email || !password) {
     return {
@@ -171,7 +173,8 @@ const login = async ({
   if (!user) {
     recordLoginResult(
       normalizedEmail,
-      false
+      false,
+      req
     );
 
     return {
@@ -191,7 +194,8 @@ const login = async ({
   if (!match) {
     recordLoginResult(
       normalizedEmail,
-      false
+      false,
+      req
     );
 
     return {
@@ -278,8 +282,15 @@ const login = async ({
 
   recordLoginResult(
     normalizedEmail,
-    true
+    true,
+    req
   );
+
+  logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, {
+    req,
+    userId: user.id,
+    orgId: user.org_id
+  });
 
   const token = signToken(user);
 
@@ -848,6 +859,11 @@ const registerStaff = async ({
           );
         }
 
+        logSecurityEvent(SECURITY_EVENTS.PASSWORD_CHANGED, {
+          userId: user.id,
+          orgId: user.org_id
+        });
+
         return {
           status: 200,
           body: {
@@ -930,16 +946,21 @@ const forgotPassword = async (email) => {
   |--------------------------------------------------------------------------
   | Forgot password cooldown
   |--------------------------------------------------------------------------
+  |
+  | Redis-backed, atomic (SET key value NX EX <seconds>) so two concurrent
+  | requests for the same email can't both slip through the cooldown the
+  | way a separate GET-then-SET could. Fails open if Redis is unreachable
+  | (see gateway/cooldown.js), which only weakens abuse protection here —
+  | it never blocks a legitimate password reset.
+  |--------------------------------------------------------------------------
   */
 
-  const lastAttempt = forgotPasswordAttempts.get(
-    normalizedEmail
+  const cooldownAcquired = await tryAcquireCooldown(
+    `forgot-password:cooldown:${normalizedEmail}`,
+    Math.max(1, Math.ceil(FORGOT_PASSWORD_COOLDOWN_MS / 1000))
   );
 
-  if (
-    lastAttempt &&
-    Date.now() - lastAttempt < FORGOT_PASSWORD_COOLDOWN_MS
-  ) {
+  if (!cooldownAcquired) {
     console.log(
       '[Forgot Password] Cooldown active for:',
       normalizedEmail
@@ -954,10 +975,9 @@ const forgotPassword = async (email) => {
     };
   }
 
-  forgotPasswordAttempts.set(
-    normalizedEmail,
-    Date.now()
-  );
+  logSecurityEvent(SECURITY_EVENTS.PASSWORD_RESET_REQUEST, {
+    metadata: { email: normalizedEmail }
+  });
 
   try {
     /*

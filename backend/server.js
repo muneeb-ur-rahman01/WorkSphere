@@ -1,8 +1,10 @@
 require('dotenv').config();
 const express = require('express');
-const cors = require('cors');
 const morgan = require('morgan');
 const net = require('net');
+
+const { applyGateway } = require('./gateway');
+const { closeRedisClient } = require('./config/redis');
 
 const authRoutes = require('./routes/authRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
@@ -86,9 +88,24 @@ console.log('documentRoutes:', typeof documentRoutes);
 console.log('directoryRoutes:', typeof directoryRoutes);
 console.log('connectionRoutes:', typeof connectionRoutes);
 
-app.use(cors({ origin: process.env.CLIENT_URL || '*' }));
-app.use(express.json());
-app.use(morgan('dev'));
+// ============================================================
+// Secure API Gateway Layer
+//
+// Replaces the previous bare cors()/express.json()/morgan() setup with:
+//   requestId -> HTTPS enforcement -> helmet -> CORS allow-list ->
+//   size-limited body parsing -> request timeout -> structured logging ->
+//   baseline Redis-backed rate limiting on /api
+//
+// See gateway/index.js for the full breakdown. Auth, RBAC, org isolation,
+// and Supabase access below are unchanged.
+// ============================================================
+applyGateway(app);
+
+// Human-readable dev console logging alongside the structured JSON logs
+// the gateway already emits; skip in production to avoid duplicate noise.
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('dev'));
+}
 
 app.get('/api/health', (req, res) =>
   res.json({
@@ -141,8 +158,20 @@ app.use((req, res) =>
 );
 
 // Global error handler
+//
+// Never leaks database errors, stack traces, SQL/query details, Redis
+// connection details, internal file paths, environment variables, or
+// authentication secrets to the client — those stay server-side in the
+// console log below, tagged with the request's requestId for tracing.
 app.use((err, req, res, next) => {
-  console.error(err);
+  console.error(JSON.stringify({
+    type: 'error_log',
+    requestId: req.id,
+    path: req.originalUrl,
+    method: req.method,
+    message: err.message,
+    stack: err.stack
+  }));
 
   if (
     err.name === 'MulterError' ||
@@ -150,13 +179,43 @@ app.use((err, req, res, next) => {
   ) {
     return res.status(400).json({
       success: false,
-      error: err.message
+      error: err.message,
+      requestId: req.id
+    });
+  }
+
+  // Oversized request bodies (from the gateway's express.json/urlencoded
+  // size limits) surface as a PayloadTooLargeError.
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({
+      success: false,
+      error: 'Request body is too large.',
+      requestId: req.id
+    });
+  }
+
+  // Malformed JSON bodies surface as a SyntaxError from body-parser.
+  if (err.type === 'entity.parse.failed' || err instanceof SyntaxError) {
+    return res.status(400).json({
+      success: false,
+      error: 'Malformed request body.',
+      requestId: req.id
+    });
+  }
+
+  // CORS rejections raised by gateway/securityHeaders.js.
+  if (/not allowed by cors/i.test(err.message || '')) {
+    return res.status(403).json({
+      success: false,
+      error: 'This origin is not permitted to access the API.',
+      requestId: req.id
     });
   }
 
   res.status(500).json({
     success: false,
-    error: 'Something went wrong on the server.'
+    error: 'Something went wrong on the server.',
+    requestId: req.id
   });
 });
 
@@ -246,3 +305,21 @@ socket.on('error', (err) => {
     message: err.message
   });
 });
+
+// ============================================================
+// Graceful shutdown
+// ============================================================
+//
+// Ensures the Redis connection is closed cleanly on deploy/restart
+// instead of leaking a connection or logging spurious errors.
+//
+const shutdown = (signal) => {
+  console.log(`[server] Received ${signal}, shutting down gracefully...`);
+
+  closeRedisClient().finally(() => {
+    process.exit(0);
+  });
+};
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

@@ -6,6 +6,7 @@ const router = express.Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { requireFeature } = require('../middleware/subscriptionAccess');
 const { FEATURES } = require('../config/plans');
+const { fileUploadLimiter } = require('../middleware/rateLimiter');
 
 const {
   validatePrescriptionAudio
@@ -39,6 +40,7 @@ router.post(
   '/',
   requireRole('OrgAdmin'),
   requireFeature(FEATURES.AI_PRESCRIPTIONS),
+  fileUploadLimiter,
   upload.single('audio'),
   validatePrescriptionAudio,
   createFromAudio

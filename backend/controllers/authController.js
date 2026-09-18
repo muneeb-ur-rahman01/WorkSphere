@@ -11,7 +11,8 @@ const login = async (req, res) => {
     const result = await authService.login({
       email: req.body.email,
       password: req.body.password,
-      roleDomain: req.body.roleDomain
+      roleDomain: req.body.roleDomain,
+      req
     });
 
     return res

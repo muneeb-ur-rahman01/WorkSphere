@@ -16,6 +16,13 @@ const {
   validatePublicEventsAndCamps
 } = require('../middleware/public');
 
+const { publicLimiter } = require('../middleware/rateLimiter');
+
+// Public, unauthenticated routes get their own (looser than auth, tighter
+// than the general API) rate limit since anyone on the internet can hit
+// them without an account.
+router.use(publicLimiter);
+
 // Public — no auth.
 // Powers the Home Page "Organization Events & Camps" section.
 router.get(

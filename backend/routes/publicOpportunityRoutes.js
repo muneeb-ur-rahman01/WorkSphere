@@ -12,6 +12,10 @@ const {
   applyToOpportunity
 } = require('../controllers/opportunityController');
 
+const { publicLimiter } = require('../middleware/rateLimiter');
+
+router.use(publicLimiter);
+
 router.get(
   '/',
   getPublicOpportunities

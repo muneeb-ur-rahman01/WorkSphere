@@ -17,6 +17,13 @@ const {
   requireAuth
 } = require('../middleware/auth');
 
+const {
+  authLimiter,
+  registrationLimiter,
+  passwordResetLimiter,
+  checkAccountThrottle
+} = require('../middleware/rateLimiter');
+
 /*
 |--------------------------------------------------------------------------
 | Public Auth Routes
@@ -25,9 +32,15 @@ const {
 
 /*
  * POST /api/auth/login
+ *
+ * authLimiter: bounds login attempts per IP.
+ * checkAccountThrottle: blocks a specific account once it has hit
+ *   LOGIN_MAX_FAILURES failed attempts (Redis-backed, atomic).
  */
 router.post(
   '/login',
+  authLimiter,
+  checkAccountThrottle,
   login
 );
 
@@ -36,6 +49,7 @@ router.post(
  */
 router.post(
   '/register-organization',
+  registrationLimiter,
   registerOrganization
 );
 
@@ -44,14 +58,20 @@ router.post(
  */
 router.post(
   '/register-staff',
+  registrationLimiter,
   registerStaff
 );
 
 /*
  * POST /api/auth/forgot-password
+ *
+ * passwordResetLimiter bounds requests per IP; the per-email cooldown
+ * (services/authService.js, Redis SET NX EX) additionally bounds how
+ * often any single email address can trigger a reset email.
  */
 router.post(
   '/forgot-password',
+  passwordResetLimiter,
   forgotPassword
 );
 
@@ -60,6 +80,7 @@ router.post(
  */
 router.get(
   '/reset-password/:token/validate',
+  passwordResetLimiter,
   validateResetToken
 );
 
@@ -68,6 +89,7 @@ router.get(
  */
 router.post(
   '/reset-password',
+  passwordResetLimiter,
   resetPassword
 );
 
