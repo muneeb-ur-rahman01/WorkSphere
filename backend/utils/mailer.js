@@ -503,21 +503,26 @@ const sendTrialExpiredEmail = async ({
 const sendQueryReceivedEmail = async ({
   to,
   name,
-  subject
+  subject,
+  orgName
 }) => {
-  const emailSubject = 'We received your message — WorkSphere';
+  const emailSubject = orgName
+    ? `We received your message — ${orgName}`
+    : 'We received your message — WorkSphere';
+
+  const recipientLabel = orgName || 'WorkSphere';
 
   const text =
     `Hi ${name || 'there'},\n\n` +
-    `Thanks for reaching out to WorkSphere. We received your message with the subject "${subject}" ` +
+    `Thanks for reaching out to ${recipientLabel}. We received your message with the subject "${subject}" ` +
     `and our team will get back to you by email shortly.\n\n` +
-    `— The WorkSphere Team`;
+    `— ${orgName ? `${orgName} (via WorkSphere)` : 'The WorkSphere Team'}`;
 
   const html = `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #111;">
       <h2 style="color:#4338ca; margin-bottom: 4px;">We received your message</h2>
       <p>Hi ${name ? escapeHtml(name) : 'there'},</p>
-      <p>Thanks for reaching out to WorkSphere. We received your message with the subject "<strong>${escapeHtml(subject)}</strong>" and our team will get back to you by email shortly.</p>
+      <p>Thanks for reaching out to ${escapeHtml(recipientLabel)}. We received your message with the subject "<strong>${escapeHtml(subject)}</strong>" and our team will get back to you by email shortly.</p>
       <hr style="border:none;border-top:1px solid #eee;margin:28px 0;"/>
       <p style="font-size: 12px; color: #999;">WorkSphere · Medical Camp Management</p>
     </div>
@@ -540,18 +545,19 @@ const sendQueryResponseEmail = async ({
   to,
   name,
   originalSubject,
-  responseText
+  responseText,
+  orgName
 }) => {
   const subject = `Re: ${originalSubject}`;
 
   const text =
     `Hi ${name || 'there'},\n\n` +
     `${responseText}\n\n` +
-    `— The WorkSphere Team`;
+    `— ${orgName ? `${orgName} (via WorkSphere)` : 'The WorkSphere Team'}`;
 
   const html = `
     <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #111;">
-      <h2 style="color:#4338ca; margin-bottom: 4px;">Reply from WorkSphere</h2>
+      <h2 style="color:#4338ca; margin-bottom: 4px;">Reply from ${escapeHtml(orgName || 'WorkSphere')}</h2>
       <p>Hi ${name ? escapeHtml(name) : 'there'},</p>
       <p style="white-space: pre-wrap;">${escapeHtml(responseText)}</p>
       <hr style="border:none;border-top:1px solid #eee;margin:28px 0;"/>

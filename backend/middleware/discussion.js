@@ -73,7 +73,7 @@ const validateAddGroupMember = (req, res, next) => {
 };
 
 const validatePostMessage = (req, res, next) => {
-  const { message } = req.body;
+  const { message, replyToId, mentionIds } = req.body;
 
   if (!message || !message.trim()) {
     return res.status(400).json({
@@ -82,8 +82,20 @@ const validatePostMessage = (req, res, next) => {
     });
   }
 
+  if (message.length > 4000) {
+    return res.status(400).json({
+      success: false,
+      error: 'Message is too long (max 4000 characters).'
+    });
+  }
+
   req.discussionData = {
-    message
+    message,
+    replyToId:
+      typeof replyToId === 'string' && replyToId ? replyToId : null,
+    mentionIds: Array.isArray(mentionIds)
+      ? mentionIds.filter((v) => typeof v === 'string')
+      : []
   };
 
   next();

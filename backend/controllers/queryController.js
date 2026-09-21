@@ -39,6 +39,7 @@ const submitQuery = async (req, res) => {
 const getQueries = async (req, res) => {
   try {
     const queries = await queryService.getQueries({
+      user: req.user,
       status: req.query.status
     });
 
@@ -59,6 +60,7 @@ const getQueries = async (req, res) => {
 const updateQueryStatus = async (req, res) => {
   try {
     const query = await queryService.updateQueryStatus({
+      user: req.user,
       id: req.params.id,
       status: req.queryStatus
     });
@@ -80,6 +82,7 @@ const updateQueryStatus = async (req, res) => {
 const respondToQuery = async (req, res) => {
   try {
     const result = await queryService.respondToQuery({
+      user: req.user,
       id: req.params.id,
       message: req.responseMessage,
       respondedBy: req.user.id

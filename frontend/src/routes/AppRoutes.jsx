@@ -56,6 +56,7 @@ import Impact from '../pages/organization/admin/Impact';
 import OrganizationDirectory from '../pages/organization/admin/OrganizationDirectory';
 import Connections from '../pages/organization/admin/Connections';
 import OrgProfile from '../pages/organization/admin/OrgProfile';
+import OrgQueries from '../pages/super-admin/Queries';
 import Documentation from '../pages/public-site/Documentation';
 import TermsAndConditions from '../pages/public-site/TermsAndConditions';
 import PrivacyPolicy from '../pages/public-site/PrivacyPolicy';
@@ -77,7 +78,7 @@ import PaymentResult from '../pages/payment/PaymentResult';
 
 import { STAFF_ROLE_NAMES } from '../Config/constant';
 
-// Route Guards (Simulated redirects based on localStorage sessions)
+// Route Guards (redirects based on the sessionStorage login session)
 const PrivateRoute = ({ children, allowedRoles = [] }) => {
   const { currentUser } = useContext(AppContext);
 
@@ -342,9 +343,16 @@ const AppRoutes = () => {
           </PrivateRoute>
         } />
 
-        {/* Discussion / Group Chat (OrgAdmin + all staff-tier roles) */}
+        {/* Queries visitors addressed to this organization */}
+        <Route path="/org-admin/queries" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <OrgQueries />
+          </PrivateRoute>
+        } />
+
+        {/* Discussion / Group Chat (SuperAdmin channels, OrgAdmin + all staff-tier roles) */}
         <Route path="/discussion" element={
-          <PrivateRoute allowedRoles={['OrgAdmin', ...STAFF_ROLE_NAMES]}>
+          <PrivateRoute allowedRoles={['SuperAdmin', 'OrgAdmin', ...STAFF_ROLE_NAMES]}>
             <Discussion />
           </PrivateRoute>
         } />

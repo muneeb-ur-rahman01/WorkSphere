@@ -1,5 +1,25 @@
 const permissionService = require('../services/permissionServices');
 
+const setUserPermissions = async (req, res) => {
+  try {
+    const result = await permissionService.setUserPermissions({
+      user: req.user,
+      userId: req.body.userId,
+      sectionKeys: req.body.sectionKeys
+    });
+
+    return res.json({
+      success: true,
+      ...result
+    });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: err.message || 'Could not save access.'
+    });
+  }
+};
+
 const getAssignableSections = async (req, res) => {
   try {
     const sections =
@@ -109,5 +129,6 @@ module.exports = {
   getMyPermissions,
   getUserPermissions,
   grantPermission,
-  revokePermission
+  revokePermission,
+  setUserPermissions
 };

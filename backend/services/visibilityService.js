@@ -192,6 +192,17 @@ const reviewVisibilityRequest = async ({
     throw err;
   }
 
+  // Approval is an explicit decision to show this item publicly, so make
+  // sure the organization-level public switch is on as well. Without this
+  // the item was "Approved" but silently filtered out of the Home page by
+  // organizations.public_events_enabled (default off).
+  if (decision === 'Approved') {
+    await supabase
+      .from('organizations')
+      .update({ public_events_enabled: true })
+      .eq('id', item.org_id);
+  }
+
   await supabase.from('notifications').insert({
     org_id: item.org_id,
     title:

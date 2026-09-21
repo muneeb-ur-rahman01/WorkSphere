@@ -2,7 +2,8 @@ import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import { useConfirm } from '../../../shared/ConfirmDialog/ConfirmDialog';
-import { FileText, Plus, Check, Ban, Trash2, ExternalLink } from 'lucide-react';
+import { FileText, Plus, Check, Ban, Trash2, ExternalLink, AlertCircle, X } from 'lucide-react';
+import { isValidGoogleDriveUrl } from '../../../utils/linkify';
 
 const emptyForm = { title: '', category: '', fileUrl: '', expiryDate: '' };
 
@@ -16,7 +17,11 @@ const statusBadgeClass = (status) => {
 };
 
 const Documents = () => {
-  const { documents, createDocument, updateDocumentStatus, deleteDocument, currentUser } = useContext(AppContext);
+  const { documents, createDocument, updateDocumentStatus, deleteDocument, currentUser, hasAccess } = useContext(AppContext);
+
+  // Org Admins always can; staff need the 'documents' section granted under
+  // Accessibility. (Approve / reject decisions stay Org-Admin-only.)
+  const canManage = currentUser?.role === 'OrgAdmin' || hasAccess('documents');
   const confirm = useConfirm();
 
   const [statusFilter, setStatusFilter] = useState('All');
@@ -24,14 +29,33 @@ const Documents = () => {
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 4500);
+  };
 
   const filtered = useMemo(() => documents.filter((d) => statusFilter === 'All' || d.status === statusFilter), [documents, statusFilter]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setError('');
-    const res = await createDocument(form);
+
+    if (!form.title.trim()) {
+      setError('Title is required.');
+      return;
+    }
+
+    const fileUrl = form.fileUrl.trim();
+
+    if (!isValidGoogleDriveUrl(fileUrl)) {
+      showToast('Please enter a valid Google Drive link, e.g. https://drive.google.com/file/d/…');
+      return;
+    }
+
+    setSubmitting(true);
+    const res = await createDocument({ ...form, fileUrl });
     setSubmitting(false);
     if (res.success) { setModalOpen(false); setForm(emptyForm); }
     else setError(res.error);
@@ -49,6 +73,23 @@ const Documents = () => {
 
   return (
     <DashboardLayout>
+      {toast && (
+        <div className="fixed right-6 top-6 z-[9999]">
+          <div className="flex min-w-[260px] max-w-sm items-start gap-3 rounded-xl border border-red-200 bg-white px-5 py-4 shadow-xl">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-100">
+              <AlertCircle size={20} className="text-red-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-900">Invalid URL</p>
+              <p className="mt-0.5 text-sm text-gray-600">{toast}</p>
+            </div>
+            <button type="button" onClick={() => setToast(null)} className="text-gray-400 hover:text-gray-700">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-black flex items-center gap-2">
@@ -58,9 +99,11 @@ const Documents = () => {
             Organization documents by link — agreements, policies, certificates. Staff uploads need Org Admin approval.
           </p>
         </div>
-        <button onClick={() => { setForm(emptyForm); setError(''); setModalOpen(true); }} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all">
+        {canManage && (
+<button onClick={() => { setForm(emptyForm); setError(''); setModalOpen(true); }} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all">
           <Plus size={18} /> Add Document
         </button>
+)}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -109,7 +152,7 @@ const Documents = () => {
                   <button onClick={() => handleReject(doc)} className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition" title="Reject"><Ban size={16} /></button>
                 </>
               )}
-              {currentUser?.role === 'OrgAdmin' && (
+              {canManage && (
                 <button onClick={() => handleDelete(doc)} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition ml-auto" title="Delete"><Trash2 size={16} /></button>
               )}
             </div>
@@ -121,16 +164,16 @@ const Documents = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <h2 className="text-xl font-bold text-black mb-4">Add Document</h2>
-            <p className="text-xs text-gray-500 mb-4">Link to a file hosted elsewhere (Google Drive, Dropbox, etc.) WorkSphere doesn't store the file itself.</p>
+            <p className="text-xs text-gray-500 mb-4">Paste a Google Drive link to the file (Drive, Docs, Sheets or Slides share link). WorkSphere doesn't store the file itself.</p>
             {error && <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-4">{error}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               <div>
                 <label className="mb-1 block text-sm font-semibold text-black">Title</label>
                 <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full rounded-lg border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div>
                 <label className="mb-1 block text-sm font-semibold text-black">File URL</label>
-                <input required type="url" value={form.fileUrl} onChange={(e) => setForm({ ...form, fileUrl: e.target.value })} placeholder="https://..." className="w-full rounded-lg border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                <input required type="text" inputMode="url" value={form.fileUrl} onChange={(e) => setForm({ ...form, fileUrl: e.target.value })} placeholder="https://drive.google.com/file/d/…" className="w-full rounded-lg border border-gray-300 px-4 py-2 text-black focus:outline-none focus:ring-2 focus:ring-indigo-500" />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

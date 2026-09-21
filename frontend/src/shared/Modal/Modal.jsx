@@ -2,6 +2,24 @@ import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
 import styles from './Modal.module.css';
 
+// Several modals can be open at once (or one can close while another opens).
+// A simple counter makes sure the page scroll is only released when the
+// LAST modal closes - otherwise the page could stay scroll-locked.
+let openModalCount = 0;
+
+const lockBodyScroll = () => {
+  openModalCount += 1;
+  document.body.style.overflow = 'hidden';
+};
+
+const unlockBodyScroll = () => {
+  openModalCount = Math.max(0, openModalCount - 1);
+
+  if (openModalCount === 0) {
+    document.body.style.overflow = '';
+  }
+};
+
 const Modal = ({
   isOpen,
   onClose,
@@ -9,18 +27,25 @@ const Modal = ({
   children,
   maxWidth = '500px'
 }) => {
+  // Body scroll lock: only while open, always released on close/unmount.
   useEffect(() => {
+    if (!isOpen) return undefined;
+
+    lockBodyScroll();
+
+    return unlockBodyScroll;
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
     const handleEscape = (e) => {
       if (e.key === 'Escape') onClose();
     };
 
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleEscape);
-    }
+    window.addEventListener('keydown', handleEscape);
 
     return () => {
-      document.body.style.overflow = 'unset';
       window.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen, onClose]);

@@ -6,7 +6,8 @@ const validateSubmitQuery = (req, res, next) => {
     email,
     subject,
     message,
-    website
+    website,
+    orgId
   } = req.body;
 
   // Honeypot — silently accept and drop spam submissions.
@@ -50,7 +51,12 @@ const validateSubmitQuery = (req, res, next) => {
     name: name.trim(),
     email: email.trim().toLowerCase(),
     subject: subject.trim(),
-    message: message.trim()
+    message: message.trim(),
+    orgId:
+      typeof orgId === 'string' &&
+      /^[0-9a-fA-F-]{36}$/.test(orgId.trim())
+        ? orgId.trim()
+        : null
   };
 
   console.log('[validateSubmitQuery] Validation passed:', {

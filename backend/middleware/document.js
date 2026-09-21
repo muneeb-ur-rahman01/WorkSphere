@@ -11,6 +11,29 @@ const validateDocumentQuery = (req, res, next) => {
   next();
 };
 
+// Documents are links to files that live in Google Drive. Only https links
+// on Google's Drive/Docs hosts are accepted (this also stops "javascript:"
+// or other unsafe URLs from ever being stored and rendered as a link).
+const DRIVE_HOSTS = [
+  'drive.google.com',
+  'docs.google.com',
+  'drive.usercontent.google.com'
+];
+
+const isValidDriveUrl = (value) => {
+  try {
+    const url = new URL(String(value || '').trim());
+
+    return (
+      url.protocol === 'https:' &&
+      DRIVE_HOSTS.includes(url.hostname.toLowerCase()) &&
+      (url.pathname.length > 1 || url.searchParams.has('id'))
+    );
+  } catch (err) {
+    return false;
+  }
+};
+
 const validateCreateDocument = (req, res, next) => {
   const {
     title,
@@ -25,6 +48,13 @@ const validateCreateDocument = (req, res, next) => {
     return res.status(400).json({
       success: false,
       error: 'title and fileUrl are required.'
+    });
+  }
+
+  if (!isValidDriveUrl(fileUrl)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please enter a valid Google Drive link (https://drive.google.com/… or https://docs.google.com/…).'
     });
   }
 

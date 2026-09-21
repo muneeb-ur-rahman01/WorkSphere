@@ -23,8 +23,9 @@ const {
 // Powers the floating Query widget on the public site.
 router.post('/', validateSubmitQuery, submitQuery);
 
-// SuperAdmin only
-router.use(requireAuth, requireRole('SuperAdmin'));
+// SuperAdmin (general platform queries) and OrgAdmin (queries addressed to
+// their own organization). Scoping is enforced in queryService.
+router.use(requireAuth, requireRole('SuperAdmin', 'OrgAdmin'));
 
 router.get('/', getQueries);
 

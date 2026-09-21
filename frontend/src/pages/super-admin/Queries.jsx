@@ -21,7 +21,11 @@ const formatDateTime = (d) =>
   d ? new Date(d).toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—';
 
 const Queries = () => {
-  const { queries, updateQueryStatus, respondToQuery } = useContext(AppContext);
+  const { currentUser, queries, updateQueryStatus, respondToQuery } = useContext(AppContext);
+
+  // The same inbox is used by the SuperAdmin (general platform queries) and
+  // by each Organization Admin (queries visitors addressed to their org).
+  const isOrgInbox = currentUser?.role === 'OrgAdmin';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [activeQuery, setActiveQuery] = useState(null);
@@ -86,9 +90,11 @@ const Queries = () => {
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-black">External Queries</h1>
+          <h1 className="text-3xl font-bold text-black">{isOrgInbox ? 'Queries' : 'External Queries'}</h1>
           <p className="text-gray-600 mt-1">
-            Messages submitted through the public website's Query widget.
+            {isOrgInbox
+              ? "Questions visitors sent to your organization from the public website. Your reply is emailed to them."
+              : "Messages submitted through the public website's Query widget."}
             {newCount > 0 && <span className="ml-2 text-blue-600 font-semibold">{newCount} new</span>}
           </p>
         </div>

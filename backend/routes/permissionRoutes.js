@@ -18,7 +18,8 @@ const {
   getMyPermissions,
   getUserPermissions,
   grantPermission,
-  revokePermission
+  revokePermission,
+  setUserPermissions
 } = require('../controllers/permissionController');
 
 router.use(requireAuth);
@@ -45,6 +46,13 @@ router.post(
   requireRole('OrgAdmin'),
   validateGrantPermission,
   grantPermission
+);
+
+// Save the complete set of sections for one staff member at once.
+router.put(
+  '/',
+  requireRole('OrgAdmin'),
+  setUserPermissions
 );
 
 router.delete(

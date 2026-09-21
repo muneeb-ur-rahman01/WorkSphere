@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   MessageCircle,
   X,
@@ -8,9 +8,11 @@ import {
   Mail,
   FileText,
   MessageSquare,
+  Building2,
 } from 'lucide-react';
 
 import { AppContext } from '../../context/AppContext';
+import api from '../../Config/apiConfig';
 
 const EMPTY_FORM = {
   name: '',
@@ -18,6 +20,7 @@ const EMPTY_FORM = {
   subject: '',
   message: '',
   website: '',
+  orgId: '', // '' = general WorkSphere platform query
 };
 
 const QueryWidget = () => {
@@ -29,6 +32,40 @@ const QueryWidget = () => {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [organizations, setOrganizations] = useState([]);
+  const [orgsLoading, setOrgsLoading] = useState(false);
+  const [sentTo, setSentTo] = useState('');
+
+  // Organizations a visitor can address a query to (loaded when the panel
+  // is first opened).
+  useEffect(() => {
+    if (!open || organizations.length > 0) return undefined;
+
+    let cancelled = false;
+
+    const load = async () => {
+      setOrgsLoading(true);
+
+      try {
+        const res = await api.get('/organizations/public');
+
+        if (!cancelled) {
+          setOrganizations(res.data.organizations || []);
+        }
+      } catch (err) {
+        // The dropdown simply stays on "WorkSphere (general)".
+      } finally {
+        if (!cancelled) setOrgsLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -87,11 +124,17 @@ const QueryWidget = () => {
 
     setSubmitting(true);
 
-    const res = await submitQuery(form);
+    const res = await submitQuery({
+      ...form,
+      orgId: form.orgId || undefined,
+    });
 
     setSubmitting(false);
 
     if (res.success) {
+      setSentTo(
+        organizations.find((o) => o.id === form.orgId)?.name || ''
+      );
       setSubmitted(true);
       setForm(EMPTY_FORM);
       setErrors({});
@@ -162,8 +205,9 @@ const QueryWidget = () => {
                   </h3>
 
                   <p className="text-sm text-gray-600 mt-2 leading-6">
-                    We've received your message and sent a confirmation
-                    to your email. Our team will follow up soon.
+                    {sentTo
+                      ? `We've sent your message to ${sentTo} and emailed you a confirmation. Their admin will reply to you by email.`
+                      : "We've received your message and sent a confirmation to your email. Our team will follow up soon."}
                   </p>
 
                   <button
@@ -182,6 +226,46 @@ const QueryWidget = () => {
                   onSubmit={handleSubmit}
                   className="space-y-4"
                 >
+
+                  {/* Organization */}
+                  <div>
+                    <label
+                      htmlFor="query-org"
+                      className="mb-1.5 block text-sm font-semibold text-gray-800"
+                    >
+                      Ask which organization?
+                    </label>
+
+                    <div className="relative">
+                      <Building2
+                        size={17}
+                        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+                      />
+
+                      <select
+                        id="query-org"
+                        name="orgId"
+                        value={form.orgId}
+                        onChange={handleChange}
+                        className="w-full appearance-none rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-3 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      >
+                        <option value="">WorkSphere (general question)</option>
+                        {organizations.map((org) => (
+                          <option key={org.id} value={org.id}>
+                            {org.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {orgsLoading
+                        ? 'Loading organizations…'
+                        : form.orgId
+                          ? 'Your question goes straight to this organization\'s admin.'
+                          : 'Pick an organization to send your question to its admin.'}
+                    </p>
+                  </div>
 
                   {/* Name */}
                   <div>

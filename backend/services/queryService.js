@@ -11,11 +11,58 @@ const submitAttempts = new Map();
 
 const SUBMIT_COOLDOWN_MS = 30 * 1000;
 
+// ------------------------------------------------------------
+// Who is allowed to see / answer a query:
+//   - orgId set  -> that organization's admin(s) only
+//   - orgId null -> general platform queries, handled by the SuperAdmin
+// ------------------------------------------------------------
+const assertQueryAccess = (user, query) => {
+  const allowed =
+    user.role === 'SuperAdmin'
+      ? !query.org_id
+      : user.role === 'OrgAdmin' &&
+        !!query.org_id &&
+        query.org_id === user.orgId;
+
+  if (!allowed) {
+    const err = new Error('Query not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+};
+
+const fetchQueryForUser = async (user, id) => {
+  const { data, error } = await supabase
+    .from('queries')
+    .select('*, organizations(name)')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) {
+    console.error('[fetchQueryForUser] SUPABASE ERROR:', error);
+
+    const err = new Error('Could not find the query.');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  if (!data) {
+    const err = new Error('Query not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  assertQueryAccess(user, data);
+
+  return data;
+};
+
 const submitQuery = async ({
   name,
   email,
   subject,
-  message
+  message,
+  orgId
 }) => {
   const key = email.toLowerCase();
 
@@ -33,6 +80,29 @@ const submitQuery = async ({
     error.statusCode = 429;
 
     throw error;
+  }
+
+  // Optional: address the query to one organization's admin.
+  let targetOrg = null;
+
+  if (orgId) {
+    const { data: org } = await supabase
+      .from('organizations')
+      .select('id, name, status')
+      .eq('id', orgId)
+      .maybeSingle();
+
+    if (!org || org.status !== 'Active') {
+      const error = new Error(
+        'The selected organization is not available.'
+      );
+
+      error.statusCode = 400;
+
+      throw error;
+    }
+
+    targetOrg = org;
   }
 
   submitAttempts.set(key, Date.now());
@@ -55,7 +125,8 @@ const submitQuery = async ({
       email,
       subject,
       message,
-      status: 'New'
+      status: 'New',
+      ...(targetOrg ? { org_id: targetOrg.id } : {})
     })
     .select()
     .single();
@@ -87,13 +158,23 @@ const submitQuery = async ({
     error: notificationError
   } = await supabase
     .from('notifications')
-    .insert({
-      org_id: null,
-      title: 'New Query Received',
-      message: `${name} (${email}) sent a message: "${subject}"`,
-      type: 'Query',
-      target_role: 'SuperAdmin'
-    });
+    .insert(
+      targetOrg
+        ? {
+            org_id: targetOrg.id,
+            title: 'New Query Received',
+            message: `${name} (${email}) sent a query to ${targetOrg.name}: "${subject}". Open "Queries" to read and answer it.`,
+            type: 'Query',
+            target_role: 'OrgAdmin'
+          }
+        : {
+            org_id: null,
+            title: 'New Query Received',
+            message: `${name} (${email}) sent a message: "${subject}"`,
+            type: 'Query',
+            target_role: 'SuperAdmin'
+          }
+    );
 
   if (notificationError) {
     console.error(
@@ -110,7 +191,8 @@ const submitQuery = async ({
     await sendQueryReceivedEmail({
       to: email,
       name,
-      subject
+      subject,
+      orgName: targetOrg?.name
     });
 
     console.log(
@@ -130,13 +212,20 @@ const submitQuery = async ({
   return serializeQuery(query);
 };
 
-const getQueries = async ({ status }) => {
+const getQueries = async ({ user, status }) => {
   let query = supabase
     .from('queries')
-    .select('*')
+    .select('*, organizations(name)')
     .order('created_at', {
       ascending: false
     });
+
+  // SuperAdmin: general platform queries. OrgAdmin: only their own
+  // organization's queries.
+  query =
+    user.role === 'SuperAdmin'
+      ? query.is('org_id', null)
+      : query.eq('org_id', user.orgId);
 
   if (status && status !== 'All') {
     query = query.eq('status', status);
@@ -166,9 +255,12 @@ const getQueries = async ({ status }) => {
 };
 
 const updateQueryStatus = async ({
+  user,
   id,
   status
 }) => {
+  await fetchQueryForUser(user, id);
+
   const {
     data: query,
     error
@@ -178,7 +270,7 @@ const updateQueryStatus = async ({
       status
     })
     .eq('id', id)
-    .select()
+    .select('*, organizations(name)')
     .single();
 
   if (error) {
@@ -200,44 +292,13 @@ const updateQueryStatus = async ({
 };
 
 const respondToQuery = async ({
+  user,
   id,
   message,
   respondedBy
 }) => {
-  // Find existing query
-  const {
-    data: existing,
-    error: fetchErr
-  } = await supabase
-    .from('queries')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle();
-
-  if (fetchErr) {
-    console.error(
-      '[respondToQuery] FETCH ERROR:',
-      fetchErr
-    );
-
-    const err = new Error(
-      'Could not find the query.'
-    );
-
-    err.statusCode = 500;
-
-    throw err;
-  }
-
-  if (!existing) {
-    const err = new Error(
-      'Query not found.'
-    );
-
-    err.statusCode = 404;
-
-    throw err;
-  }
+  // Find existing query (also enforces who may answer it)
+  const existing = await fetchQueryForUser(user, id);
 
   // Save response
   const {
@@ -252,7 +313,7 @@ const respondToQuery = async ({
       responded_at: new Date().toISOString()
     })
     .eq('id', id)
-    .select()
+    .select('*, organizations(name)')
     .single();
 
   if (error) {
@@ -277,7 +338,8 @@ const respondToQuery = async ({
       to: existing.email,
       name: existing.name,
       originalSubject: existing.subject,
-      responseText: message
+      responseText: message,
+      orgName: existing.organizations?.name
     });
   } catch (mailErr) {
     console.error(

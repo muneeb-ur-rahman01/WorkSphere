@@ -55,6 +55,7 @@ import {
 
 import { AppContext } from '../context/AppContext';
 import PaymentAlertModal from '../shared/PaymentAlertModal/PaymentAlertModal';
+import NotificationToaster from '../shared/NotificationToaster/NotificationToaster';
 
 import {
   SUBSCRIPTION_PLANS,
@@ -78,6 +79,7 @@ const DashboardLayout = ({ children }) => {
     // NOTIFICATION READ STATE FROM APPCONTEXT
     // =========================================================
     unreadNotifications = [],
+    userNotifications: contextUserNotifications = [],
     markNotificationAsRead,
     markAllNotificationsAsRead,
     isNotificationRead
@@ -148,6 +150,12 @@ const DashboardLayout = ({ children }) => {
     };
   }, []);
 
+  // Safety net: never carry a stuck "scroll locked" state from a closed
+  // modal over to the next page.
+  useEffect(() => {
+    document.body.style.overflow = '';
+  }, [location.pathname]);
+
   // =========================================================
   // GROUP TOGGLE
   // =========================================================
@@ -172,6 +180,12 @@ const DashboardLayout = ({ children }) => {
     logout();
     navigate('/');
   };
+
+  // Organization Admin + SuperAdmin use a slimmer notification setup:
+  // bell icon only (latest 5) + toast popups.
+  const isAdminTier =
+    currentUser.role === 'SuperAdmin' ||
+    currentUser.role === 'OrgAdmin';
 
   // =========================================================
   // ORGANIZATION
@@ -204,40 +218,8 @@ const DashboardLayout = ({ children }) => {
   // NOTIFICATIONS
   // =========================================================
 
-  const userNotifications = notifications.filter(
-    (n) => {
-
-      // SuperAdmin gets global notifications
-      if (currentUser.role === 'SuperAdmin') {
-        return n.orgId === null;
-      }
-
-      // OrgAdmin gets organization notifications
-      if (currentUser.role === 'OrgAdmin') {
-        return (
-          n.orgId === currentUser.orgId
-        );
-      }
-
-      // Specific user notification
-      if (n.targetUserId) {
-        return (
-          String(n.targetUserId) ===
-          String(currentUser.id)
-        );
-      }
-
-      // Staff notifications
-      return (
-        String(n.orgId) ===
-          String(currentUser.orgId) &&
-        (
-          n.targetRole === 'All' ||
-          n.targetRole === currentUser.role
-        )
-      );
-    }
-  );
+  // Already filtered for this user (and sorted, newest first) by AppContext.
+  const userNotifications = contextUserNotifications;
 
   // =========================================================
   // STABLE NOTIFICATION KEY
@@ -459,18 +441,22 @@ const DashboardLayout = ({ children }) => {
         },
 
         {
+          path: '/discussion',
+          label: 'Discussion',
+          icon: (
+            <MessageSquare size={18} />
+          ),
+          badge:
+            'unreadDiscussion'
+        },
+
+        {
           path:
             '/super-admin/platform-settings',
           label: 'Platform Settings',
           icon: (
             <SettingsIcon size={18} />
           )
-        },
-
-        {
-          key: 'notifications',
-          label: 'Notifications',
-          icon: <Bell size={18} />
         },
 
         {
@@ -830,9 +816,14 @@ const DashboardLayout = ({ children }) => {
         },
 
         {
-          key: 'notifications',
-          label: 'Notifications',
-          icon: <Bell size={18} />
+          path: '/org-admin/queries',
+          label: 'Queries',
+          icon: (
+            <MessageCircleQuestion
+              size={18}
+            />
+          ),
+          badge: 'newQueries'
         },
 
         {
@@ -1175,11 +1166,11 @@ const DashboardLayout = ({ children }) => {
           'unreadDiscussion'
       },
 
-      {
-        key: 'notifications',
-        label: 'Notifications',
-        icon: <Bell size={18} />
-      },
+      // {
+      //   key: 'notifications',
+      //   label: 'Notifications',
+      //   icon: <Bell size={18} />
+      // },
 
       {
         path: '/settings',
@@ -1441,14 +1432,19 @@ const DashboardLayout = ({ children }) => {
   // NOTIFICATION DROPDOWN
   // =========================================================
 
-  const NotificationDropdown = ({
+  const renderNotificationDropdown = ({
     isSidebar = false
-  }) => {
+  } = {}) => {
+
+    // Organization Admin / SuperAdmin: only the 5 latest. (The full sidebar
+    // "Notifications" entry was removed for these roles - the bell icon at
+    // the top right is the single place for notifications.)
+    const notificationLimit = isAdminTier ? 5 : 10;
 
     const visibleNotifications =
       sortedUserNotifications.slice(
         0,
-        10
+        notificationLimit
       );
 
     return (
@@ -1635,7 +1631,7 @@ const DashboardLayout = ({ children }) => {
         {/* FOOTER */}
 
         {sortedUserNotifications.length >
-          10 && (
+          notificationLimit && (
           <div
             className="
               px-4
@@ -1653,7 +1649,7 @@ const DashboardLayout = ({ children }) => {
                 text-indigo-600
               "
             >
-              Showing latest 10
+              Showing latest {notificationLimit}
               notifications
             </span>
           </div>
@@ -1676,6 +1672,9 @@ const DashboardLayout = ({ children }) => {
         text-slate-900
       "
     >
+
+      {/* Toast popups for new notifications (top right) */}
+      <NotificationToaster />
 
       {/* =====================================================
           SIDEBAR
@@ -1983,11 +1982,10 @@ const DashboardLayout = ({ children }) => {
 
                     </button>
 
-                    {sidebarNotificationsOpen && (
-                      <NotificationDropdown
-                        isSidebar
-                      />
-                    )}
+                    {sidebarNotificationsOpen &&
+                      renderNotificationDropdown({
+                        isSidebar: true
+                      })}
 
                   </div>
                 );
@@ -2584,9 +2582,8 @@ const DashboardLayout = ({ children }) => {
 
               </button>
 
-              {notificationsOpen && (
-                <NotificationDropdown />
-              )}
+              {notificationsOpen &&
+                renderNotificationDropdown()}
 
             </div>
 

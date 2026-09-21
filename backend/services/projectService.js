@@ -183,10 +183,31 @@ const deleteProject = async ({ user, id }) => {
 };
 
 const getMyProjectAssignments = async ({ user }) => {
-  const userId = user.id;
-  const orgId = user.orgId;
+  const userId = user?.id;
+  const orgId = user?.orgId;
 
-  const { data: assignments, error } = await supabase
+  if (!userId) {
+    const err = new Error('User ID is missing.');
+    err.statusCode = 401;
+    throw err;
+  }
+
+  if (!orgId) {
+    const err = new Error(
+      'Organization ID is missing for this user.'
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // =========================
+  // GET MY PROJECT ASSIGNMENTS
+  // =========================
+
+  const {
+    data: assignments,
+    error: assignmentError
+  } = await supabase
     .from('entity_team_members')
     .select(`
       id,
@@ -202,10 +223,21 @@ const getMyProjectAssignments = async ({ user }) => {
     .eq('entity_type', 'project')
     .eq('user_id', userId)
     .eq('org_id', orgId)
-    .order('added_at', { ascending: false });
+    .order('added_at', {
+      ascending: false
+    });
 
-  if (error) {
-    const err = new Error('Could not fetch your project assignments.');
+  if (assignmentError) {
+    console.error(
+      'getMyProjectAssignments - assignment query error:',
+      assignmentError
+    );
+
+    const err = new Error(
+      assignmentError.message ||
+        'Could not fetch your project assignments.'
+    );
+
     err.statusCode = 500;
     throw err;
   }
@@ -214,33 +246,83 @@ const getMyProjectAssignments = async ({ user }) => {
     return [];
   }
 
-  const projectIds = assignments.map((assignment) => assignment.entity_id);
+  // =========================
+  // GET PROJECT IDS
+  // =========================
 
-  const { data: projects, error: projectError } = await supabase
+  const projectIds = [
+    ...new Set(
+      assignments
+        .map((assignment) => assignment.entity_id)
+        .filter(Boolean)
+    )
+  ];
+
+  if (projectIds.length === 0) {
+    return [];
+  }
+
+  // =========================
+  // GET PROJECTS
+  // =========================
+
+  const {
+    data: projects,
+    error: projectError
+  } = await supabase
     .from('projects')
     .select('*')
     .in('id', projectIds)
     .eq('org_id', orgId);
 
   if (projectError) {
-    const err = new Error('Could not fetch assigned projects.');
+    console.error(
+      'getMyProjectAssignments - project query error:',
+      projectError
+    );
+
+    const err = new Error(
+      projectError.message ||
+        'Could not fetch assigned projects.'
+    );
+
     err.statusCode = 500;
     throw err;
   }
 
-  const assignmentMap = Object.fromEntries(
-    assignments.map((assignment) => [
+  if (!projects || projects.length === 0) {
+    return [];
+  }
+
+  // =========================
+  // MAP ASSIGNMENTS
+  // =========================
+
+  const assignmentMap = new Map();
+
+  assignments.forEach((assignment) => {
+    assignmentMap.set(
       assignment.entity_id,
       assignment
-    ])
-  );
+    );
+  });
 
-  return projects.map((project) => ({
-    ...serializeProject(project),
-    assignment: serializeTeamMember(
-      assignmentMap[project.id]
-    )
-  }));
+  // =========================
+  // FINAL RESPONSE
+  // =========================
+
+  return projects.map((project) => {
+    const assignment =
+      assignmentMap.get(project.id);
+
+    return {
+      ...serializeProject(project),
+
+      assignment: assignment
+        ? serializeTeamMember(assignment)
+        : null
+    };
+  });
 };
 
 const getProjectTeam = async ({ id }) => {

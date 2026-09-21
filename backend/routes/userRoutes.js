@@ -17,6 +17,7 @@ const {
 } = require('../middleware/user');
 
 const {
+  updateMyProfile,
   getUsers,
   createStaffByAdmin,
   updateStaffStatus,
@@ -38,6 +39,13 @@ router.post(
   requireRole('OrgAdmin'),
   validateCreateStaff,
   createStaffByAdmin
+);
+
+// Edit own profile (name / email). SuperAdmin is intentionally excluded.
+router.patch(
+  '/me',
+  requireRole('OrgAdmin', 'Employee', 'Intern', 'Volunteer', 'Membership', 'Executive Director'),
+  updateMyProfile
 );
 
 router.patch(

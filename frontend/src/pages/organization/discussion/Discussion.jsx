@@ -2,9 +2,11 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import { getRoleBadgeColor } from '../../../Config/constant';
+import { splitTextByLinks } from '../../../utils/linkify';
 import {
   Hash, Megaphone, Users, Plus, Send, X, UserPlus, UserMinus,
-  Loader2, MessageSquare, Settings2, Search, Pencil, Trash2
+  Loader2, MessageSquare, Settings2, Search, Pencil, Trash2,
+  CornerUpLeft, AtSign, Building2
 } from 'lucide-react';
 
 // ============================================================
@@ -56,6 +58,65 @@ const groupColor = (id) => {
   return palette[Math.abs(hash) % palette.length];
 };
 
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Renders chat text with:
+//  - valid web links as real, clickable links (new tab, noopener)
+//  - @Member mentions highlighted
+const MessageText = ({ text, mentionNames, isMine }) => {
+  const mentionRegex = mentionNames.length
+    ? new RegExp(
+        `(@(?:${[...mentionNames]
+          .sort((a, b) => b.length - a.length)
+          .map(escapeRegExp)
+          .join('|')})(?![\\w]))`,
+        'g'
+      )
+    : null;
+
+  const renderPlain = (value, keyPrefix) => {
+    if (!mentionRegex) return value;
+
+    return value.split(mentionRegex).map((chunk, i) =>
+      i % 2 === 1 ? (
+        <span
+          key={`${keyPrefix}-m${i}`}
+          className={`rounded px-1 font-semibold ${
+            isMine ? 'bg-white/25 text-white' : 'bg-indigo-100 text-indigo-700'
+          }`}
+        >
+          {chunk}
+        </span>
+      ) : (
+        chunk
+      )
+    );
+  };
+
+  return (
+    <>
+      {splitTextByLinks(text).map((part, i) =>
+        part.type === 'link' ? (
+          <a
+            key={i}
+            href={part.href}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            onClick={(e) => e.stopPropagation()}
+            className={`break-all font-medium underline underline-offset-2 ${
+              isMine ? 'text-white hover:text-indigo-100' : 'text-indigo-600 hover:text-indigo-800'
+            }`}
+          >
+            {part.value}
+          </a>
+        ) : (
+          <React.Fragment key={i}>{renderPlain(part.value, i)}</React.Fragment>
+        )
+      )}
+    </>
+  );
+};
+
 const Discussion = () => {
   const {
     currentUser, users, discussionGroups,
@@ -80,6 +141,14 @@ const Discussion = () => {
 
   const pollRef = useRef(null);
   const bottomRef = useRef(null);
+  const composerRef = useRef(null);
+
+  // Reply + @mention state
+  const [members, setMembers] = useState([]);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [mentionState, setMentionState] = useState(null); // { query, start, caret }
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const [highlightedId, setHighlightedId] = useState(null);
 
   // Auto-select the first available channel once groups load
   useEffect(() => {
@@ -89,6 +158,145 @@ const Discussion = () => {
   }, [discussionGroups, selectedGroupId]);
 
   const selectedGroup = discussionGroups.find(g => g.id === selectedGroupId) || null;
+
+  // Org Admins manage regular departments. The SuperAdmin <-> Org Admin
+  // channels are system-managed, so no edit / members / delete there.
+  const canManageSelected = isAdmin && !!selectedGroup && !selectedGroup.isPlatform;
+
+  // Members of the open channel (for @mention suggestions + highlighting)
+  useEffect(() => {
+    setMembers([]);
+    setReplyingTo(null);
+    setMentionState(null);
+    if (!selectedGroupId) return undefined;
+
+    let cancelled = false;
+
+    getGroupMembers(selectedGroupId).then((res) => {
+      if (!cancelled && res.success) setMembers(res.members || []);
+    });
+
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGroupId, selectedGroup?.memberCount]);
+
+  const mentionNames = useMemo(
+    () => members.filter(u => u.id !== currentUser.id).map(u => u.fullName).filter(Boolean),
+    [members, currentUser.id]
+  );
+
+  const mentionOptions = useMemo(() => {
+    if (!mentionState) return [];
+    const q = mentionState.query.toLowerCase();
+
+    return members
+      .filter(u => u.id !== currentUser.id && u.fullName && u.fullName.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [mentionState, members, currentUser.id]);
+
+  const updateMentionState = (text, caret) => {
+    const before = text.slice(0, caret);
+    const match = /(?:^|\s)@([^\s@][^@\n]{0,30})?$/.exec(before);
+
+    if (!match) {
+      setMentionState(null);
+      return;
+    }
+
+    const query = match[1] || '';
+    setMentionState({ query, start: caret - query.length - 1, caret });
+    setMentionIndex(0);
+  };
+
+  const handleComposerChange = (e) => {
+    setComposerText(e.target.value);
+    updateMentionState(e.target.value, e.target.selectionStart);
+  };
+
+  const pickMention = (user) => {
+    if (!mentionState) return;
+
+    const insert = `@${user.fullName} `;
+    const next =
+      composerText.slice(0, mentionState.start) +
+      insert +
+      composerText.slice(mentionState.caret);
+
+    const caretAfter = mentionState.start + insert.length;
+
+    setComposerText(next);
+    setMentionState(null);
+
+    requestAnimationFrame(() => {
+      const el = composerRef.current;
+      if (el) {
+        el.focus();
+        el.setSelectionRange(caretAfter, caretAfter);
+      }
+    });
+  };
+
+  const collectMentionIds = (text) => {
+    let rest = text;
+    const ids = [];
+
+    [...members]
+      .filter(u => u.id !== currentUser.id && u.fullName)
+      .sort((a, b) => b.fullName.length - a.fullName.length)
+      .forEach((u) => {
+        const re = new RegExp(`@${escapeRegExp(u.fullName)}(?![\\w])`, 'g');
+        if (re.test(rest)) {
+          ids.push(u.id);
+          rest = rest.replace(re, ' ');
+        }
+      });
+
+    return ids;
+  };
+
+  const startReply = (message) => {
+    setReplyingTo(message);
+    composerRef.current?.focus();
+  };
+
+  const jumpToMessage = (messageId) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setHighlightedId(messageId);
+    setTimeout(() => setHighlightedId(null), 1600);
+  };
+
+  const handleComposerKeyDown = (e) => {
+    if (mentionOptions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setMentionIndex((i) => (i + 1) % mentionOptions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setMentionIndex((i) => (i - 1 + mentionOptions.length) % mentionOptions.length);
+        return;
+      }
+      if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        pickMention(mentionOptions[mentionIndex] || mentionOptions[0]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setMentionState(null);
+        return;
+      }
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend(e);
+    }
+  };
 
   const loadMessages = async (groupId, silent = false) => {
     if (!silent) setLoadingMessages(true);
@@ -127,12 +335,20 @@ const Discussion = () => {
     if (!composerText.trim() || !selectedGroupId) return;
 
     setSending(true);
-    const res = await sendGroupMessage(selectedGroupId, composerText.trim());
+    const text = composerText.trim();
+
+    const res = await sendGroupMessage(selectedGroupId, text, {
+      replyToId: replyingTo?.id || null,
+      mentionIds: collectMentionIds(text)
+    });
     setSending(false);
 
     if (res.success) {
       setMessages((prev) => [...prev, res.message]);
       setComposerText('');
+      setReplyingTo(null);
+      setMentionState(null);
+      setError('');
     } else {
       setError(res.error || 'Could not send message.');
     }
@@ -187,7 +403,9 @@ const Discussion = () => {
             <div className="flex-1 overflow-y-auto p-2">
               {discussionGroups.length === 0 ? (
                 <p className="text-sm text-gray-400 text-center py-8 px-4">
-                  You aren't a member of any channels yet.
+                  {currentUser.role === 'SuperAdmin'
+                    ? 'No organization channels yet. A channel with each organization\'s admin is created automatically once the organization is active.'
+                    : "You aren't a member of any channels yet."}
                   {isAdmin && ' Create a department to get started.'}
                 </p>
               ) : (
@@ -203,7 +421,7 @@ const Discussion = () => {
                         }`}
                       >
                         <div className={`w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br ${groupColor(g.id)} text-white flex items-center justify-center font-bold text-xs`}>
-                          {g.isOpen ? <Megaphone size={16} /> : groupInitials(g.name)}
+                          {g.isPlatform ? <Building2 size={16} /> : g.isOpen ? <Megaphone size={16} /> : groupInitials(g.name)}
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -252,17 +470,24 @@ const Discussion = () => {
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className={`w-9 h-9 shrink-0 rounded-lg bg-gradient-to-br ${groupColor(selectedGroup.id)} text-white flex items-center justify-center`}>
-                      {selectedGroup.isOpen ? <Megaphone size={15} /> : <Hash size={15} />}
+                      {selectedGroup.isPlatform ? <Building2 size={15} /> : selectedGroup.isOpen ? <Megaphone size={15} /> : <Hash size={15} />}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="font-bold text-black truncate">{selectedGroup.name}</h2>
+                      <h2 className="font-bold text-black truncate flex items-center gap-2">
+                        {selectedGroup.name}
+                        {selectedGroup.isPlatform && (
+                          <span className="shrink-0 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-700">
+                            {currentUser.role === 'SuperAdmin' ? 'Organization admin' : 'WorkSphere SuperAdmin'}
+                          </span>
+                        )}
+                      </h2>
                       <p className="text-xs text-gray-500 truncate">
                         {selectedGroup.description || 'No description'} · {selectedGroup.memberCount} member{selectedGroup.memberCount === 1 ? '' : 's'}
                       </p>
                     </div>
                   </div>
 
-                  {isAdmin && (
+                  {canManageSelected && (
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => setShowEditModal(true)}
@@ -308,9 +533,14 @@ const Discussion = () => {
                     <div className="space-y-4">
                       {messages.map((m) => {
                         const isMine = m.authorId === currentUser.id;
+                        const mentionsMe = Array.isArray(m.mentions) && m.mentions.includes(currentUser.id);
                         return (
-                          <div key={m.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[70%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
+                          <div
+                            key={m.id}
+                            id={`msg-${m.id}`}
+                            className={`group flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div className={`max-w-[75%] flex flex-col ${isMine ? 'items-end' : 'items-start'}`}>
                               <div className="flex items-center gap-2 mb-1 px-1">
                                 <span className="text-xs font-bold text-black">{isMine ? 'You' : m.authorName}</span>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${getRoleBadgeColor(m.authorRole)}`}>
@@ -318,14 +548,54 @@ const Discussion = () => {
                                 </span>
                                 <span className="text-[11px] text-gray-400">{formatFullTimestamp(m.createdAt)}</span>
                               </div>
-                              <div
-                                className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words shadow-sm ${
-                                  isMine
-                                    ? 'bg-indigo-600 text-white rounded-tr-sm'
-                                    : 'bg-white text-gray-800 border border-gray-200 rounded-tl-sm'
-                                }`}
-                              >
-                                {m.message}
+
+                              <div className={`flex items-end gap-2 ${isMine ? 'flex-row-reverse' : ''}`}>
+                                <div
+                                  className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed break-words shadow-sm transition-all ${
+                                    isMine
+                                      ? 'bg-indigo-600 text-white rounded-tr-sm'
+                                      : 'bg-white text-gray-800 border border-gray-200 rounded-tl-sm'
+                                  } ${mentionsMe && !isMine ? 'ring-2 ring-amber-300' : ''} ${
+                                    highlightedId === m.id ? 'ring-4 ring-indigo-300' : ''
+                                  }`}
+                                >
+                                  {/* Quoted message this one replies to */}
+                                  {m.replyTo && (
+                                    <button
+                                      type="button"
+                                      onClick={() => m.replyTo.deleted ? null : jumpToMessage(m.replyTo.id)}
+                                      className={`mb-2 block w-full text-left rounded-lg border-l-4 px-3 py-1.5 text-xs ${
+                                        isMine
+                                          ? 'bg-indigo-500/60 border-indigo-200 text-indigo-50'
+                                          : 'bg-gray-50 border-indigo-400 text-gray-600'
+                                      }`}
+                                    >
+                                      {m.replyTo.deleted ? (
+                                        <span className="italic opacity-80">Original message is no longer available</span>
+                                      ) : (
+                                        <>
+                                          <span className="block font-bold">
+                                            {m.replyTo.authorId === currentUser.id ? 'You' : m.replyTo.authorName}
+                                          </span>
+                                          <span className="block line-clamp-2 whitespace-pre-wrap">{m.replyTo.message}</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+
+                                  <div className="whitespace-pre-wrap">
+                                    <MessageText text={m.message} mentionNames={mentionNames} isMine={isMine} />
+                                  </div>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => startReply(m)}
+                                  title="Reply"
+                                  className="shrink-0 p-1.5 rounded-full text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 opacity-60 group-hover:opacity-100 transition"
+                                >
+                                  <CornerUpLeft size={15} />
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -339,20 +609,68 @@ const Discussion = () => {
                 {/* Composer */}
                 <div className="border-t border-gray-200 p-4 bg-white shrink-0">
                   {error && <p className="text-red-600 text-xs mb-2">{error}</p>}
+
+                  {/* Replying to ... */}
+                  {replyingTo && (
+                    <div className="mb-2 flex items-start gap-2 rounded-lg border-l-4 border-indigo-500 bg-indigo-50 px-3 py-2">
+                      <CornerUpLeft size={14} className="mt-0.5 shrink-0 text-indigo-600" />
+                      <div className="min-w-0 flex-1 text-xs">
+                        <p className="font-bold text-indigo-700">
+                          Replying to {replyingTo.authorId === currentUser.id ? 'yourself' : replyingTo.authorName}
+                        </p>
+                        <p className="truncate text-gray-600">{replyingTo.message}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setReplyingTo(null)}
+                        title="Cancel reply"
+                        className="shrink-0 rounded p-0.5 text-gray-400 hover:bg-white hover:text-gray-700"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  )}
+
                   <form onSubmit={handleSend} className="flex items-end gap-3">
-                    <textarea
-                      value={composerText}
-                      onChange={(e) => setComposerText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSend(e);
-                        }
-                      }}
-                      placeholder={`Message #${selectedGroup.name}`}
-                      rows={1}
-                      className="flex-1 resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-h-28"
-                    />
+                    <div className="relative flex-1">
+                      {/* @mention suggestions */}
+                      {mentionOptions.length > 0 && (
+                        <div className="absolute bottom-full left-0 z-20 mb-2 w-full max-w-sm overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                          <p className="flex items-center gap-1.5 border-b border-gray-100 bg-gray-50 px-3 py-1.5 text-[11px] font-semibold text-gray-500">
+                            <AtSign size={12} /> Mention a member
+                          </p>
+                          {mentionOptions.map((u, idx) => (
+                            <button
+                              key={u.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                pickMention(u);
+                              }}
+                              className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition ${
+                                idx === mentionIndex ? 'bg-indigo-50' : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <span className="truncate font-semibold text-gray-900">{u.fullName}</span>
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${getRoleBadgeColor(u.role)}`}>
+                                {u.role}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+
+                      <textarea
+                        ref={composerRef}
+                        value={composerText}
+                        onChange={handleComposerChange}
+                        onClick={(e) => updateMentionState(e.target.value, e.target.selectionStart)}
+                        onKeyDown={handleComposerKeyDown}
+                        placeholder={`Message #${selectedGroup.name} — type @ to mention someone`}
+                        rows={1}
+                        className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 max-h-28"
+                      />
+                    </div>
                     <button
                       type="submit"
                       disabled={sending || !composerText.trim()}

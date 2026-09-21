@@ -56,8 +56,11 @@ const Campaigns = () => {
     getCampaignTeam,
     addCampaignTeamMember,
     removeCampaignTeamMember,
-    currentUser
-  } = useContext(AppContext);
+    currentUser, hasAccess } = useContext(AppContext);
+
+  // Org Admins always can; staff need the 'campaigns' section granted under
+  // Accessibility. (Approve / reject decisions stay Org-Admin-only.)
+  const canManage = currentUser?.role === 'OrgAdmin' || hasAccess('campaigns');
 
   const confirm = useConfirm();
 
@@ -519,7 +522,7 @@ const Campaigns = () => {
           </p>
         </div>
 
-        {currentUser?.role === 'OrgAdmin' && (
+        {canManage && (
           <button
             onClick={openCreate}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all"
@@ -732,8 +735,7 @@ const Campaigns = () => {
                   Team
                 </button>
 
-                {currentUser?.role ===
-                  'OrgAdmin' && (
+                {canManage && (
                   <>
                     <button
                       onClick={() =>
@@ -1463,8 +1465,7 @@ const Campaigns = () => {
                     )}
                   </div>
 
-                  {currentUser?.role ===
-                    'OrgAdmin' && (
+                  {canManage && (
                     <button
                       onClick={() =>
                         handleRemoveTeamMember(
@@ -1480,8 +1481,7 @@ const Campaigns = () => {
               ))}
             </div>
 
-            {currentUser?.role ===
-              'OrgAdmin' && (
+            {canManage && (
               <form
                 onSubmit={
                   handleAddTeamMember

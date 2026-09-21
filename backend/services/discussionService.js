@@ -1,5 +1,7 @@
 const supabase = require('../config/supabase');
 
+const { clip } = require('../utils/notifyHelpers');
+
 const {
   serializeDiscussionGroup,
   serializeDiscussionMessage,
@@ -57,12 +59,184 @@ const getGroupById = async (id) => {
   return data;
 };
 
-const assertGroupOrg = (group, orgId) => {
-  if (group.org_id !== orgId) {
+// Regular groups belong to one organization and are only reachable by
+// members of that organization. "Platform" groups (is_platform) are the
+// direct SuperAdmin <-> Organization Admin channels: the group's org_id is
+// the organization being talked to, and the SuperAdmin (who has no org of
+// their own) is allowed in as well. Group *membership* is still enforced
+// separately by assertGroupMember.
+const assertGroupOrg = (group, user) => {
+  const sameOrg =
+    !!user.orgId && group.org_id === user.orgId;
+
+  const allowed = group.is_platform
+    ? user.role === 'SuperAdmin' || sameOrg
+    : sameOrg;
+
+  if (!allowed) {
     const err = new Error('Not authorized.');
     err.statusCode = 403;
     throw err;
   }
+};
+
+const assertNotPlatformGroup = (group) => {
+  if (group.is_platform) {
+    const err = new Error(
+      'This channel is managed by WorkSphere and cannot be changed.'
+    );
+    err.statusCode = 403;
+    throw err;
+  }
+};
+
+// ------------------------------------------------------------
+// SuperAdmin <-> Organization Admin channels
+//
+// One channel per organization, named after the organization so the
+// SuperAdmin can tell at a glance which organization's admin they are
+// talking to. Members are every SuperAdmin plus that organization's
+// admin(s). Created lazily (and re-synced) so it also covers
+// organizations that existed before this feature. Throttled because
+// the dashboard polls the group list every few seconds.
+// ------------------------------------------------------------
+const PLATFORM_SYNC_INTERVAL_MS = 30 * 1000;
+
+let lastPlatformSyncAt = 0;
+let platformSyncPromise = null;
+
+const syncPlatformGroups = async () => {
+  const { data: orgs, error: orgErr } = await supabase
+    .from('organizations')
+    .select('id, name, status')
+    .in('status', ['Active', 'Suspended']);
+
+  if (orgErr) throw orgErr;
+  if (!orgs || orgs.length === 0) return;
+
+  const { data: admins, error: adminErr } = await supabase
+    .from('users')
+    .select('id, role, org_id')
+    .in('role', ['SuperAdmin', 'OrgAdmin'])
+    .eq('status', 'Active');
+
+  if (adminErr) throw adminErr;
+
+  const superAdminIds = (admins || [])
+    .filter((u) => u.role === 'SuperAdmin')
+    .map((u) => u.id);
+
+  // Without a SuperAdmin there is nobody to talk to yet.
+  if (superAdminIds.length === 0) return;
+
+  const { data: existing, error: groupErr } = await supabase
+    .from('discussion_groups')
+    .select('id, org_id, name')
+    .eq('is_platform', true);
+
+  if (groupErr) throw groupErr;
+
+  const groupByOrg = new Map(
+    (existing || []).map((g) => [g.org_id, g])
+  );
+
+  // 1. Create the missing channels.
+  const missing = orgs.filter((o) => !groupByOrg.has(o.id));
+
+  if (missing.length > 0) {
+    const { data: created, error: createErr } = await supabase
+      .from('discussion_groups')
+      .insert(
+        missing.map((o) => ({
+          org_id: o.id,
+          name: o.name,
+          description:
+            'Direct channel between the WorkSphere SuperAdmin and this organization\'s admin.',
+          is_open: false,
+          is_platform: true,
+          created_by: superAdminIds[0]
+        }))
+      )
+      .select('id, org_id, name');
+
+    if (createErr) throw createErr;
+
+    (created || []).forEach((g) => groupByOrg.set(g.org_id, g));
+  }
+
+  // 2. Keep channel names in sync with organization names.
+  for (const org of orgs) {
+    const group = groupByOrg.get(org.id);
+
+    if (group && group.name !== org.name) {
+      await supabase
+        .from('discussion_groups')
+        .update({ name: org.name })
+        .eq('id', group.id);
+    }
+  }
+
+  // 3. Make sure every SuperAdmin and the org's admin(s) are members.
+  const groupIds = [...groupByOrg.values()].map((g) => g.id);
+
+  const { data: memberRows } = await supabase
+    .from('discussion_group_members')
+    .select('group_id, user_id')
+    .in('group_id', groupIds);
+
+  const have = new Set(
+    (memberRows || []).map((m) => `${m.group_id}:${m.user_id}`)
+  );
+
+  const toInsert = [];
+
+  for (const org of orgs) {
+    const group = groupByOrg.get(org.id);
+    if (!group) continue;
+
+    const orgAdminIds = (admins || [])
+      .filter((u) => u.role === 'OrgAdmin' && u.org_id === org.id)
+      .map((u) => u.id);
+
+    [...superAdminIds, ...orgAdminIds].forEach((userId) => {
+      if (!have.has(`${group.id}:${userId}`)) {
+        toInsert.push({ group_id: group.id, user_id: userId });
+      }
+    });
+  }
+
+  if (toInsert.length > 0) {
+    await supabase
+      .from('discussion_group_members')
+      .upsert(toInsert, {
+        onConflict: 'group_id,user_id',
+        ignoreDuplicates: true
+      });
+  }
+};
+
+const ensurePlatformGroups = async () => {
+  if (Date.now() - lastPlatformSyncAt < PLATFORM_SYNC_INTERVAL_MS) {
+    return;
+  }
+
+  if (!platformSyncPromise) {
+    platformSyncPromise = syncPlatformGroups()
+      .catch((err) => {
+        // Most likely the is_platform migration has not been run yet.
+        // Regular discussions keep working either way.
+        console.error(
+          '[discussion] platform group sync failed:',
+          err.message
+        );
+      })
+      .finally(() => {
+        lastPlatformSyncAt = Date.now();
+        platformSyncPromise = null;
+      });
+  }
+
+  await platformSyncPromise;
 };
 
 const isGroupMember = async (groupId, userId) => {
@@ -93,6 +267,10 @@ const assertGroupMember = async (groupId, userId) => {
 // ============================================================
 
 const getMyGroups = async ({ user }) => {
+  if (user.role === 'SuperAdmin' || user.role === 'OrgAdmin') {
+    await ensurePlatformGroups();
+  }
+
   const { data: memberships, error: memErr } = await supabase
     .from('discussion_group_members')
     .select('group_id, last_read_at')
@@ -239,7 +417,8 @@ const updateGroup = async ({
 }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
+  assertNotPlatformGroup(group);
 
   const updates = {};
 
@@ -283,7 +462,8 @@ const updateGroup = async ({
 const deleteGroup = async ({ user, id }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
+  assertNotPlatformGroup(group);
 
   const { error } = await supabase
     .from('discussion_groups')
@@ -304,7 +484,7 @@ const deleteGroup = async ({ user, id }) => {
 const getGroupMembers = async ({ user, id }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
   await assertGroupMember(id, user.id);
 
   const { data: memberRows, error } = await supabase
@@ -339,7 +519,8 @@ const addGroupMember = async ({
 }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
+  assertNotPlatformGroup(group);
 
   const { data: targetUser } = await supabase
     .from('users')
@@ -385,7 +566,8 @@ const removeGroupMember = async ({
 }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
+  assertNotPlatformGroup(group);
 
   if (userId === user.id) {
     const err = new Error(
@@ -415,7 +597,7 @@ const removeGroupMember = async ({
 const getMessages = async ({ user, id }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
   await assertGroupMember(id, user.id);
 
   const { data, error } = await supabase
@@ -428,20 +610,88 @@ const getMessages = async ({ user, id }) => {
     throw new Error('Could not load messages.');
   }
 
-  return (data || []).map(
-    serializeDiscussionMessage
-  );
+  const rows = data || [];
+  const byId = new Map(rows.map((m) => [m.id, m]));
+
+  // Attach a small preview of the message being replied to so the client
+  // can render the quoted "reply" block without extra requests.
+  return rows.map((m) => {
+    const base = serializeDiscussionMessage(m);
+
+    if (!m.reply_to_id) {
+      return { ...base, replyTo: null };
+    }
+
+    const parent = byId.get(m.reply_to_id);
+
+    return {
+      ...base,
+      replyTo: parent
+        ? {
+            id: parent.id,
+            authorId: parent.author_id,
+            authorName: parent.author_name,
+            message: clip(parent.message, 160)
+          }
+        : {
+            id: m.reply_to_id,
+            authorId: null,
+            authorName: null,
+            message: null,
+            deleted: true
+          }
+    };
+  });
 };
 
 const postMessage = async ({
   user,
   id,
-  message
+  message,
+  replyToId,
+  mentionIds
 }) => {
   const group = await getGroupById(id);
 
-  assertGroupOrg(group, user.orgId);
+  assertGroupOrg(group, user);
   await assertGroupMember(id, user.id);
+
+  // ---- Reply target must be a message from this same group
+  let replyTarget = null;
+
+  if (replyToId) {
+    const { data: target } = await supabase
+      .from('discussion_messages')
+      .select('id, author_id, author_name, message')
+      .eq('id', replyToId)
+      .eq('group_id', id)
+      .maybeSingle();
+
+    if (!target) {
+      const err = new Error(
+        'The message you are replying to no longer exists.'
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    replyTarget = target;
+  }
+
+  // ---- Mentions must be members of this group (never trust the client)
+  let validMentionIds = [];
+
+  if (Array.isArray(mentionIds) && mentionIds.length > 0) {
+    const { data: mentionedRows } = await supabase
+      .from('discussion_group_members')
+      .select('user_id')
+      .eq('group_id', id)
+      .in('user_id', mentionIds.slice(0, 25));
+
+    validMentionIds = (mentionedRows || [])
+      .map((row) => row.user_id)
+      .filter((userId) => userId !== user.id);
+  }
 
   const { data: author } = await supabase
     .from('users')
@@ -459,13 +709,84 @@ const postMessage = async ({
         user.email ||
         'Unknown',
       author_role: user.role,
-      message: message.trim()
+      message: message.trim(),
+      // Only sent when used, so plain messages keep working even before
+      // the reply/mention migration has been applied.
+      ...(replyTarget ? { reply_to_id: replyTarget.id } : {}),
+      ...(validMentionIds.length > 0
+        ? { mentions: validMentionIds }
+        : {})
     })
     .select()
     .single();
 
   if (error) {
     throw new Error('Could not send message.');
+  }
+
+  const authorName =
+    author?.full_name || user.email || 'Someone';
+
+  // ---- Notify mentioned members (and the author being replied to)
+  const notifyIds = new Set(validMentionIds);
+
+  const notifications = [];
+
+  if (validMentionIds.length > 0) {
+    const { data: mentionedUsers } = await supabase
+      .from('users')
+      .select('id, role')
+      .in('id', validMentionIds);
+
+    (mentionedUsers || []).forEach((mentioned) => {
+      notifications.push({
+        // SuperAdmin notifications live on org_id = null.
+        org_id:
+          mentioned.role === 'SuperAdmin' ? null : group.org_id,
+        target_user_id: mentioned.id,
+        title: `${authorName} mentioned you`,
+        message: `In "${group.name}": "${clip(message, 140)}"`,
+        type: 'Mention',
+        target_role: 'All'
+      });
+    });
+  }
+
+  if (
+    replyTarget &&
+    replyTarget.author_id &&
+    replyTarget.author_id !== user.id &&
+    !notifyIds.has(replyTarget.author_id)
+  ) {
+    const { data: replied } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('id', replyTarget.author_id)
+      .maybeSingle();
+
+    if (replied) {
+      notifications.push({
+        org_id: replied.role === 'SuperAdmin' ? null : group.org_id,
+        target_user_id: replied.id,
+        title: `${authorName} replied to your message`,
+        message: `In "${group.name}": "${clip(message, 140)}"`,
+        type: 'Mention',
+        target_role: 'All'
+      });
+    }
+  }
+
+  if (notifications.length > 0) {
+    const { error: notifyErr } = await supabase
+      .from('notifications')
+      .insert(notifications);
+
+    if (notifyErr) {
+      console.error(
+        '[discussion] mention notification failed:',
+        notifyErr.message
+      );
+    }
   }
 
   // Sender's own message is immediately considered read.
@@ -477,7 +798,17 @@ const postMessage = async ({
     .eq('group_id', id)
     .eq('user_id', user.id);
 
-  return serializeDiscussionMessage(msg);
+  return {
+    ...serializeDiscussionMessage(msg),
+    replyTo: replyTarget
+      ? {
+          id: replyTarget.id,
+          authorId: replyTarget.author_id,
+          authorName: replyTarget.author_name,
+          message: clip(replyTarget.message, 160)
+        }
+      : null
+  };
 };
 
 const markGroupRead = async ({

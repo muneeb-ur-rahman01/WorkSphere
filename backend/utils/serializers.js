@@ -240,6 +240,7 @@ const serializeDiscussionGroup = (g) => ({
   name: g.name,
   description: g.description,
   isOpen: g.is_open,
+  isPlatform: !!g.is_platform,
   createdBy: g.created_by,
   createdAt: g.created_at
 });
@@ -251,11 +252,15 @@ const serializeDiscussionMessage = (m) => ({
   authorName: m.author_name,
   authorRole: m.author_role,
   message: m.message,
+  replyToId: m.reply_to_id || null,
+  mentions: Array.isArray(m.mentions) ? m.mentions : [],
   createdAt: m.created_at
 });
 
 const serializeQuery = (q) => ({
   id: q.id,
+  orgId: q.org_id || null,
+  orgName: q.organizations?.name || null,
   name: q.name,
   email: q.email,
   subject: q.subject,

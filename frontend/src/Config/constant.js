@@ -28,11 +28,11 @@ export const STAFF_ROLES = [
     { value: "Executive Director", label: "Executive Director", description: "Senior leadership role" }
 ];
 
-// Roles the public can request via the self-registration form. Executive
-// Director is deliberately excluded - it's a leadership title that should
-// only ever be granted by an Organization Admin from the internal "Add
-// Personnel" screen, never requested by an anonymous visitor.
-export const SELF_REGISTERABLE_ROLES = STAFF_ROLES.filter(r => r.value !== 'Executive Director');
+// Roles the public can request via the self-registration form. Every
+// staff-tier role (including Executive Director) can register themselves;
+// the Organization Admin still has to approve the request from
+// "Registration Requests" before the account can log in.
+export const SELF_REGISTERABLE_ROLES = STAFF_ROLES;
 
 // Just the role name strings, e.g. for allowedRoles route guards.
 export const STAFF_ROLE_NAMES = STAFF_ROLES.map(r => r.value);

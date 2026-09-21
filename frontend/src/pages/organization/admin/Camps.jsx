@@ -584,7 +584,7 @@ const Camps = () => {
 
                 <div className="bg-gray-100 border rounded-lg p-4 mt-5">
                   <p className="text-sm font-bold text-gray-800 mb-3">
-                    Roster Availability Summary
+                      Availability Summary
                   </p>
 
                   <div className="flex justify-between text-sm font-semibold">
@@ -1126,7 +1126,7 @@ const Camps = () => {
                   }
                   className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg"
                 >
-                  Close Roster
+                  Close 
                 </button>
               </div>
             </div>

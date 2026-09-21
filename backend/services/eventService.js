@@ -2,6 +2,13 @@ const supabase = require('../config/supabase');
 
 const { serializeEvent } = require('../utils/serializers');
 
+const {
+  getActorName,
+  formatDateLabel,
+  formatTimeLabel,
+  clip
+} = require('../utils/notifyHelpers');
+
 const getEvents = async ({ user, orgId }) => {
   const targetOrgId = user.role === 'SuperAdmin' ? orgId : user.orgId;
 
@@ -57,10 +64,17 @@ const createEvent = async ({
     throw err;
   }
 
+  const scheduledBy = await getActorName(user);
+  const timeLabel = formatTimeLabel(time);
+
   await supabase.from('notifications').insert({
     org_id: user.orgId,
-    title: `${title} - New Event Scheduled`,
-    message: `A new event "${title}" has been scheduled at ${location} on ${date}.`,
+    title: `New Event: ${title}`,
+    message:
+      `${scheduledBy} scheduled a new ${(eventType || 'General').toLowerCase()} event "${title}" ` +
+      `on ${formatDateLabel(date)}${timeLabel ? ` at ${timeLabel}` : ''}, ` +
+      `location: ${location}.` +
+      (description ? ` Details: ${clip(description)}` : ''),
     type: 'EventAlert',
     target_role: 'All'
   });

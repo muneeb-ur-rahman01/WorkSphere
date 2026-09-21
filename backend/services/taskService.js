@@ -121,8 +121,10 @@ const createTask = async ({
       org_id: user.orgId,
       title: 'New Task Assigned',
       message: `You have been assigned the task: "${title}". Deadline: ${dueDate || 'N/A'}. Priority: ${priority || 'Medium'}.`,
-      type: 'GeneralAlert',
-      target_role: assignee.role
+      type: 'TaskAlert',
+      target_role: assignee.role,
+      // Only the assignee should see this — not everyone with the same role.
+      target_user_id: assignedToId
     });
   }
 
@@ -243,8 +245,9 @@ const addTaskComment = async ({
         org_id: task.org_id,
         title: 'New Reply on Task',
         message: `${comment.author_name} replied on "${task.title}": "${trimmedMessage.slice(0, 120)}"`,
-        type: 'GeneralAlert',
-        target_role: assignee.role
+        type: 'TaskAlert',
+        target_role: assignee.role,
+        target_user_id: task.assigned_to_id
       });
     }
   }

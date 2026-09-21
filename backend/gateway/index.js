@@ -23,6 +23,7 @@
 //   6. timeoutGuard          - bounds how long a request can run
 //   7. requestLogger         - structured logs + generic security events
 //   8. apiLimiter             - baseline Redis-backed rate limit on /api
+//   9. payloadCrypto         - encrypted request/response envelope (opt-in per request)
 //
 // Auth, RBAC, org isolation, and Supabase RLS are unchanged and continue
 // to run further down the existing Routes -> Middleware -> Controllers
@@ -36,6 +37,7 @@ const { helmetMiddleware, corsMiddleware, enforceHttps } = require('./securityHe
 const timeoutGuard = require('./timeoutGuard');
 const requestLogger = require('./requestLogger');
 const { apiLimiter } = require('../middleware/rateLimiter');
+const { payloadCrypto } = require('./payloadCrypto');
 
 const int = (value, fallback) => {
   const n = parseInt(value, 10);
@@ -68,6 +70,18 @@ const applyGateway = (app) => {
   // forgot-password, registration, file upload, etc.) layer additional,
   // stricter limiters on top of this in their own route files.
   app.use('/api', apiLimiter);
+
+  // Authenticated API responses are personal data: never let browsers or
+  // intermediary caches store them.
+  app.use('/api', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Pragma', 'no-cache');
+    next();
+  });
+
+  // Optional encrypted request/response envelope for authenticated calls
+  // (see gateway/payloadCrypto.js). Must run after the body parsers.
+  app.use('/api', payloadCrypto);
 };
 
 module.exports = { applyGateway };

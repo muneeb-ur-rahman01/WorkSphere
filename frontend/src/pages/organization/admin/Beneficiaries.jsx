@@ -16,7 +16,11 @@ const statusBadgeClass = (status) => {
 };
 
 const Beneficiaries = () => {
-  const { beneficiaries, enrollments, projects, createBeneficiary, updateBeneficiary, deleteBeneficiary, createEnrollment, updateEnrollment, deleteEnrollment, currentUser } = useContext(AppContext);
+  const { beneficiaries, enrollments, projects, createBeneficiary, updateBeneficiary, deleteBeneficiary, createEnrollment, updateEnrollment, deleteEnrollment, currentUser, hasAccess } = useContext(AppContext);
+
+  // Org Admins always can; staff need the 'beneficiaries' section granted under
+  // Accessibility. (Approve / reject decisions stay Org-Admin-only.)
+  const canManage = currentUser?.role === 'OrgAdmin' || hasAccess('beneficiaries');
   const confirm = useConfirm();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -81,7 +85,7 @@ const Beneficiaries = () => {
           </h1>
           <p className="text-gray-600 mt-1">Registered beneficiaries and their program enrollment.</p>
         </div>
-        {currentUser?.role === 'OrgAdmin' && (
+        {canManage && (
           <button onClick={openCreate} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all">
             <Plus size={18} /> Register Beneficiary
           </button>
@@ -131,7 +135,7 @@ const Beneficiaries = () => {
               <button onClick={() => openEnrollModal(b)} className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition">
                 <FolderPlus size={14} /> Enrollment
               </button>
-              {currentUser?.role === 'OrgAdmin' && (
+              {canManage && (
                 <>
                   <button onClick={() => openEdit(b)} className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 transition">
                     <Edit size={14} /> Edit
@@ -188,7 +192,7 @@ const Beneficiaries = () => {
                 <div key={enr.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-2">
                   <span className="text-sm text-black">{projectTitle(enr.projectId)}</span>
                   <div className="flex items-center gap-2">
-                    {currentUser?.role === 'OrgAdmin' ? (
+                    {canManage ? (
                       <select value={enr.status} onChange={(e) => handleEnrollmentStatus(enr, e.target.value)} className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${statusBadgeClass(enr.status)}`}>
                         <option value="Active">Active</option>
                         <option value="Completed">Completed</option>
@@ -197,7 +201,7 @@ const Beneficiaries = () => {
                     ) : (
                       <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${statusBadgeClass(enr.status)}`}>{enr.status}</span>
                     )}
-                    {currentUser?.role === 'OrgAdmin' && (
+                    {canManage && (
                       <button onClick={() => handleRemoveEnrollment(enr)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
                     )}
                   </div>
@@ -205,7 +209,7 @@ const Beneficiaries = () => {
               ))}
             </div>
 
-            {currentUser?.role === 'OrgAdmin' && (
+            {canManage && (
               <form onSubmit={handleEnroll} className="flex gap-2 pt-3 border-t border-gray-100">
                 <select value={projectToEnroll} onChange={(e) => setProjectToEnroll(e.target.value)} required className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-black">
                   <option value="">Select project...</option>

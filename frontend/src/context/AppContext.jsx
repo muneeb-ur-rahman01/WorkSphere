@@ -1,5 +1,12 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../Config/apiConfig';
+import {
+  getStoredUser,
+  setStoredUser,
+  setSession,
+  setToken,
+  clearSession
+} from '../utils/secureSession';
 
 export const AppContext = createContext();
 
@@ -40,23 +47,64 @@ export const AppProvider = ({ children }) => {
   const [directory, setDirectory] = useState([]);
   const [connections, setConnections] = useState([]);
   const [myPermissions, setMyPermissions] = useState([]); // Accessibility: section keys granted to the current user
-  const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('campos_current_user');
-    return saved ? JSON.parse(saved) : null;
-  });
+  // The session (token + user) lives in sessionStorage - per browser
+  // tab/window, gone when it is closed. See utils/secureSession.js.
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('campos_current_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('campos_current_user');
-    }
+    setStoredUser(currentUser);
   }, [currentUser]);
 
   // ===========================================================
-  // Notification Read State
+  // Notifications: read state, "who is this for" filter, toast popups
+  //
+  // Read state and "already shown as a popup" state are remembered per
+  // user in localStorage so badges/toasts don't reset on every refresh or
+  // re-login. (Notifications themselves are org-wide rows on the server, so
+  // there is no per-user read flag in the database.)
   // ===========================================================
+  const [notificationsLoaded, setNotificationsLoaded] = useState(false);
+  const [toasts, setToasts] = useState([]);
+  const toastedRef = useRef(new Set());
+  const toastBaselineDoneRef = useRef(false);
+
+  const storageKey = (kind, userId) => `ws_notif_${kind}:${userId}`;
+
+  const loadList = (kind, userId) => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(storageKey(kind, userId)) || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveList = (kind, userId, list) => {
+    try {
+      localStorage.setItem(storageKey(kind, userId), JSON.stringify(list.slice(-500)));
+    } catch {
+      /* storage full / unavailable - state simply won't persist */
+    }
+  };
+
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setReadNotificationIds([]);
+      setNotificationsLoaded(false);
+      setToasts([]);
+      toastedRef.current = new Set();
+      toastBaselineDoneRef.current = false;
+      return;
+    }
+
+    setReadNotificationIds(loadList('read', currentUser.id));
+    setNotificationsLoaded(false);
+    toastedRef.current = new Set(loadList('toasted', currentUser.id));
+    toastBaselineDoneRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
   const getNotificationKey = useCallback((notification) => {
     if (
       notification?.id !== undefined &&
@@ -85,9 +133,12 @@ export const AppProvider = ({ children }) => {
         return prev;
       }
 
-      return [...prev, key];
+      const next = [...prev, key];
+      if (currentUser?.id) saveList('read', currentUser.id, next);
+      return next;
     });
-  }, [getNotificationKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [getNotificationKey, currentUser?.id]);
 
   const markAllNotificationsAsRead = useCallback(
     (notificationList = notifications) => {
@@ -98,10 +149,13 @@ export const AppProvider = ({ children }) => {
           next.add(getNotificationKey(notification));
         });
 
-        return Array.from(next);
+        const list = Array.from(next);
+        if (currentUser?.id) saveList('read', currentUser.id, list);
+        return list;
       });
     },
-    [notifications, getNotificationKey]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [notifications, getNotificationKey, currentUser?.id]
   );
 
   const isNotificationRead = useCallback(
@@ -113,10 +167,121 @@ export const AppProvider = ({ children }) => {
     [readNotificationIds, getNotificationKey]
   );
 
-  const unreadNotifications = notifications.filter(
+  // Notifications that are meant for the signed-in user, newest first.
+  const userNotifications = React.useMemo(() => {
+    if (!currentUser) return [];
+
+    return notifications
+      .filter((n) => {
+        // SuperAdmin gets platform-level notifications
+        if (currentUser.role === 'SuperAdmin') {
+          return n.orgId === null || n.orgId === undefined;
+        }
+
+        // A notification addressed to one specific person
+        if (n.targetUserId) {
+          return String(n.targetUserId) === String(currentUser.id);
+        }
+
+        // OrgAdmin gets everything for the organization
+        if (currentUser.role === 'OrgAdmin') {
+          return String(n.orgId) === String(currentUser.orgId);
+        }
+
+        // Staff: organization broadcasts for "All" or their role
+        return (
+          String(n.orgId) === String(currentUser.orgId) &&
+          (n.targetRole === 'All' || n.targetRole === currentUser.role)
+        );
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || 0).getTime() -
+          new Date(a.createdAt || a.date || 0).getTime()
+      );
+  }, [notifications, currentUser]);
+
+  const unreadNotifications = userNotifications.filter(
     (notification) =>
       !isNotificationRead(notification)
   );
+
+  const dismissToast = useCallback((toastId) => {
+    setToasts((prev) => prev.filter((t) => t.toastId !== toastId));
+  }, []);
+
+  // Pop a toast for every notification the user hasn't been shown yet:
+  //  - first load after login: unread ones from the last 3 days that
+  //    post-date the account (so a staff member who logs in later still
+  //    sees what was scheduled while they were away)
+  //  - afterwards: anything new that arrives while they are logged in.
+  useEffect(() => {
+    if (!currentUser?.id || !notificationsLoaded) return;
+
+    const fresh = userNotifications.filter(
+      (n) => !toastedRef.current.has(getNotificationKey(n))
+    );
+
+    if (fresh.length === 0) {
+      toastBaselineDoneRef.current = true;
+      return;
+    }
+
+    // Things the user did themselves shouldn't pop up back at them.
+    const isOwnAction = (n) =>
+      ['CampAlert', 'EventAlert', 'MeetingAlert'].includes(n.type) &&
+      (currentUser.role === 'OrgAdmin' ||
+        String(n.message || '').startsWith(currentUser.fullName || '\u0000'));
+
+    let candidates;
+
+    if (!toastBaselineDoneRef.current) {
+      const accountCreated = new Date(currentUser.createdAt || 0).getTime();
+      const cutoff = Math.max(accountCreated || 0, Date.now() - 3 * 24 * 60 * 60 * 1000);
+
+      candidates = fresh.filter(
+        (n) =>
+          !isNotificationRead(n) &&
+          !isOwnAction(n) &&
+          new Date(n.createdAt || n.date || 0).getTime() >= cutoff
+      );
+    } else {
+      candidates = fresh.filter((n) => !isOwnAction(n));
+    }
+
+    toastBaselineDoneRef.current = true;
+
+    fresh.forEach((n) => toastedRef.current.add(getNotificationKey(n)));
+    saveList('toasted', currentUser.id, Array.from(toastedRef.current));
+
+    if (candidates.length === 0) return;
+
+    const MAX_TOASTS = 4;
+    const shown = candidates.slice(0, MAX_TOASTS).map((n) => ({
+      toastId: `${getNotificationKey(n)}#${Date.now()}`,
+      notification: n,
+      title: n.title || 'New notification',
+      message: n.message || '',
+      type: n.type || 'General',
+      createdAt: n.createdAt || n.date || null
+    }));
+
+    const extra = candidates.length - shown.length;
+
+    if (extra > 0) {
+      shown.push({
+        toastId: `more#${Date.now()}`,
+        notification: null,
+        title: `${extra} more new notification${extra === 1 ? '' : 's'}`,
+        message: 'Open the bell icon at the top right to read them.',
+        type: 'General',
+        createdAt: null
+      });
+    }
+
+    setToasts((prev) => [...shown, ...prev].slice(0, 6));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userNotifications, notificationsLoaded, currentUser?.id]);
 
   // ===========================================================
   // Real-time-ish data loading: fetch fresh data from the DB
@@ -132,7 +297,7 @@ export const AppProvider = ({ children }) => {
         api.get('/events').then(r => setEvents(r.data.events)).catch(() => {}),
         api.get('/meetings').then(r => setMeetings(r.data.meetings)).catch(() => {}),
         api.get('/tasks').then(r => setTasks(r.data.tasks)).catch(() => {}),
-        api.get('/notifications').then(r => setNotifications(r.data.notifications)).catch(() => {}),
+        api.get('/notifications').then(r => { setNotifications(r.data.notifications); setNotificationsLoaded(true); }).catch(() => {}),
         api.get('/availability').then(r => setAvailability(r.data.availability)).catch(() => {}),
         api.get('/discussion-groups').then(r => setDiscussionGroups(r.data.groups)).catch(() => {}),
         api.get('/permissions/me').then(r => setMyPermissions(r.data.sections)).catch(() => {})
@@ -171,6 +336,8 @@ export const AppProvider = ({ children }) => {
         );
 
         if (currentUser.role === 'OrgAdmin') {
+          // Queries visitors addressed to this organization (public site widget).
+          requests.push(api.get('/queries').then(r => setQueries(r.data.queries)).catch(() => {}));
           requests.push(api.get('/visibility-requests/mine').then(r => setVisibilityRequests(r.data.requests)).catch(() => {}));
           requests.push(api.get('/opportunities').then(r => setOpportunities(r.data.opportunities)).catch(() => {}));
 
@@ -202,6 +369,23 @@ export const AppProvider = ({ children }) => {
     }
   }, [currentUser, refreshAll]);
 
+  // Notifications are polled a little faster than the rest of the data so a
+  // new one (and its toast popup) shows up within a few seconds.
+  useEffect(() => {
+    if (!currentUser) return undefined;
+
+    const interval = setInterval(() => {
+      api.get('/notifications')
+        .then(r => {
+          setNotifications(r.data.notifications);
+          setNotificationsLoaded(true);
+        })
+        .catch(() => {});
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   // ===================
   // Auth Operations
   // ===================
@@ -213,9 +397,11 @@ export const AppProvider = ({ children }) => {
         roleDomain: expectedRoleDomain
       });
 
-      const { token, user } = res.data;
+      const { token, user, encKey } = res.data;
 
-      localStorage.setItem('token', token);
+      // Start from a clean slate, then keep the session in sessionStorage only.
+      clearSession();
+      setSession({ token, encKey });
       setCurrentUser(user);
 
       return { success: true, user };
@@ -225,7 +411,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
+    clearSession();
     setCurrentUser(null);
     setUsers([]);
     setCamps([]);
@@ -238,6 +424,8 @@ export const AppProvider = ({ children }) => {
     setOrganizations([]);
     setDiscussionGroups([]);
     setMyPermissions([]);
+    setQueries([]);
+    setToasts([]);
   };
 
   const changePassword = async (currentPassword, newPassword) => {
@@ -693,6 +881,51 @@ export const AppProvider = ({ children }) => {
       return { success: true };
     } catch (err) {
       return asError(err, 'Could not revoke access.');
+    }
+  };
+
+  // Saves the full set of sections for one staff member in one request
+  // (Accessibility page "Save" button).
+  const setUserPermissions = async (userId, sectionKeys) => {
+    try {
+      const res = await api.put('/permissions', {
+        userId,
+        sectionKeys
+      });
+
+      if (currentUser?.id === userId) {
+        await refreshAll();
+      }
+
+      return {
+        success: true,
+        granted: res.data.granted || [],
+        revoked: res.data.revoked || []
+      };
+    } catch (err) {
+      return asError(err, 'Could not save access.');
+    }
+  };
+
+  // Organization Admin / staff: edit own name & email.
+  const updateMyProfile = async ({ fullName, email, currentPassword }) => {
+    try {
+      const res = await api.patch('/users/me', {
+        fullName,
+        email,
+        currentPassword
+      });
+
+      if (res.data.token) {
+        setToken(res.data.token);
+      }
+
+      setCurrentUser((prev) => ({ ...prev, ...res.data.user }));
+      await refreshAll();
+
+      return { success: true, user: res.data.user };
+    } catch (err) {
+      return asError(err, 'Could not update your profile.');
     }
   };
 
@@ -1652,12 +1885,13 @@ export const AppProvider = ({ children }) => {
 
   const sendGroupMessage = async (
     groupId,
-    message
+    message,
+    { replyToId = null, mentionIds = [] } = {}
   ) => {
     try {
       const res = await api.post(
         `/discussion-groups/${groupId}/messages`,
-        { message }
+        { message, replyToId, mentionIds }
       );
 
       // Lightweight refresh so the sidebar's unread/last-message preview
@@ -2439,6 +2673,12 @@ export const AppProvider = ({ children }) => {
       markNotificationAsRead,
       markAllNotificationsAsRead,
       isNotificationRead,
+      userNotifications,
+      notificationsLoaded,
+      toasts,
+      dismissToast,
+      setUserPermissions,
+      updateMyProfile,
 
       availability,
       prescriptions,

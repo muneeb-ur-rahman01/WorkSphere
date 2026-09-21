@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const supabase = require('../config/supabase');
 
@@ -347,7 +348,132 @@ const assignMentor = async ({
   }
 };
 
+// ============================================================
+// Own profile (Organization Admin + staff-tier roles)
+// ============================================================
+
+const PROFILE_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+const updateMyProfile = async ({
+  user,
+  fullName,
+  email,
+  currentPassword
+}) => {
+  const { data: existing, error: fetchErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  if (fetchErr || !existing) {
+    const err = new Error('Account not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const updates = {};
+
+  if (fullName !== undefined) {
+    const cleanName = String(fullName).trim();
+
+    if (cleanName.length < 2 || cleanName.length > 120) {
+      const err = new Error(
+        'Full name must be between 2 and 120 characters.'
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (cleanName !== existing.full_name) {
+      updates.full_name = cleanName;
+    }
+  }
+
+  if (email !== undefined) {
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    if (!PROFILE_EMAIL_REGEX.test(cleanEmail)) {
+      const err = new Error('Please enter a valid email address.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (cleanEmail !== String(existing.email).toLowerCase()) {
+      // Changing the login email is sensitive: re-confirm the password.
+      if (!currentPassword) {
+        const err = new Error(
+          'Enter your current password to change your email.'
+        );
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const match = await bcrypt.compare(
+        currentPassword,
+        existing.password_hash
+      );
+
+      if (!match) {
+        const err = new Error('Current password is incorrect.');
+        err.statusCode = 401;
+        throw err;
+      }
+
+      const { data: taken } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', cleanEmail)
+        .neq('id', user.id)
+        .maybeSingle();
+
+      if (taken) {
+        const err = new Error(
+          'That email address is already in use.'
+        );
+        err.statusCode = 409;
+        throw err;
+      }
+
+      updates.email = cleanEmail;
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { user: serializeUser(existing), token: null };
+  }
+
+  const { data: updated, error } = await supabase
+    .from('users')
+    .update(updates)
+    .eq('id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    const err = new Error('Could not update your profile.');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  // Re-issue the session token so the email inside it stays current.
+  const token = jwt.sign(
+    {
+      id: updated.id,
+      role: updated.role,
+      orgId: updated.org_id,
+      email: updated.email,
+      ...(user.ek ? { ek: user.ek } : {})
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+  );
+
+  return { user: serializeUser(updated), token };
+};
+
 module.exports = {
+  updateMyProfile,
   STAFF_ROLES,
   getUsers,
   createStaffByAdmin,

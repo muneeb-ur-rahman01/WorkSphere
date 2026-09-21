@@ -14,6 +14,11 @@ const getPublicEventsAndCamps = async () => {
     .eq('public_events_enabled', true)
     .eq('status', 'Active');
 
+  // NOTE: an organization becomes eligible automatically the moment the
+  // SuperAdmin approves one of its camps/events (see
+  // visibilityService.reviewVisibilityRequest). The toggle in Organization
+  // Management remains a manual kill-switch on top of that.
+
   if (orgErr) {
     const err = new Error('Could not load public events.');
     err.statusCode = 500;

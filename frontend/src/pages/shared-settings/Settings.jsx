@@ -1,10 +1,67 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../../context/AppContext';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { KeyRound, ShieldCheck, UserCircle2 } from 'lucide-react';
+import { KeyRound, ShieldCheck, UserCircle2, UserCog, Save } from 'lucide-react';
 
 const Settings = () => {
-  const { currentUser, changePassword } = useContext(AppContext);
+  const { currentUser, changePassword, updateMyProfile } = useContext(AppContext);
+
+  // Organization Admin and staff can edit their own profile.
+  // (The SuperAdmin account keeps the read-only card.)
+  const canEditProfile = !!currentUser && currentUser.role !== 'SuperAdmin';
+
+  const [profileForm, setProfileForm] = useState({
+    fullName: currentUser?.fullName || '',
+    email: currentUser?.email || '',
+    currentPassword: ''
+  });
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  const emailChanged =
+    profileForm.email.trim().toLowerCase() !== String(currentUser?.email || '').toLowerCase();
+  const nameChanged = profileForm.fullName.trim() !== (currentUser?.fullName || '');
+
+  const handleProfileChange = (e) => {
+    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+    setProfileError('');
+    setProfileSuccess('');
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    setProfileError('');
+    setProfileSuccess('');
+
+    if (profileForm.fullName.trim().length < 2) {
+      setProfileError('Please enter your full name.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email.trim())) {
+      setProfileError('Please enter a valid email address.');
+      return;
+    }
+    if (emailChanged && !profileForm.currentPassword) {
+      setProfileError('Enter your current password to change your email address.');
+      return;
+    }
+
+    setProfileSaving(true);
+    const res = await updateMyProfile({
+      fullName: profileForm.fullName.trim(),
+      email: profileForm.email.trim(),
+      currentPassword: emailChanged ? profileForm.currentPassword : undefined
+    });
+    setProfileSaving(false);
+
+    if (res.success) {
+      setProfileSuccess('Profile updated successfully.');
+      setProfileForm((prev) => ({ ...prev, currentPassword: '' }));
+    } else {
+      setProfileError(res.error || 'Could not update your profile.');
+    }
+  };
 
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -115,8 +172,86 @@ const Settings = () => {
           </div>
         </div>
 
+        <div className="lg:col-span-2 space-y-6">
+        {/* Edit Profile Card */}
+        {canEditProfile && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-1">
+              <UserCog size={20} className="text-blue-600" />
+              <h2 className="text-xl font-bold text-black">Edit Profile</h2>
+            </div>
+            <p className="text-sm text-gray-500 mb-6">
+              Update the name and email address on your account.
+            </p>
+
+            {profileError && (
+              <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-5">
+                {profileError}
+              </div>
+            )}
+
+            {profileSuccess && (
+              <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
+                <ShieldCheck size={16} />
+                {profileSuccess}
+              </div>
+            )}
+
+            <form onSubmit={handleProfileSubmit} noValidate className="max-w-md">
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-black mb-2">Full Name</label>
+                <input
+                  type="text"
+                  name="fullName"
+                  value={profileForm.fullName}
+                  onChange={handleProfileChange}
+                  maxLength={120}
+                  className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-black mb-2">Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={profileForm.email}
+                  onChange={handleProfileChange}
+                  className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {emailChanged && (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Current Password <span className="font-normal text-gray-500">(required to change email)</span>
+                  </label>
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={profileForm.currentPassword}
+                    onChange={handleProfileChange}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={profileSaving || (!nameChanged && !emailChanged)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700 hover:shadow-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Save size={18} />
+                {profileSaving ? 'Saving...' : 'Save Profile'}
+              </button>
+            </form>
+          </div>
+        )}
+
         {/* Change Password Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 lg:col-span-2">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <div className="flex items-center gap-3 mb-1">
             <KeyRound size={20} className="text-blue-600" />
             <h2 className="text-xl font-bold text-black">Change Password</h2>
@@ -238,6 +373,7 @@ const Settings = () => {
               {submitting ? 'Updating...' : 'Update Password'}
             </button>
           </form>
+        </div>
         </div>
       </div>
     </DashboardLayout>

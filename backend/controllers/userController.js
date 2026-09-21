@@ -1,5 +1,26 @@
 const userService = require('../services/userService');
 
+const updateMyProfile = async (req, res) => {
+  try {
+    const result = await userService.updateMyProfile({
+      user: req.user,
+      fullName: req.body.fullName,
+      email: req.body.email,
+      currentPassword: req.body.currentPassword
+    });
+
+    return res.json({
+      success: true,
+      ...result
+    });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({
+      success: false,
+      error: err.message || 'Could not update your profile.'
+    });
+  }
+};
+
 const getUsers = async (req, res) => {
   try {
     const users = await userService.getUsers({
@@ -113,6 +134,7 @@ const assignMentor = async (req, res) => {
 };
 
 module.exports = {
+  updateMyProfile,
   getUsers,
   createStaffByAdmin,
   updateStaffStatus,

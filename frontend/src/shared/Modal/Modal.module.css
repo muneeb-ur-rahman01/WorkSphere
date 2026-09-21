@@ -9,13 +9,16 @@
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start; /* + auto margins on .modal: centered when it fits, scrolls when it doesn't */
+  overflow-y: auto;
+  overscroll-behavior: contain;
   z-index: 1000;
   padding: 16px;
   animation: fadeIn 0.2s ease-out forwards;
 }
 
 .modal {
+  margin: auto;
   width: 100%;
   background: #0F172A;
   border: 1px solid var(--border-color);

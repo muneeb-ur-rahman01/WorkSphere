@@ -1,6 +1,13 @@
 const supabase = require('../config/supabase');
 const { serializeCamp } = require('../utils/serializers');
 
+const {
+  getActorName,
+  formatDateLabel,
+  formatTimeLabel,
+  clip
+} = require('../utils/notifyHelpers');
+
 const getCamps = async ({ user, orgId }) => {
   let query = supabase
     .from('camps')
@@ -49,10 +56,18 @@ const createCamp = async ({
   }
 
   // Broadcast notification to the organization's staff
+  const scheduledBy = await getActorName(user);
+  const timeLabel = formatTimeLabel(time);
+
   await supabase.from('notifications').insert({
     org_id: user.orgId,
-    title: `${title} - Availability Requested`,
-    message: `A new medical camp "${title}" is scheduled at ${location} on ${date}. Admin requested your availability status. Please update it immediately.`,
+    title: `New Medical Camp: ${title}`,
+    message:
+      `${scheduledBy} scheduled a new medical camp "${title}" ` +
+      `on ${formatDateLabel(date)}${timeLabel ? ` at ${timeLabel}` : ''}, ` +
+      `location: ${location}.` +
+      (description ? ` Details: ${clip(description)}` : '') +
+      ' Please update your availability from the Camps section as soon as possible.',
     type: 'CampAlert',
     target_role: 'All'
   });

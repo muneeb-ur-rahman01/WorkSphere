@@ -152,7 +152,6 @@ cp .env.example .env # fill in real Supabase/JWT values; set REDIS_URL
 # Redis (any of):
 docker run -p 6379:6379 redis:7
 # or: redis-server (if installed locally)
-
 npm run dev
 ```
 

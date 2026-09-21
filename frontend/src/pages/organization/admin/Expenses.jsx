@@ -16,7 +16,11 @@ const statusBadgeClass = (status) => {
 };
 
 const Expenses = () => {
-  const { expenses, projects, campaigns, createExpense, updateExpenseStatus, deleteExpense, currentUser } = useContext(AppContext);
+  const { expenses, projects, campaigns, createExpense, updateExpenseStatus, deleteExpense, currentUser, hasAccess } = useContext(AppContext);
+
+  // Org Admins always can; staff need the 'expenses' section granted under
+  // Accessibility. (Approve / reject decisions stay Org-Admin-only.)
+  const canManage = currentUser?.role === 'OrgAdmin' || hasAccess('expenses');
   const confirm = useConfirm();
 
   const [statusFilter, setStatusFilter] = useState('All');
@@ -58,9 +62,11 @@ const Expenses = () => {
           </h1>
           <p className="text-gray-600 mt-1">Project and campaign expenses, awaiting or reviewed by Org Admin approval.</p>
         </div>
-        <button onClick={() => { setForm(emptyForm); setError(''); setModalOpen(true); }} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all">
+        {canManage && (
+<button onClick={() => { setForm(emptyForm); setError(''); setModalOpen(true); }} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all">
           <Plus size={18} /> Submit Expense
         </button>
+)}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -124,7 +130,7 @@ const Expenses = () => {
                           <button onClick={() => handleReject(exp)} className="p-2 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 transition" title="Reject"><Ban size={16} /></button>
                         </>
                       )}
-                      {currentUser?.role === 'OrgAdmin' && (
+                      {canManage && (
                         <button onClick={() => handleDelete(exp)} className="p-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition" title="Delete"><Trash2 size={16} /></button>
                       )}
                     </div>

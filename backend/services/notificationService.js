@@ -14,7 +14,7 @@ const getNotifications = async ({ user }) => {
     query = query.eq('org_id', user.orgId);
   }
 
-  const { data, error } = await query;
+  const { data, error } = await query.limit(200);
 
   if (error) {
     const err = new Error('Could not fetch notifications.');
@@ -22,7 +22,29 @@ const getNotifications = async ({ user }) => {
     throw err;
   }
 
-  return data.map(serializeNotification);
+  // Staff-tier users must only receive notifications meant for them:
+  // either addressed to them directly, or a broadcast for their role /
+  // "All". (Previously every notification in the organization was sent to
+  // every member and only filtered client-side.)
+  if (user.role !== 'SuperAdmin' && user.role !== 'OrgAdmin') {
+    return data
+      .filter((n) =>
+        n.target_user_id
+          ? String(n.target_user_id) === String(user.id)
+          : n.target_role === 'All' || n.target_role === user.role
+      )
+      .map(serializeNotification);
+  }
+
+  // Admins see broadcasts plus anything addressed to them personally —
+  // not notifications that were addressed to a specific other person.
+  return data
+    .filter(
+      (n) =>
+        !n.target_user_id ||
+        String(n.target_user_id) === String(user.id)
+    )
+    .map(serializeNotification);
 };
 
 const sendCustomAlert = async ({

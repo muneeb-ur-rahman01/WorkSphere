@@ -1,6 +1,12 @@
 const supabase = require('../config/supabase');
 const { serializeMeeting } = require('../utils/serializers');
 
+const {
+  getActorName,
+  formatDateLabel,
+  formatTimeLabel
+} = require('../utils/notifyHelpers');
+
 const MEETING_TYPES = ['Online', 'Offline'];
 const MEETING_STATUSES = ['Upcoming', 'Completed', 'Cancelled'];
 
@@ -61,10 +67,17 @@ const createMeeting = async ({
     throw err;
   }
 
+  const scheduledBy = await getActorName(user);
+
   await supabase.from('notifications').insert({
     org_id: user.orgId,
-    title: `${subject} - New Meeting Scheduled`,
-    message: `A new ${type.toLowerCase()} meeting "${subject}" has been scheduled on ${date} at ${time}.`,
+    title: `New Meeting: ${subject}`,
+    message:
+      `${scheduledBy} scheduled a new ${type.toLowerCase()} meeting "${subject}" ` +
+      `on ${formatDateLabel(date)}${time ? ` at ${formatTimeLabel(time)}` : ''}.` +
+      (type === 'Online' && meetingLink
+        ? ` Join link: ${meetingLink}`
+        : ''),
     type: 'MeetingAlert',
     target_role: 'All'
   });

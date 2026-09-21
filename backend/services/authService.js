@@ -9,6 +9,8 @@ const { sendPasswordResetEmail } = require('../utils/mailer');
 
 const { getPlan } = require('../config/plans');
 
+const { createSessionKey } = require('../gateway/payloadCrypto');
+
 const {
   logBillingEvent,
   BILLING_EVENTS
@@ -43,7 +45,8 @@ const SELF_REGISTERABLE_ROLES = [
   'Employee',
   'Intern',
   'Volunteer',
-  'Membership'
+  'Membership',
+  'Executive Director'
 ];
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
@@ -99,13 +102,16 @@ const hashToken = (rawToken) => {
     .digest('hex');
 };
 
-const signToken = (user) => {
+const signToken = (user, ek) => {
   return jwt.sign(
     {
       id: user.id,
       role: user.role,
       orgId: user.org_id,
-      email: user.email
+      email: user.email,
+      // Wrapped session key for the encrypted API transport
+      // (see gateway/payloadCrypto.js).
+      ...(ek ? { ek } : {})
     },
     process.env.JWT_SECRET,
     {
@@ -292,7 +298,9 @@ const login = async ({
     orgId: user.org_id
   });
 
-  const token = signToken(user);
+  const sessionKey = createSessionKey();
+
+  const token = signToken(user, sessionKey.ek);
 
   /*
   |--------------------------------------------------------------------------
@@ -320,6 +328,7 @@ const login = async ({
     body: {
       success: true,
       token,
+      encKey: sessionKey.key,
       user: serializeUser(user)
     }
   };

@@ -12,7 +12,8 @@ const SELF_REGISTERABLE_ROLES = [
   'Employee',
   'Intern',
   'Volunteer',
-  'Membership'
+  'Membership',
+  'Executive Director'
 ];
 
 const VALID_PLAN_KEYS = [

@@ -6,7 +6,11 @@ import { HandHeart, Search, Edit } from 'lucide-react';
 const emptyForm = { skills: '', interests: '', availability: '', totalHours: '', performanceNotes: '' };
 
 const Volunteers = () => {
-  const { volunteers, updateVolunteerProfile, currentUser } = useContext(AppContext);
+  const { volunteers, updateVolunteerProfile, currentUser, hasAccess } = useContext(AppContext);
+
+  // Org Admins always can; staff need the 'volunteers' section granted under
+  // Accessibility. (Approve / reject decisions stay Org-Admin-only.)
+  const canManage = currentUser?.role === 'OrgAdmin' || hasAccess('volunteers');
   const [searchTerm, setSearchTerm] = useState('');
   const [editingVolunteer, setEditingVolunteer] = useState(null);
   const [form, setForm] = useState(emptyForm);
@@ -92,7 +96,7 @@ const Volunteers = () => {
               <p><span className="font-semibold text-black">Availability:</span> {v.profile?.availability || '—'}</p>
               <p><span className="font-semibold text-black">Hours logged:</span> {v.profile?.totalHours ?? 0}</p>
             </div>
-            {currentUser?.role === 'OrgAdmin' && (
+            {canManage && (
               <button onClick={() => openEdit(v)} className="mt-2 self-start flex items-center gap-1.5 text-xs font-semibold text-indigo-600 border border-indigo-200 rounded-lg px-3 py-1.5 hover:bg-indigo-50 transition">
                 <Edit size={14} /> Edit Profile
               </button>

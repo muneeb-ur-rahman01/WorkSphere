@@ -335,7 +335,148 @@ const revokePermission = async ({
   return true;
 };
 
+// Saves the complete set of sections for one staff member in a single
+// operation (used by the Accessibility screen's Save button). Only the
+// difference against what is stored is written, and the staff member gets
+// ONE notification listing what was newly granted.
+const setUserPermissions = async ({
+  user,
+  userId,
+  sectionKeys
+}) => {
+  if (!userId || !Array.isArray(sectionKeys)) {
+    const err = new Error(
+      'userId and sectionKeys are required.'
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const desired = [...new Set(sectionKeys)];
+
+  if (!desired.every(isAssignableSection)) {
+    const err = new Error('Invalid section.');
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const { data: target } = await supabase
+    .from('users')
+    .select('org_id, full_name')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (!target || target.org_id !== user.orgId) {
+    const err = new Error('Not authorized for this user.');
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const { data: currentRows, error: currentErr } =
+    await supabase
+      .from('staff_permissions')
+      .select('section_key')
+      .eq('user_id', userId);
+
+  if (currentErr) {
+    const err = new Error('Could not fetch permissions.');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  const current = (currentRows || []).map(
+    (row) => row.section_key
+  );
+
+  const toGrant = desired.filter((k) => !current.includes(k));
+  const toRevoke = current.filter((k) => !desired.includes(k));
+
+  const labelOf = (key) =>
+    ASSIGNABLE_SECTIONS.find((s) => s.key === key)?.label ||
+    key;
+
+  if (toGrant.length > 0) {
+    const { error } = await supabase
+      .from('staff_permissions')
+      .upsert(
+        toGrant.map((key) => ({
+          org_id: user.orgId,
+          user_id: userId,
+          section_key: key,
+          granted_by: user.id
+        })),
+        { onConflict: 'user_id,section_key' }
+      );
+
+    if (error) {
+      const err = new Error('Could not grant access.');
+      err.statusCode = 500;
+      throw err;
+    }
+  }
+
+  if (toRevoke.length > 0) {
+    const { error } = await supabase
+      .from('staff_permissions')
+      .delete()
+      .eq('user_id', userId)
+      .in('section_key', toRevoke);
+
+    if (error) {
+      const err = new Error('Could not revoke access.');
+      err.statusCode = 500;
+      throw err;
+    }
+  }
+
+  for (const key of toGrant) {
+    await logAudit({
+      actor: user,
+      orgId: user.orgId,
+      action: AUDIT_ACTIONS.PERMISSION_GRANTED,
+      entityType: 'permission',
+      entityId: userId,
+      entityLabel: `${target.full_name} — ${labelOf(key)}`,
+      newValue: { sectionKey: key }
+    });
+  }
+
+  for (const key of toRevoke) {
+    await logAudit({
+      actor: user,
+      orgId: user.orgId,
+      action: AUDIT_ACTIONS.PERMISSION_REVOKED,
+      entityType: 'permission',
+      entityId: userId,
+      entityLabel: `${target.full_name} — ${labelOf(key)}`,
+      previousValue: { sectionKey: key }
+    });
+  }
+
+  if (toGrant.length > 0) {
+    await supabase.from('notifications').insert({
+      org_id: user.orgId,
+      target_user_id: userId,
+      title: 'New Dashboard Access Granted',
+      message:
+        `Your organization admin gave you access to: ${toGrant
+          .map(labelOf)
+          .join(', ')}. ` +
+        'You can now find and manage these sections from your dashboard menu.',
+      type: 'Accessibility',
+      target_role: 'All'
+    });
+  }
+
+  return {
+    sections: desired,
+    granted: toGrant,
+    revoked: toRevoke
+  };
+};
+
 module.exports = {
+  setUserPermissions,
   ASSIGNABLE_SECTIONS,
   isAssignableSection,
   getAssignableSections,
