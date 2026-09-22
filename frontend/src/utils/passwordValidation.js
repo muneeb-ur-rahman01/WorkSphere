@@ -5,6 +5,6 @@
 export const STAFF_PASSWORD_REGEX = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
 export const STAFF_PASSWORD_MESSAGE =
-  'Password must be at least 8 characters long and include at least one letter and one number.';
+  'Password must be at least 16 characters long and include at least one Capital letter, one Special Character and one number.';
 
 export const isValidStaffPassword = (password) => STAFF_PASSWORD_REGEX.test(password || '');

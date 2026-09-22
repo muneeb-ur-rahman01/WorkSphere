@@ -1,36 +1,61 @@
 import React, { useContext, useState } from 'react';
+
 import { AppContext } from '../../context/AppContext';
+
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { KeyRound, ShieldCheck, UserCircle2, UserCog, Save } from 'lucide-react';
+
+import {
+  KeyRound,
+  ShieldCheck,
+  UserCircle2,
+  UserCog,
+  Save,
+  Eye,
+  EyeOff
+} from 'lucide-react';
 
 const Settings = () => {
-  const { currentUser, changePassword, updateMyProfile } = useContext(AppContext);
+  const { currentUser, changePassword, updateMyProfile } =
+    useContext(AppContext);
 
   // Organization Admin and staff can edit their own profile.
-  // (The SuperAdmin account keeps the read-only card.)
-  const canEditProfile = !!currentUser && currentUser.role !== 'SuperAdmin';
+  // The SuperAdmin account keeps the read-only card.
+  const canEditProfile =
+    !!currentUser && currentUser.role !== 'SuperAdmin';
 
+  // -----------------------------
+  // Profile State
+  // -----------------------------
   const [profileForm, setProfileForm] = useState({
     fullName: currentUser?.fullName || '',
     email: currentUser?.email || '',
     currentPassword: ''
   });
+
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
 
   const emailChanged =
-    profileForm.email.trim().toLowerCase() !== String(currentUser?.email || '').toLowerCase();
-  const nameChanged = profileForm.fullName.trim() !== (currentUser?.fullName || '');
+    profileForm.email.trim().toLowerCase() !==
+    String(currentUser?.email || '').toLowerCase();
+
+  const nameChanged =
+    profileForm.fullName.trim() !== (currentUser?.fullName || '');
 
   const handleProfileChange = (e) => {
-    setProfileForm({ ...profileForm, [e.target.name]: e.target.value });
+    setProfileForm({
+      ...profileForm,
+      [e.target.name]: e.target.value
+    });
+
     setProfileError('');
     setProfileSuccess('');
   };
 
   const handleProfileSubmit = async (e) => {
     e.preventDefault();
+
     setProfileError('');
     setProfileSuccess('');
 
@@ -38,49 +63,82 @@ const Settings = () => {
       setProfileError('Please enter your full name.');
       return;
     }
+
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(profileForm.email.trim())) {
       setProfileError('Please enter a valid email address.');
       return;
     }
+
     if (emailChanged && !profileForm.currentPassword) {
-      setProfileError('Enter your current password to change your email address.');
+      setProfileError(
+        'Enter your current password to change your email address.'
+      );
       return;
     }
 
     setProfileSaving(true);
+
     const res = await updateMyProfile({
       fullName: profileForm.fullName.trim(),
       email: profileForm.email.trim(),
-      currentPassword: emailChanged ? profileForm.currentPassword : undefined
+      currentPassword: emailChanged
+        ? profileForm.currentPassword
+        : undefined
     });
+
     setProfileSaving(false);
 
     if (res.success) {
       setProfileSuccess('Profile updated successfully.');
-      setProfileForm((prev) => ({ ...prev, currentPassword: '' }));
+
+      setProfileForm((prev) => ({
+        ...prev,
+        currentPassword: ''
+      }));
     } else {
-      setProfileError(res.error || 'Could not update your profile.');
+      setProfileError(
+        res.error || 'Could not update your profile.'
+      );
     }
   };
 
+  // -----------------------------
+  // Password State
+  // -----------------------------
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Show / Hide Password States
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+
     setError('');
     setSuccess('');
   };
 
+  // -----------------------------
+  // Password Strength
+  // -----------------------------
   const getPasswordStrength = (password) => {
     if (!password) {
-      return { label: '', width: '0%' };
+      return {
+        label: '',
+        width: '0%'
+      };
     }
 
     let score = 0;
@@ -92,288 +150,519 @@ const Settings = () => {
     if (/[^A-Za-z0-9]/.test(password)) score++;
 
     if (score <= 1) {
-      return { label: 'Weak', width: '25%' };
+      return {
+        label: 'Weak',
+        width: '25%'
+      };
     }
 
     if (score === 2) {
-      return { label: 'Moderate', width: '50%' };
+      return {
+        label: 'Moderate',
+        width: '50%'
+      };
     }
 
     if (score === 3 || score === 4) {
-      return { label: 'Good', width: '75%' };
+      return {
+        label: 'Good',
+        width: '75%'
+      };
     }
 
-    return { label: 'Perfect', width: '100%' };
+    return {
+      label: 'Perfect',
+      width: '100%'
+    };
   };
 
-  const passwordStrength = getPasswordStrength(formData.newPassword);
+  const passwordStrength = getPasswordStrength(
+    formData.newPassword
+  );
 
+  // -----------------------------
+  // Change Password Submit
+  // -----------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError('');
     setSuccess('');
 
-    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+    if (
+      !formData.currentPassword ||
+      !formData.newPassword ||
+      !formData.confirmPassword
+    ) {
       setError('Please fill in all fields.');
       return;
     }
+
     if (formData.newPassword.length !== 16) {
       setError('New password must be exactly 16 characters.');
       return;
     }
+
     if (formData.newPassword !== formData.confirmPassword) {
       setError('New password and confirmation do not match.');
       return;
     }
 
     setSubmitting(true);
-    const res = await changePassword(formData.currentPassword, formData.newPassword);
+
+    const res = await changePassword(
+      formData.currentPassword,
+      formData.newPassword
+    );
+
     setSubmitting(false);
 
     if (res.success) {
       setSuccess('Password updated successfully.');
-      setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+
+      // Hide passwords again after successful update
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } else {
-      setError(res.error || 'Could not update password.');
+      setError(
+        res.error || 'Could not update password.'
+      );
     }
   };
 
   return (
     <DashboardLayout>
+      {/* Page Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-black">Settings</h1>
+        <h1 className="text-3xl font-bold text-black">
+          Settings
+        </h1>
+
         <p className="mt-1 text-sm text-gray-600">
           Manage your account and security preferences.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
         {/* Profile Card */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 h-fit">
+
           <div className="flex items-center gap-3 mb-5">
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
               <UserCircle2 size={28} />
             </div>
+
             <div>
-              <p className="font-bold text-black">{currentUser?.fullName}</p>
-              <p className="text-sm text-gray-500">{currentUser?.email}</p>
+              <p className="font-bold text-black">
+                {currentUser?.fullName}
+              </p>
+
+              <p className="text-sm text-gray-500">
+                {currentUser?.email}
+              </p>
             </div>
           </div>
 
           <div className="space-y-2 text-sm">
+
             <div className="flex justify-between border-b border-gray-100 pb-2">
-              <span className="text-gray-500">Role</span>
-              <span className="font-semibold text-black">{currentUser?.role}</span>
+              <span className="text-gray-500">
+                Role
+              </span>
+
+              <span className="font-semibold text-black">
+                {currentUser?.role}
+              </span>
             </div>
+
             <div className="flex justify-between pb-2">
-              <span className="text-gray-500">Status</span>
-              <span className="font-semibold text-green-600">{currentUser?.status}</span>
+              <span className="text-gray-500">
+                Status
+              </span>
+
+              <span className="font-semibold text-green-600">
+                {currentUser?.status}
+              </span>
             </div>
+
           </div>
         </div>
 
         <div className="lg:col-span-2 space-y-6">
-        {/* Edit Profile Card */}
-        {canEditProfile && (
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-1">
-              <UserCog size={20} className="text-blue-600" />
-              <h2 className="text-xl font-bold text-black">Edit Profile</h2>
-            </div>
-            <p className="text-sm text-gray-500 mb-6">
-              Update the name and email address on your account.
-            </p>
 
-            {profileError && (
-              <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-5">
-                {profileError}
-              </div>
-            )}
+          {/* Edit Profile Card */}
+          {canEditProfile && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
 
-            {profileSuccess && (
-              <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
-                <ShieldCheck size={16} />
-                {profileSuccess}
-              </div>
-            )}
-
-            <form onSubmit={handleProfileSubmit} noValidate className="max-w-md">
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-black mb-2">Full Name</label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={profileForm.fullName}
-                  onChange={handleProfileChange}
-                  maxLength={120}
-                  className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              <div className="flex items-center gap-3 mb-1">
+                <UserCog
+                  size={20}
+                  className="text-blue-600"
                 />
+
+                <h2 className="text-xl font-bold text-black">
+                  Edit Profile
+                </h2>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-semibold text-black mb-2">Email Address</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={profileForm.email}
-                  onChange={handleProfileChange}
-                  className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <p className="text-sm text-gray-500 mb-6">
+                Update the name and email address on your account.
+              </p>
 
-              {emailChanged && (
+              {/* Profile Error */}
+              {profileError && (
+                <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-5">
+                  {profileError}
+                </div>
+              )}
+
+              {/* Profile Success */}
+              {profileSuccess && (
+                <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
+                  <ShieldCheck size={16} />
+                  {profileSuccess}
+                </div>
+              )}
+
+              <form
+                onSubmit={handleProfileSubmit}
+                noValidate
+                className="max-w-md"
+              >
+
+                {/* Full Name */}
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-black mb-2">
-                    Current Password <span className="font-normal text-gray-500">(required to change email)</span>
+                    Full Name
                   </label>
+
                   <input
-                    type="password"
-                    name="currentPassword"
-                    value={profileForm.currentPassword}
+                    type="text"
+                    name="fullName"
+                    value={profileForm.fullName}
                     onChange={handleProfileChange}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
+                    maxLength={120}
                     className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-              )}
 
+                {/* Email */}
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-black mb-2">
+                    Email Address
+                  </label>
+
+                  <input
+                    type="email"
+                    name="email"
+                    value={profileForm.email}
+                    onChange={handleProfileChange}
+                    className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Current Password for Email Change */}
+                {emailChanged && (
+                  <div className="mb-4">
+
+                    <label className="block text-sm font-semibold text-black mb-2">
+                      Current Password{' '}
+                      <span className="font-normal text-gray-500">
+                        (required to change email)
+                      </span>
+                    </label>
+
+                    <input
+                      type="password"
+                      name="currentPassword"
+                      value={profileForm.currentPassword}
+                      onChange={handleProfileChange}
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+
+                  </div>
+                )}
+
+                {/* Save Profile */}
+                <button
+                  type="submit"
+                  disabled={
+                    profileSaving ||
+                    (!nameChanged && !emailChanged)
+                  }
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700 hover:shadow-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <Save size={18} />
+
+                  {profileSaving
+                    ? 'Saving...'
+                    : 'Save Profile'}
+                </button>
+
+              </form>
+            </div>
+          )}
+
+          {/* Change Password Card */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
+
+            <div className="flex items-center gap-3 mb-1">
+              <KeyRound
+                size={20}
+                className="text-blue-600"
+              />
+
+              <h2 className="text-xl font-bold text-black">
+                Change Password
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-500 mb-6">
+              Choose a strong password you don't use anywhere else.
+            </p>
+
+            {/* Password Error */}
+            {error && (
+              <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-5">
+                {error}
+              </div>
+            )}
+
+            {/* Password Success */}
+            {success && (
+              <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
+                <ShieldCheck size={16} />
+                {success}
+              </div>
+            )}
+
+            <form
+              onSubmit={handleSubmit}
+              className="max-w-md"
+            >
+
+              {/* Current Password */}
+              <div className="mb-4">
+
+                <label className="block text-sm font-semibold text-black mb-2">
+                  Current Password
+                </label>
+
+                <div className="relative">
+
+                  <input
+                    type={
+                      showCurrentPassword
+                        ? 'text'
+                        : 'password'
+                    }
+                    name="currentPassword"
+                    value={formData.currentPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full px-4 py-3 pr-12 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowCurrentPassword(
+                        !showCurrentPassword
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={
+                      showCurrentPassword
+                        ? 'Hide current password'
+                        : 'Show current password'
+                    }
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+
+                </div>
+              </div>
+
+              {/* New Password */}
+              <div className="mb-4">
+
+                <label className="block text-sm font-semibold text-black mb-2">
+                  New Password
+                </label>
+
+                <div className="relative">
+
+                  <input
+                    type={
+                      showNewPassword
+                        ? 'text'
+                        : 'password'
+                    }
+                    name="newPassword"
+                    value={formData.newPassword}
+                    onChange={handleChange}
+                    minLength={16}
+                    maxLength={16}
+                    placeholder="Exactly 16 characters"
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 pr-12 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowNewPassword(
+                        !showNewPassword
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={
+                      showNewPassword
+                        ? 'Hide new password'
+                        : 'Show new password'
+                    }
+                  >
+                    {showNewPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+
+                </div>
+
+                {/* Password Strength */}
+                {formData.newPassword && (
+                  <div className="mt-2">
+
+                    <div className="flex items-center justify-between mb-1">
+
+                      <span className="text-xs text-gray-500">
+                        Password strength
+                      </span>
+
+                      <span
+                        className={`text-xs font-bold ${
+                          passwordStrength.label === 'Weak'
+                            ? 'text-red-500'
+                            : passwordStrength.label === 'Moderate'
+                            ? 'text-orange-500'
+                            : passwordStrength.label === 'Good'
+                            ? 'text-blue-600'
+                            : 'text-green-600'
+                        }`}
+                      >
+                        {passwordStrength.label}
+                      </span>
+
+                    </div>
+
+                    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          passwordStrength.label === 'Weak'
+                            ? 'bg-red-500'
+                            : passwordStrength.label === 'Moderate'
+                            ? 'bg-orange-500'
+                            : passwordStrength.label === 'Good'
+                            ? 'bg-blue-600'
+                            : 'bg-green-600'
+                        }`}
+                        style={{
+                          width: passwordStrength.width
+                        }}
+                      />
+
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Confirm New Password */}
+              <div className="mb-6">
+
+                <label className="block text-sm font-semibold text-black mb-2">
+                  Confirm New Password
+                </label>
+
+                <div className="relative">
+
+                  <input
+                    type={
+                      showConfirmPassword
+                        ? 'text'
+                        : 'password'
+                    }
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    minLength={16}
+                    maxLength={16}
+                    placeholder="Re-enter new password"
+                    autoComplete="new-password"
+                    className="w-full px-4 py-3 pr-12 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword(
+                        !showConfirmPassword
+                      )
+                    }
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label={
+                      showConfirmPassword
+                        ? 'Hide confirm password'
+                        : 'Show confirm password'
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={20} />
+                    ) : (
+                      <Eye size={20} />
+                    )}
+                  </button>
+
+                </div>
+              </div>
+
+              {/* Update Password */}
               <button
                 type="submit"
-                disabled={profileSaving || (!nameChanged && !emailChanged)}
+                disabled={submitting}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700 hover:shadow-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                <Save size={18} />
-                {profileSaving ? 'Saving...' : 'Save Profile'}
+                <KeyRound size={18} />
+
+                {submitting
+                  ? 'Updating...'
+                  : 'Update Password'}
               </button>
+
             </form>
           </div>
-        )}
 
-        {/* Change Password Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center gap-3 mb-1">
-            <KeyRound size={20} className="text-blue-600" />
-            <h2 className="text-xl font-bold text-black">Change Password</h2>
-          </div>
-          <p className="text-sm text-gray-500 mb-6">
-            Choose a strong password you don't use anywhere else.
-          </p>
-
-          {error && (
-            <div className="bg-red-50 border border-red-400 text-red-600 rounded-lg p-3 text-sm mb-5">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-green-50 border border-green-400 text-green-700 rounded-lg p-3 text-sm mb-5 flex items-center gap-2">
-              <ShieldCheck size={16} />
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="max-w-md">
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-black mb-2">
-                Current Password
-              </label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={formData.currentPassword}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-sm font-semibold text-black mb-2">
-                New Password
-              </label>
-
-              <input
-                type="password"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                minLength={16}
-                maxLength={16}
-                placeholder="Exactly 16 characters"
-                className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-
-              {/* Password Strength */}
-              {formData.newPassword && (
-                <div className="mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500">
-                      Password strength
-                    </span>
-
-                    <span
-                      className={`text-xs font-bold ${
-                        passwordStrength.label === 'Weak'
-                          ? 'text-red-500'
-                          : passwordStrength.label === 'Moderate'
-                          ? 'text-orange-500'
-                          : passwordStrength.label === 'Good'
-                          ? 'text-blue-600'
-                          : 'text-green-600'
-                      }`}
-                    >
-                      {passwordStrength.label}
-                    </span>
-                  </div>
-
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full transition-all duration-300 ${
-                        passwordStrength.label === 'Weak'
-                          ? 'bg-red-500'
-                          : passwordStrength.label === 'Moderate'
-                          ? 'bg-orange-500'
-                          : passwordStrength.label === 'Good'
-                          ? 'bg-blue-600'
-                          : 'bg-green-600'
-                      }`}
-                      style={{ width: passwordStrength.width }}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-black mb-2">
-                Confirm New Password
-              </label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                minLength={16}
-                maxLength={16}
-                placeholder="Re-enter new password"
-                className="w-full px-4 py-3 bg-white text-black border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-bold shadow-md hover:bg-blue-700 hover:shadow-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <KeyRound size={18} />
-              {submitting ? 'Updating...' : 'Update Password'}
-            </button>
-          </form>
-        </div>
         </div>
       </div>
     </DashboardLayout>

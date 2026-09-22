@@ -369,7 +369,7 @@ const Register = () => {
                         id="password"
                         name="password"
                         type="password"
-                        maxLength={8}
+                        maxLength={16}
                         placeholder="At least 8 characters, with a letter and a number"
                         value={formData.password}
                         onChange={handleChange}
