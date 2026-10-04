@@ -43,7 +43,27 @@ const sendCustomAlert = async (req, res) => {
   }
 };
 
+const markRead = async (req, res) => {
+  try {
+    await notificationService.markRead({ user: req.user, id: req.params.id });
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ success: false, error: err.statusCode ? err.message : 'Could not mark notification as read.' });
+  }
+};
+
+const markAllRead = async (req, res) => {
+  try {
+    const result = await notificationService.markAllRead({ user: req.user });
+    return res.json({ success: true, ...result });
+  } catch (err) {
+    return res.status(err.statusCode || 500).json({ success: false, error: err.statusCode ? err.message : 'Could not mark notifications as read.' });
+  }
+};
+
 module.exports = {
+  markRead,
+  markAllRead,
   getNotifications,
   sendCustomAlert
 };

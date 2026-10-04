@@ -6,7 +6,6 @@ import React, {
 } from 'react';
 
 import {
-  Link,
   useNavigate,
   useLocation
 } from 'react-router-dom';
@@ -22,10 +21,8 @@ import {
   Calendar,
   CalendarDays,
   CheckSquare,
-  LogOut,
   Building,
   Video,
-  UserCircle2,
   Settings as SettingsIcon,
   MessageSquare,
   MessageCircleQuestion,
@@ -37,8 +34,6 @@ import {
   Sparkles,
   History,
   Activity,
-  ChevronDown,
-  ChevronRight,
   FolderKanban,
   Megaphone,
   HeartHandshake,
@@ -49,11 +44,24 @@ import {
   Wallet,
   FileText,
   ClipboardCheck,
+  Clock,
+  CalendarClock,
+  UserPlus,
+  Banknote,
+  Star,
+  GraduationCap,
+  FolderOpen,
+  ListTree,
+  Receipt,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Link2,
   TrendingUp,
   Check
 } from 'lucide-react';
 
 import { AppContext } from '../context/AppContext';
+import TopNav from './TopNav';
 import PaymentAlertModal from '../shared/PaymentAlertModal/PaymentAlertModal';
 import NotificationToaster from '../shared/NotificationToaster/NotificationToaster';
 
@@ -89,28 +97,13 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
 
   // =========================================================
-  // SIDEBAR
-  // =========================================================
-
-  const [sidebarHovered, setSidebarHovered] = useState(false);
-
-  const [collapsedGroups, setCollapsedGroups] =
-    useState({});
-
-  // =========================================================
   // NOTIFICATION DROPDOWN
   // =========================================================
 
   const [notificationsOpen, setNotificationsOpen] =
     useState(false);
 
-  const [
-    sidebarNotificationsOpen,
-    setSidebarNotificationsOpen
-  ] = useState(false);
-
   const headerNotificationRef = useRef(null);
-  const sidebarNotificationRef = useRef(null);
 
   // =========================================================
   // CLOSE NOTIFICATION DROPDOWNS
@@ -125,15 +118,6 @@ const DashboardLayout = ({ children }) => {
         )
       ) {
         setNotificationsOpen(false);
-      }
-
-      if (
-        sidebarNotificationRef.current &&
-        !sidebarNotificationRef.current.contains(
-          event.target
-        )
-      ) {
-        setSidebarNotificationsOpen(false);
       }
     };
 
@@ -155,17 +139,6 @@ const DashboardLayout = ({ children }) => {
   useEffect(() => {
     document.body.style.overflow = '';
   }, [location.pathname]);
-
-  // =========================================================
-  // GROUP TOGGLE
-  // =========================================================
-
-  const toggleGroup = (key) => {
-    setCollapsedGroups((prev) => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
 
   if (!currentUser) {
     navigate('/login/org');
@@ -515,6 +488,87 @@ const DashboardLayout = ({ children }) => {
 
             {
               path:
+                '/org-admin/employees',
+              label:
+                'Employee Profiles & Records',
+              icon: (
+                <UsersRound size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/org-structure',
+              label:
+                'Roles, Departments & Designations',
+              icon: (
+                <Building size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/attendance-leave',
+              label:
+                'Attendance & Leave',
+              icon: (
+                <CalendarClock size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/recruitment',
+              label:
+                'Recruitment & Onboarding',
+              icon: (
+                <UserPlus size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/payroll',
+              label:
+                'Payroll & Salary Management',
+              icon: (
+                <Banknote size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/performance',
+              label:
+                'Performance Management',
+              icon: (
+                <Star size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/training',
+              label:
+                'Training & Development',
+              icon: (
+                <GraduationCap size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/employee-documents',
+              label:
+                'Employee Documents',
+              icon: (
+                <FolderOpen size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/benefits',
+              label:
+                'Employee Benefits & Allowances',
+              icon: (
+                <Gift size={18} />
+              )
+            },
+            {
+              path:
                 '/org-admin/accessibility',
               label: 'Accessibility',
               icon: (
@@ -716,6 +770,60 @@ const DashboardLayout = ({ children }) => {
 
             {
               path:
+                '/org-admin/finance/chart-of-accounts',
+              label:
+                'Chart of Accounts',
+              icon: (
+                <ListTree size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/finance/income',
+              label:
+                'Income & Revenue Management',
+              icon: (
+                <TrendingUp size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/finance/invoices',
+              label:
+                'Invoices & Payments',
+              icon: (
+                <Receipt size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/finance/payable',
+              label:
+                'Accounts Payable',
+              icon: (
+                <ArrowUpFromLine size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/finance/receivable',
+              label:
+                'Accounts Receivable',
+              icon: (
+                <ArrowDownToLine size={18} />
+              )
+            },
+            {
+              path:
+                '/org-admin/finance/payroll-integration',
+              label:
+                'Payroll Integration',
+              icon: (
+                <Link2 size={18} />
+              )
+            },
+            {
+              path:
                 '/org-admin/expenses',
               label: 'Expenses',
               icon: (
@@ -850,6 +958,33 @@ const DashboardLayout = ({ children }) => {
         badge:
           'unreadTaskComments'
       },
+
+      // Attendance & Leave are for staff-tier accounts (OrgAdmin has its
+      // own combined page under User & Access Management).
+      ...(currentUser.role !==
+        'OrgAdmin'
+        ? [
+            {
+              path: '/staff/attendance',
+              label: 'Attendance',
+              icon: <Clock size={18} />
+            },
+            {
+              path: '/staff/leave',
+              label: 'Leave',
+              icon: (
+                <CalendarClock size={18} />
+              )
+            },
+            {
+              path: '/staff/donations',
+              label: 'Donations',
+              icon: (
+                <HeartHandshake size={18} />
+              )
+            }
+          ]
+        : []),
 
       ...(hasAccess(
         'registration_requests'
@@ -1667,6 +1802,7 @@ const DashboardLayout = ({ children }) => {
     <div
       className="
         flex
+        flex-col
         min-h-screen
         bg-slate-50
         text-slate-900
@@ -1677,768 +1813,16 @@ const DashboardLayout = ({ children }) => {
       <NotificationToaster />
 
       {/* =====================================================
-          SIDEBAR
+          TOP NAVIGATION (replaces the former left sidebar)
       ===================================================== */}
 
-      <aside
-        onMouseEnter={() =>
-          setSidebarHovered(true)
-        }
-        onMouseLeave={() =>
-          setSidebarHovered(false)
-        }
-        className={`
-          fixed
-          left-0
-          top-0
-          z-50
-          h-screen
-          flex
-          flex-col
-          bg-[#0b1220]
-          text-white
-          border-r
-          border-white/10
-          shadow-2xl
-          shadow-black/20
-          transition-all
-          duration-300
-          ease-in-out
-          overflow-visible
-
-          ${
-            sidebarHovered
-              ? 'w-72'
-              : 'w-16'
-          }
-        `}
-      >
-
-        {/* BRAND */}
-
-        <div
-          className={`
-            flex
-            items-center
-            gap-3
-            py-5
-            border-b
-            border-white/10
-            transition-all
-            duration-300
-
-            ${
-              sidebarHovered
-                ? 'px-5 justify-start'
-                : 'px-3 justify-center'
-            }
-          `}
-        >
-
-          <div
-            className="
-              shrink-0
-              w-10
-              h-10
-              flex
-              items-center
-              justify-center
-              rounded-lg
-              overflow-hidden
-            "
-            title="WorkSphere"
-          >
-            <img
-              src={logo}
-              alt="WorkSphere"
-              className="
-                w-full
-                h-full
-                object-contain
-              "
-            />
-          </div>
-
-          {sidebarHovered && (
-            <>
-              <span
-                className="
-                  font-bold
-                  text-lg
-                  tracking-tight
-                  whitespace-nowrap
-                "
-              >
-                WorkSphere
-              </span>
-
-              <span
-                className="
-                  text-xs
-                  bg-white/10
-                  border
-                  border-white/10
-                  px-2
-                  py-0.5
-                  rounded
-                  text-slate-300
-                  whitespace-nowrap
-                "
-              >
-                v1.0
-              </span>
-            </>
-          )}
-
-        </div>
-
-        {/* USER INFO */}
-
-        <div
-          className={`
-            flex
-            items-center
-            gap-3
-            py-5
-            border-b
-            border-white/10
-            transition-all
-            duration-300
-
-            ${
-              sidebarHovered
-                ? 'px-5 justify-start'
-                : 'px-3 justify-center'
-            }
-          `}
-        >
-
-          <div
-            className="
-              text-indigo-400
-              shrink-0
-            "
-            title={currentUser.fullName}
-          >
-            <UserCircle2 size={34} />
-          </div>
-
-          {sidebarHovered && (
-            <div className="min-w-0">
-
-              <p
-                className="
-                  text-sm
-                  truncate
-                  font-semibold
-                  tracking-tight
-                "
-              >
-                {currentUser.fullName}
-              </p>
-
-              <span
-                className="
-                  text-xs
-                  text-slate-400
-                "
-              >
-                {currentUser.role}
-              </span>
-
-            </div>
-          )}
-
-        </div>
-
-        {/* NAVIGATION */}
-
-        <nav
-          className="
-            flex
-            flex-col
-            gap-1
-            p-2
-            flex-1
-            overflow-y-auto
-            overflow-x-visible
-            scrollbar-thin
-            scrollbar-thumb-slate-700
-            scrollbar-track-transparent
-          "
-        >
-
-          {navItems.map(
-            (item, idx) => {
-
-              // =================================================
-              // NOTIFICATIONS SIDEBAR ITEM
-              // =================================================
-
-              if (
-                item.key ===
-                'notifications'
-              ) {
-
-                return (
-                  <div
-                    key="notifications"
-                    ref={
-                      sidebarNotificationRef
-                    }
-                    className="
-                      relative
-                      w-full
-                    "
-                  >
-
-                    <button
-                      type="button"
-                      title={
-                        !sidebarHovered
-                          ? 'Notifications'
-                          : undefined
-                      }
-                      onClick={() =>
-                        setSidebarNotificationsOpen(
-                          (prev) => !prev
-                        )
-                      }
-                      className={`
-                        flex
-                        items-center
-                        gap-3
-                        py-2.5
-                        rounded-lg
-                        text-sm
-                        transition-all
-                        duration-200
-                        w-full
-
-                        ${
-                          sidebarHovered
-                            ? 'px-3 justify-start'
-                            : 'px-3 justify-center'
-                        }
-
-                        ${
-                          sidebarNotificationsOpen
-                            ? `
-                              bg-white/10
-                              text-white
-                            `
-                            : `
-                              text-slate-400
-                              hover:text-white
-                              hover:bg-white/10
-                            `
-                        }
-                      `}
-                    >
-
-                      <span
-                        className="
-                          text-slate-300
-                          shrink-0
-                        "
-                      >
-                        <Bell size={18} />
-                      </span>
-
-                      {sidebarHovered && (
-                        <span
-                          className="
-                            flex-1
-                            font-medium
-                            whitespace-nowrap
-                            text-left
-                          "
-                        >
-                          Notifications
-                        </span>
-                      )}
-
-                      {unreadNotificationsCount >
-                        0 && (
-                        <span
-                          className="
-                            bg-rose-500
-                            text-white
-                            text-xs
-                            font-semibold
-                            px-2
-                            py-0.5
-                            rounded-full
-                            shadow-sm
-                            shrink-0
-                          "
-                        >
-                          {unreadNotificationsCount >
-                          99
-                            ? '99+'
-                            : unreadNotificationsCount}
-                        </span>
-                      )}
-
-                    </button>
-
-                    {sidebarNotificationsOpen &&
-                      renderNotificationDropdown({
-                        isSidebar: true
-                      })}
-
-                  </div>
-                );
-              }
-
-              // =================================================
-              // GROUP
-              // =================================================
-
-              if (item.children) {
-
-                const isCollapsed =
-                  !!collapsedGroups[
-                    item.key
-                  ];
-
-                const groupBadgeTotal =
-                  item.children.reduce(
-                    (sum, child) =>
-                      sum +
-                      getBadgeCount(
-                        child.badge
-                      ),
-                    0
-                  );
-
-                const groupHasActiveChild =
-                  item.children.some(
-                    (child) =>
-                      location.pathname ===
-                      child.path
-                  );
-
-                return (
-                  <div
-                    key={
-                      item.key || idx
-                    }
-                    className="
-                      flex
-                      flex-col
-                    "
-                  >
-
-                    <button
-                      type="button"
-                      title={
-                        !sidebarHovered
-                          ? item.label
-                          : undefined
-                      }
-                      onClick={() => {
-
-                        if (
-                          sidebarHovered
-                        ) {
-                          toggleGroup(
-                            item.key
-                          );
-                        }
-
-                      }}
-                      className={`
-                        flex
-                        items-center
-                        gap-3
-                        py-2.5
-                        rounded-lg
-                        text-sm
-                        transition-all
-                        duration-200
-                        w-full
-
-                        ${
-                          sidebarHovered
-                            ? 'px-3 justify-start'
-                            : 'px-3 justify-center'
-                        }
-
-                        ${
-                          groupHasActiveChild
-                            ? 'text-white bg-white/5'
-                            : `
-                              text-slate-400
-                              hover:text-white
-                              hover:bg-white/10
-                            `
-                        }
-                      `}
-                    >
-
-                      <span
-                        className={
-                          groupHasActiveChild
-                            ? 'text-white shrink-0'
-                            : 'text-slate-400 shrink-0'
-                        }
-                      >
-                        {item.icon}
-                      </span>
-
-                      {sidebarHovered && (
-                        <>
-                          <span
-                            className="
-                              flex-1
-                              font-semibold
-                              uppercase
-                              tracking-wide
-                              text-xs
-                              text-left
-                              whitespace-nowrap
-                            "
-                          >
-                            {item.label}
-                          </span>
-
-                          {groupBadgeTotal >
-                            0 && (
-                            <span
-                              className="
-                                bg-rose-500
-                                text-white
-                                text-xs
-                                font-semibold
-                                px-2
-                                py-0.5
-                                rounded-full
-                                shadow-sm
-                                shrink-0
-                              "
-                            >
-                              {
-                                groupBadgeTotal
-                              }
-                            </span>
-                          )}
-
-                          {isCollapsed ? (
-                            <ChevronRight
-                              size={14}
-                              className="shrink-0"
-                            />
-                          ) : (
-                            <ChevronDown
-                              size={14}
-                              className="shrink-0"
-                            />
-                          )}
-                        </>
-                      )}
-
-                    </button>
-
-                    {sidebarHovered &&
-                      !isCollapsed && (
-                        <div
-                          className="
-                            flex
-                            flex-col
-                            gap-1
-                            pl-3
-                            mt-1
-                            mb-1
-                            ml-4
-                            border-l
-                            border-white/10
-                          "
-                        >
-
-                          {item.children.map(
-                            (child) => {
-
-                              const childActive =
-                                location.pathname ===
-                                child.path;
-
-                              const childBadge =
-                                getBadgeCount(
-                                  child.badge
-                                );
-
-                              return (
-                                <Link
-                                  key={
-                                    child.path
-                                  }
-                                  to={
-                                    child.path
-                                  }
-                                  className={`
-                                    flex
-                                    items-center
-                                    gap-3
-                                    px-3
-                                    py-2
-                                    rounded-lg
-                                    text-sm
-                                    transition-all
-                                    duration-200
-
-                                    ${
-                                      childActive
-                                        ? `
-                                          bg-gradient-to-r
-                                          from-indigo-500
-                                          to-violet-600
-                                          text-white
-                                          shadow-md
-                                          shadow-indigo-500/20
-                                        `
-                                        : `
-                                          text-slate-400
-                                          hover:text-white
-                                          hover:bg-white/10
-                                        `
-                                    }
-                                  `}
-                                >
-
-                                  <span
-                                    className={
-                                      childActive
-                                        ? 'text-white shrink-0'
-                                        : 'text-slate-400 shrink-0'
-                                    }
-                                  >
-                                    {
-                                      child.icon
-                                    }
-                                  </span>
-
-                                  <span
-                                    className="
-                                      flex-1
-                                      font-medium
-                                      whitespace-nowrap
-                                    "
-                                  >
-                                    {
-                                      child.label
-                                    }
-                                  </span>
-
-                                  {childBadge >
-                                    0 && (
-                                    <span
-                                      className="
-                                        bg-rose-500
-                                        text-white
-                                        text-xs
-                                        font-semibold
-                                        px-2
-                                        py-0.5
-                                        rounded-full
-                                        shadow-sm
-                                        shrink-0
-                                      "
-                                    >
-                                      {
-                                        childBadge
-                                      }
-                                    </span>
-                                  )}
-
-                                </Link>
-                              );
-                            }
-                          )}
-
-                        </div>
-                      )}
-
-                  </div>
-                );
-              }
-
-              // =================================================
-              // STANDALONE
-              // =================================================
-
-              const isActive =
-                location.pathname ===
-                item.path;
-
-              const badgeCount =
-                getBadgeCount(
-                  item.badge
-                );
-
-              return (
-                <Link
-                  key={
-                    item.path || idx
-                  }
-                  to={item.path}
-                  title={
-                    !sidebarHovered
-                      ? item.label
-                      : undefined
-                  }
-                  className={`
-                    flex
-                    items-center
-                    gap-3
-                    py-2.5
-                    rounded-lg
-                    text-sm
-                    transition-all
-                    duration-200
-                    w-full
-
-                    ${
-                      sidebarHovered
-                        ? 'px-3 justify-start'
-                        : 'px-3 justify-center'
-                    }
-
-                    ${
-                      isActive
-                        ? `
-                          bg-gradient-to-r
-                          from-indigo-500
-                          to-violet-600
-                          text-white
-                          shadow-md
-                          shadow-indigo-500/20
-                        `
-                        : `
-                          text-slate-400
-                          hover:text-white
-                          hover:bg-white/10
-                        `
-                    }
-                  `}
-                >
-
-                  <span
-                    className={
-                      isActive
-                        ? 'text-white shrink-0'
-                        : 'text-slate-400 shrink-0'
-                    }
-                  >
-                    {item.icon}
-                  </span>
-
-                  {sidebarHovered && (
-                    <span
-                      className="
-                        flex-1
-                        font-medium
-                        whitespace-nowrap
-                      "
-                    >
-                      {item.label}
-                    </span>
-                  )}
-
-                  {sidebarHovered &&
-                    badgeCount > 0 && (
-                    <span
-                      className="
-                        bg-rose-500
-                        text-white
-                        text-xs
-                        font-semibold
-                        px-2
-                        py-0.5
-                        rounded-full
-                        shadow-sm
-                        shrink-0
-                      "
-                    >
-                      {badgeCount}
-                    </span>
-                  )}
-
-                </Link>
-              );
-            }
-          )}
-
-        </nav>
-
-        {/* LOGOUT */}
-
-        <div
-          className={`
-            border-t
-            border-white/10
-            transition-all
-            duration-300
-
-            ${
-              sidebarHovered
-                ? 'p-4'
-                : 'p-2'
-            }
-          `}
-        >
-
-          <button
-            onClick={handleLogout}
-            title={
-              !sidebarHovered
-                ? 'Log Out'
-                : undefined
-            }
-            className={`
-              w-full
-              bg-white/5
-              hover:bg-rose-600
-              border
-              border-white/10
-              hover:border-rose-500
-              text-slate-300
-              hover:text-white
-              py-2
-              rounded-md
-              flex
-              items-center
-              transition-all
-              duration-200
-
-              ${
-                sidebarHovered
-                  ? 'justify-center gap-2'
-                  : 'justify-center'
-              }
-            `}
-          >
-
-            <LogOut
-              size={16}
-              className="shrink-0"
-            />
-
-            {sidebarHovered && (
-              <span
-                className="
-                  whitespace-nowrap
-                "
-              >
-                Log Out
-              </span>
-            )}
-
-          </button>
-
-        </div>
-
-      </aside>
+      <TopNav
+        navItems={navItems}
+        getBadgeCount={getBadgeCount}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        logo={logo}
+      />
 
       {/* =====================================================
           MAIN AREA
@@ -2450,7 +1834,6 @@ const DashboardLayout = ({ children }) => {
           flex-col
           flex-1
           min-w-0
-          ml-16
         "
       >
 

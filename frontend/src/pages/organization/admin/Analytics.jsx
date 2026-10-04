@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
+import HrFinanceInsights from './HrFinanceInsights';
 import {
   BarChart3,
   Calendar,
@@ -1091,6 +1092,10 @@ const Analytics = () => {
             </div>
           </>
         )}
+
+        <div className="mt-10">
+          <HrFinanceInsights />
+        </div>
       </div>
     </DashboardLayout>
   );

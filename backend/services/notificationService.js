@@ -2,7 +2,19 @@ const supabase = require('../config/supabase');
 
 const { serializeNotification } = require('../utils/serializers');
 
-const getNotifications = async ({ user }) => {
+// Which notifications may this user see? (unchanged rules)
+//  - staff-tier: addressed to them, or broadcast to "All"/their role
+//  - admins: broadcasts plus anything addressed to them personally
+const isVisibleTo = (user, n) => {
+  if (user.role !== 'SuperAdmin' && user.role !== 'OrgAdmin') {
+    return n.target_user_id
+      ? String(n.target_user_id) === String(user.id)
+      : n.target_role === 'All' || n.target_role === user.role;
+  }
+  return !n.target_user_id || String(n.target_user_id) === String(user.id);
+};
+
+const fetchVisible = async (user, limit = 200) => {
   let query = supabase
     .from('notifications')
     .select('*')
@@ -14,37 +26,57 @@ const getNotifications = async ({ user }) => {
     query = query.eq('org_id', user.orgId);
   }
 
-  const { data, error } = await query.limit(200);
+  const { data, error } = await query.limit(limit);
 
   if (error) {
     const err = new Error('Could not fetch notifications.');
     err.statusCode = 500;
     throw err;
   }
+  return data.filter((n) => isVisibleTo(user, n));
+};
 
-  // Staff-tier users must only receive notifications meant for them:
-  // either addressed to them directly, or a broadcast for their role /
-  // "All". (Previously every notification in the organization was sent to
-  // every member and only filtered client-side.)
-  if (user.role !== 'SuperAdmin' && user.role !== 'OrgAdmin') {
-    return data
-      .filter((n) =>
-        n.target_user_id
-          ? String(n.target_user_id) === String(user.id)
-          : n.target_role === 'All' || n.target_role === user.role
-      )
-      .map(serializeNotification);
+const getNotifications = async ({ user }) => {
+  const visible = await fetchVisible(user);
+  const ids = visible.map((n) => n.id);
+  const { data: reads } = ids.length
+    ? await supabase.from('notification_reads').select('notification_id').eq('user_id', user.id).in('notification_id', ids)
+    : { data: [] };
+  const readSet = new Set((reads || []).map((r) => r.notification_id));
+  return visible.map((n) => ({
+    ...serializeNotification(n),
+    link: n.link || undefined,
+    read: readSet.has(n.id)
+  }));
+};
+
+// Read receipts are per user and only for notifications that user may see.
+const markRead = async ({ user, id }) => {
+  const { data: n } = await supabase.from('notifications').select('*').eq('id', id).maybeSingle();
+  const sameScope = n && (user.role === 'SuperAdmin' ? n.org_id === null : n.org_id === user.orgId);
+  if (!n || !sameScope || !isVisibleTo(user, n)) {
+    const err = new Error('Notification not found.');
+    err.statusCode = 404;
+    throw err;
   }
+  await supabase
+    .from('notification_reads')
+    .upsert({ notification_id: id, user_id: user.id }, { onConflict: 'notification_id,user_id', ignoreDuplicates: true });
+};
 
-  // Admins see broadcasts plus anything addressed to them personally —
-  // not notifications that were addressed to a specific other person.
-  return data
-    .filter(
-      (n) =>
-        !n.target_user_id ||
-        String(n.target_user_id) === String(user.id)
-    )
-    .map(serializeNotification);
+const markAllRead = async ({ user }) => {
+  const visible = await fetchVisible(user, 500);
+  if (!visible.length) return { marked: 0 };
+  const rows = visible.map((n) => ({ notification_id: n.id, user_id: user.id }));
+  const { error } = await supabase
+    .from('notification_reads')
+    .upsert(rows, { onConflict: 'notification_id,user_id', ignoreDuplicates: true });
+  if (error) {
+    const err = new Error('Could not mark notifications as read.');
+    err.statusCode = 500;
+    throw err;
+  }
+  return { marked: rows.length };
 };
 
 const sendCustomAlert = async ({
@@ -145,6 +177,8 @@ const checkExpiringSubscriptions = async () => {
 
 module.exports = {
   getNotifications,
+  markRead,
+  markAllRead,
   sendCustomAlert,
   checkExpiringSubscriptions
 };

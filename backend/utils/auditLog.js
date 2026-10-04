@@ -46,7 +46,15 @@ const AUDIT_ACTIONS = {
   CONNECTION_DECLINED: 'connection.declined',
   CONNECTION_WITHDRAWN: 'connection.withdrawn',
   SUBSCRIPTION_CANCELLATION_REQUESTED: 'subscription.cancellation_requested',
-  SUBSCRIPTION_CANCELLATION_WITHDRAWN: 'subscription.cancellation_withdrawn'
+  SUBSCRIPTION_CANCELLATION_WITHDRAWN: 'subscription.cancellation_withdrawn',
+  EMPLOYEE_CREATED: 'employee.created',
+  EMPLOYEE_UPDATED: 'employee.updated',
+  DEPARTMENT_CREATED: 'department.created',
+  DEPARTMENT_UPDATED: 'department.updated',
+  DEPARTMENT_DELETED: 'department.deleted',
+  DESIGNATION_CREATED: 'designation.created',
+  DESIGNATION_UPDATED: 'designation.updated',
+  DESIGNATION_DELETED: 'designation.deleted'
 };
 
 // Writes one immutable row to audit_logs. Mirrors utils/billingAudit.js:

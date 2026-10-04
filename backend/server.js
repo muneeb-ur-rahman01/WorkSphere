@@ -31,7 +31,6 @@ const platformSettingsRoutes = require('./routes/platformSettingsRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const campaignRoutes = require('./routes/campaignRoutes');
 const donorRoutes = require('./routes/donorRoutes');
-const donationRoutes = require('./routes/donationRoutes');
 const volunteerRoutes = require('./routes/volunteerRoutes');
 const sponsorRoutes = require('./routes/sponsorRoutes');
 const partnerRoutes = require('./routes/partnerRoutes');
@@ -40,6 +39,14 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const documentRoutes = require('./routes/documentRoutes');
 const directoryRoutes = require('./routes/directoryRoutes');
 const connectionRoutes = require('./routes/connectionRoutes');
+const attendanceRoutes = require('./routes/attendanceRoutes');
+const leaveRoutes = require('./routes/leaveRoutes');
+const hrRoutes = require('./routes/hrRoutes');
+const hrmRoutes = require('./routes/hrmRoutes');
+const payrollRoutes = require('./routes/payrollRoutes');
+const financeRoutes = require('./routes/financeRoutes');
+const staffDonationRoutes = require('./routes/staffDonationRoutes');
+const donationRoutes = require('./routes/donationRoutes');
 
 const {
   checkExpiringSubscriptions
@@ -148,6 +155,13 @@ app.use('/api/expenses', expenseRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/directory', directoryRoutes);
 app.use('/api/connections', connectionRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/hr', hrRoutes);
+app.use('/api/hrm', hrmRoutes);
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/finance', financeRoutes);
+app.use('/api/staff-donations', staffDonationRoutes);
 
 // 404 handler
 app.use((req, res) =>

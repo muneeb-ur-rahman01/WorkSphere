@@ -1,6 +1,7 @@
 const supabase = require('../config/supabase');
 
 const { getActiveGateway } = require('../utils/paymentGateways');
+const { notifyOnce } = require('../utils/notify');
 const { listPlans, getPlan } = require('../config/plans');
 const {
   logBillingEvent,
@@ -309,6 +310,24 @@ const handleCallback = async ({
         last_expiry_notified_at: null
       })
       .eq('id', payment.org_id);
+
+    // Notify the org admins and the platform SuperAdmin (once per payment).
+    await notifyOnce({
+      org_id: payment.org_id,
+      title: 'Subscription Payment Received',
+      message: `Your ${payment.plan} subscription payment was verified and the plan is active.`,
+      type: 'Subscription',
+      target_role: 'OrgAdmin',
+      dedupe_key: `sub:paid:${payment.txn_ref_no}`
+    });
+    await notifyOnce({
+      org_id: null,
+      title: 'Organization Subscription Paid',
+      message: `An organization paid for the ${payment.plan} plan (ref ${payment.txn_ref_no}).`,
+      type: 'Subscription',
+      target_role: 'SuperAdmin',
+      dedupe_key: `sub:paid:sa:${payment.txn_ref_no}`
+    });
 
     await logBillingEvent({
       orgId: payment.org_id,

@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
 import TaskThreadModal from '../../../shared/TaskThreadModal/TaskThreadModal';
+import StaffOverview from './StaffOverview';
+import StaffHrCards from './StaffHrCards';
 import { formatDMY } from '../../../shared/DateInputDMY/DateInputDMY';
 
 import {
@@ -353,22 +355,29 @@ const StaffDashboard = () => {
         )}
 
         {/* ========================================= */}
+        {/* PROFILE + ATTENDANCE OVERVIEW */}
+        {/* ========================================= */}
+        <div className="mt-6">
+          <StaffOverview />
+        </div>
+
+        {/* ========================================= */}
         {/* MAIN GRID */}
         {/* ========================================= */}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 
           {/* ======================================= */}
           {/* LEFT SIDE */}
           {/* ======================================= */}
 
-          <div className="lg:col-span-2 space-y-6">
+          <div className="contents">
 
             {/* ===================================== */}
             {/* MY TASKS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center gap-2 mb-4">
 
@@ -493,7 +502,7 @@ const StaffDashboard = () => {
             {/* MY PROJECTS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center justify-between mb-5">
 
@@ -883,13 +892,13 @@ const StaffDashboard = () => {
           {/* RIGHT SIDE */}
           {/* ======================================= */}
 
-          <div className="space-y-6">
+          <div className="contents">
 
             {/* ===================================== */}
             {/* ANNOUNCEMENTS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center gap-2 mb-4">
 
@@ -943,7 +952,7 @@ const StaffDashboard = () => {
             {/* UPCOMING CAMPS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center gap-2 mb-4">
 
@@ -1035,7 +1044,7 @@ const StaffDashboard = () => {
             {/* UPCOMING EVENTS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center gap-2 mb-4">
 
@@ -1138,7 +1147,7 @@ const StaffDashboard = () => {
             {/* UPCOMING MEETINGS */}
             {/* ===================================== */}
 
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-lg shadow-indigo-100/40 p-5">
+            <div className="bg-white border-2 border-blue-400 hover:border-blue-500 transition-colors rounded-2xl shadow-lg shadow-blue-100/60 p-5 h-[440px] overflow-y-auto">
 
               <div className="flex items-center gap-2 mb-4">
 
@@ -1232,6 +1241,9 @@ const StaffDashboard = () => {
               </div>
 
             </div>
+
+            {/* HR cards: goals, reviews, feedback, training, benefits */}
+            <StaffHrCards />
 
           </div>
 

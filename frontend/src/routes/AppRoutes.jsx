@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
+import RouteLoader from '../shared/RouteLoader/RouteLoader';
 
 // Public site pages
 import Home from '../pages/public-site/Home';
@@ -66,6 +67,19 @@ import HelpSupport from '../pages/public-site/HelpSupport';
 
 // Staff pages
 import StaffDashboard from '../pages/organization/staff/StaffDashboard';
+import StaffAttendance from '../pages/organization/staff/StaffAttendance';
+import StaffLeave from '../pages/organization/staff/StaffLeave';
+import AttendanceLeave from '../pages/organization/admin/AttendanceLeave';
+import EmployeeProfiles from '../pages/organization/admin/EmployeeProfiles';
+import OrgStructure from '../pages/organization/admin/OrgStructure';
+import RecruitmentOnboarding from '../pages/organization/admin/RecruitmentOnboarding';
+import PayrollSalary from '../pages/organization/admin/PayrollSalary';
+import PerformanceManagement from '../pages/organization/admin/PerformanceManagement';
+import TrainingDevelopment from '../pages/organization/admin/TrainingDevelopment';
+import EmployeeDocuments from '../pages/organization/admin/EmployeeDocuments';
+import BenefitsAllowances from '../pages/organization/admin/BenefitsAllowances';
+import FinanceModule from '../pages/organization/admin/FinanceModule';
+import StaffDonations from '../pages/organization/staff/StaffDonations';
 
 // Discussion (shared: OrgAdmin + all staff-tier roles)
 import Discussion from '../pages/organization/discussion/Discussion';
@@ -99,6 +113,7 @@ const PrivateRoute = ({ children, allowedRoles = [] }) => {
 const AppRoutes = () => {
   return (
     <BrowserRouter>
+      <RouteLoader />
       <Routes>
         {/* Public Site Routes */}
         <Route path="/" element={<Home />} />
@@ -340,6 +355,99 @@ const AppRoutes = () => {
         <Route path="/staff/dashboard" element={
           <PrivateRoute allowedRoles={STAFF_ROLE_NAMES}>
             <StaffDashboard />
+          </PrivateRoute>
+        } />
+
+        {/* Attendance & leave: staff-tier roles use their own pages;
+            OrgAdmin manages the whole organization from one page. */}
+        <Route path="/staff/attendance" element={
+          <PrivateRoute allowedRoles={STAFF_ROLE_NAMES}>
+            <StaffAttendance />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/leave" element={
+          <PrivateRoute allowedRoles={STAFF_ROLE_NAMES}>
+            <StaffLeave />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/recruitment" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <RecruitmentOnboarding />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/payroll" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <PayrollSalary />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/performance" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <PerformanceManagement />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/training" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <TrainingDevelopment />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/employee-documents" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <EmployeeDocuments />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/benefits" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <BenefitsAllowances />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/chart-of-accounts" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="chart-of-accounts" />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/income" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="income" />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/invoices" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="invoices" />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/payable" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="payable" />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/receivable" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="receivable" />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/finance/payroll-integration" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <FinanceModule section="payroll-integration" />
+          </PrivateRoute>
+        } />
+        <Route path="/staff/donations" element={
+          <PrivateRoute allowedRoles={STAFF_ROLE_NAMES}>
+            <StaffDonations />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/employees" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <EmployeeProfiles />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/org-structure" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <OrgStructure />
+          </PrivateRoute>
+        } />
+        <Route path="/org-admin/attendance-leave" element={
+          <PrivateRoute allowedRoles={['OrgAdmin']}>
+            <AttendanceLeave />
           </PrivateRoute>
         } />
 

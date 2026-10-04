@@ -1,5 +1,4 @@
 import React from 'react';
-import styles from './Input.module.css';
 
 const Input = ({
   label,
@@ -11,62 +10,129 @@ const Input = ({
   name,
   required = false,
   error,
-  options = [], // Used for 'select' type
+  options = [],
   className = '',
-  rows = 4 // Used for 'textarea' type
+  rows = 4,
 }) => {
-  const containerClass = `${styles.inputContainer} ${className}`;
-  const inputClass = `${styles.field} ${error ? styles.fieldError : ''}`;
+  const fieldClassName = `
+    w-full
+    rounded-xl
+    border
+    bg-white
+    px-3.5
+    py-2.5
+    text-sm
+    text-slate-800
+    shadow-sm
+    outline-none
+    transition-all
+    duration-200
+
+    placeholder:text-slate-400
+
+    hover:border-slate-400
+
+    focus:border-blue-500
+    focus:ring-4
+    focus:ring-blue-500/10
+
+    disabled:cursor-not-allowed
+    disabled:bg-slate-50
+    disabled:text-slate-400
+
+    ${
+      error
+        ? 'border-red-400 bg-red-50/30 focus:border-red-500 focus:ring-red-500/10'
+        : 'border-slate-300'
+    }
+  `;
 
   return (
-    <div className={containerClass}>
+    <div className={`w-full space-y-1.5 ${className}`}>
+      {/* Label */}
       {label && (
-        <label className={styles.label}>
-          {label} {required && <span className={styles.required}>*</span>}
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {label}
+
+          {required && (
+            <span className="ml-1 text-red-500" aria-hidden="true">
+              *
+            </span>
+          )}
         </label>
       )}
-      
+
+      {/* Textarea */}
       {type === 'textarea' ? (
         <textarea
+          id={name}
           name={name}
           placeholder={placeholder}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           onBlur={onBlur}
           required={required}
           rows={rows}
-          className={inputClass}
+          className={`${fieldClassName} min-h-[110px] resize-y leading-6`}
         />
       ) : type === 'select' ? (
+        /* Select */
         <select
+          id={name}
           name={name}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           onBlur={onBlur}
           required={required}
-          className={inputClass}
+          className={`${fieldClassName} cursor-pointer`}
         >
-          {placeholder && <option value="" disabled>{placeholder}</option>}
-          {options.map((opt, idx) => (
-            <option key={idx} value={typeof opt === 'object' ? opt.value : opt}>
-              {typeof opt === 'object' ? opt.label : opt}
+          {placeholder && (
+            <option value="" disabled>
+              {placeholder}
             </option>
-          ))}
+          )}
+
+          {options.map((opt, index) => {
+            const isObject = typeof opt === 'object' && opt !== null;
+
+            return (
+              <option
+                key={isObject ? opt.value : `${opt}-${index}`}
+                value={isObject ? opt.value : opt}
+              >
+                {isObject ? opt.label : opt}
+              </option>
+            );
+          })}
         </select>
       ) : (
+        /* Input */
         <input
+          id={name}
           type={type}
           name={name}
           placeholder={placeholder}
-          value={value}
+          value={value ?? ''}
           onChange={onChange}
           onBlur={onBlur}
           required={required}
-          className={inputClass}
+          className={fieldClassName}
         />
       )}
-      
-      {error && <span className={styles.errorText}>{error}</span>}
+
+      {/* Error */}
+      {error && (
+        <p className="flex items-center gap-1 text-xs font-medium text-red-600">
+          <span
+            className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500"
+            aria-hidden="true"
+          />
+          {error}
+        </p>
+      )}
     </div>
   );
 };

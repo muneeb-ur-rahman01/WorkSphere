@@ -1,6 +1,7 @@
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '../../../context/AppContext';
 import DashboardLayout from '../../../layouts/DashboardLayout';
+import StaffDonationsReport from './StaffDonationsReport';
 import { TrendingUp, Download, Megaphone, HeartHandshake, Gift, Target } from 'lucide-react';
 
 const downloadCsv = (filename, rows) => {
@@ -135,6 +136,7 @@ const Fundraising = () => {
           </table>
         </div>
       </div>
+      <StaffDonationsReport />
     </DashboardLayout>
   );
 };

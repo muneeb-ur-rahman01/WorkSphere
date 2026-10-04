@@ -98,7 +98,9 @@ export const AppProvider = ({ children }) => {
       return;
     }
 
-    setReadNotificationIds(loadList('read', currentUser.id));
+    // Read/unread is stored per user in the database; it is hydrated from the
+    // server's `read` flag on every notifications fetch (no longer per-browser).
+    setReadNotificationIds([]);
     setNotificationsLoaded(false);
     toastedRef.current = new Set(loadList('toasted', currentUser.id));
     toastBaselineDoneRef.current = false;
@@ -125,6 +127,16 @@ export const AppProvider = ({ children }) => {
     ].join('|');
   }, []);
 
+  // Apply a notifications response and fold in the server-side read flags.
+  const applyNotifications = useCallback((list) => {
+    setNotifications(list);
+    const serverRead = list.filter((n) => n.read).map((n) => `id:${n.id}`);
+    setReadNotificationIds((prev) => {
+      const next = new Set([...prev, ...serverRead]);
+      return next.size === prev.length ? prev : Array.from(next);
+    });
+  }, []);
+
   const markNotificationAsRead = useCallback((notification) => {
     const key = getNotificationKey(notification);
 
@@ -134,9 +146,11 @@ export const AppProvider = ({ children }) => {
       }
 
       const next = [...prev, key];
-      if (currentUser?.id) saveList('read', currentUser.id, next);
       return next;
     });
+    if (notification?.id !== undefined && notification?.id !== null) {
+      api.post(`/notifications/${notification.id}/read`).catch(() => {});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getNotificationKey, currentUser?.id]);
 
@@ -149,10 +163,9 @@ export const AppProvider = ({ children }) => {
           next.add(getNotificationKey(notification));
         });
 
-        const list = Array.from(next);
-        if (currentUser?.id) saveList('read', currentUser.id, list);
-        return list;
+        return Array.from(next);
       });
+      api.post('/notifications/read-all').catch(() => {});
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [notifications, getNotificationKey, currentUser?.id]
@@ -297,7 +310,7 @@ export const AppProvider = ({ children }) => {
         api.get('/events').then(r => setEvents(r.data.events)).catch(() => {}),
         api.get('/meetings').then(r => setMeetings(r.data.meetings)).catch(() => {}),
         api.get('/tasks').then(r => setTasks(r.data.tasks)).catch(() => {}),
-        api.get('/notifications').then(r => { setNotifications(r.data.notifications); setNotificationsLoaded(true); }).catch(() => {}),
+        api.get('/notifications').then(r => { applyNotifications(r.data.notifications); setNotificationsLoaded(true); }).catch(() => {}),
         api.get('/availability').then(r => setAvailability(r.data.availability)).catch(() => {}),
         api.get('/discussion-groups').then(r => setDiscussionGroups(r.data.groups)).catch(() => {}),
         api.get('/permissions/me').then(r => setMyPermissions(r.data.sections)).catch(() => {})
@@ -354,7 +367,7 @@ export const AppProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, applyNotifications]);
 
   useEffect(() => {
     if (currentUser) {
@@ -377,14 +390,14 @@ export const AppProvider = ({ children }) => {
     const interval = setInterval(() => {
       api.get('/notifications')
         .then(r => {
-          setNotifications(r.data.notifications);
+          applyNotifications(r.data.notifications);
           setNotificationsLoaded(true);
         })
         .catch(() => {});
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [currentUser]);
+  }, [currentUser, applyNotifications]);
 
   // ===================
   // Auth Operations
