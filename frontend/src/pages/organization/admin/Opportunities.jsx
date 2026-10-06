@@ -356,7 +356,7 @@ const Opportunities = () => {
                 justify-center
                 gap-2
                 rounded-xl
-                bg-indigo-600
+                 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600
                 px-5
                 py-3
                 text-sm
@@ -1212,7 +1212,7 @@ const EmptyState = ({ onCreate }) => {
           items-center
           gap-2
           rounded-xl
-          bg-indigo-600
+         bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600
           px-5
           py-3
           text-sm

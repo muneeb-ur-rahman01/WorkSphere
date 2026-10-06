@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 const Button = ({
@@ -13,15 +12,19 @@ const Button = ({
 }) => {
   const variants = {
     primary:
-      'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-200',
+      'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:ring-indigo-200',
+
     secondary:
-      'bg-slate-100 text-slate-700 hover:bg-slate-200 focus:ring-slate-200',
+      'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:ring-indigo-200',
+
     success:
-      'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-200',
+      'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:ring-indigo-200',
+
     danger:
-      'bg-red-600 text-white hover:bg-red-700 focus:ring-red-200',
+      'bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:ring-indigo-200',
+
     outline:
-      'border border-slate-300 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50 focus:ring-slate-200',
+      'border border-indigo-500 bg-white text-indigo-600 hover:bg-indigo-50 focus:ring-indigo-200',
   };
 
   const sizes = {

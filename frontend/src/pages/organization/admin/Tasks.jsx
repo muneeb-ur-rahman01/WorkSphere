@@ -118,7 +118,7 @@ return (
 
       <button
         onClick={() => setModalOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 font-bold text-white hover:bg-blue-700 transition"
+        className="flex items-center gap-2 rounded-lg  bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 px-5 py-3 font-bold text-white hover:bg-blue-700 transition"
       >
         <Plus size={18} />
         Assign New Task

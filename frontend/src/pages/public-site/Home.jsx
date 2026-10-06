@@ -15,7 +15,7 @@
   import PublicLayout from '../../layouts/PublicLayout';
   import PublicEventsSection from './PublicEventsSection';
   import HowItWorks from './HowItWorks';
-
+  import video from '../../assets/videos/background.mp4'
   const Home = () => {
     const location = useLocation();
 
@@ -35,81 +35,125 @@
     return (
       <PublicLayout>
 
-        {/* ================= HERO SECTION ================= */}
+      {/* ================= HERO SECTION ================= */}
 
-        <section className="relative overflow-hidden bg-white px-[5%] pt-16 pb-14 sm:pt-20 md:pt-24 lg:pt-[100px] lg:pb-20">
+<section className="relative min-h-[720px] overflow-hidden px-[5%] pt-16 pb-14 sm:pt-20 md:pt-24 lg:pt-[100px] lg:pb-20">
 
-          <div className="mx-auto max-w-6xl text-center">
+  {/* Background Video */}
+  <video
+    autoPlay
+    loop
+    muted
+    playsInline
+    className="absolute inset-0 w-full h-full object-cover"
+  >
+    <source src={video} type="video/mp4" />
+    Your browser does not support the video tag.
+  </video>
 
-            <h1 className="animate-slide-up font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[3.6rem] font-extrabold leading-[1.15] text-gray-900 max-w-5xl mx-auto mb-6">
-            The Ultimate Management Operating System
-            </h1>
-            <h2 className='animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-semibold text-blue-600 max-w-3xl mx-auto mb-4 italic'>
-              "One Platform. Every Team. Every Operation"
-            </h2>
+  {/* Dark Overlay */}
+  {/* <div className="absolute inset-0 bg-slate-950/75" /> */}
 
-            <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-gray-600 max-w-3xl mx-auto leading-8 mb-10">
-              A universal management platform that enables organizations to coordinate teams, manage operations, assign tasks, track resources, and stay connected, while leveraging AI-powered voice capture, intelligent analytics, workflow automation, automated annual reporting, and real-time data visualization.
-            </p>
+  {/* Optional Indigo Gradient Overlay */}
+  <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/70 via-slate-950/50 to-black/70" />
 
-            <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/register-org">
-                <button
-                  type="button"
-                  className="group flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-lg hover:shadow-2xl hover:scale-105 transition-all duration-300"
-                >
-                  Register Your workspace
-                  <ArrowRight
-                    size={20}
-                    className="transition-transform duration-300 group-hover:translate-x-1"
-                  />
-                </button>
-              </Link>
+  {/* Hero Content */}
+  <div className="relative z-10 mx-auto max-w-6xl text-center">
 
-              <Link to="/login/org">
-                <button
-                  type="button"
-                  className="group flex items-center justify-center px-8 py-4 font-bold text-lg text-gray-900 bg-white border-2 border-indigo-600 hover:bg-indigo-50 shadow-md hover:shadow-xl hover:scale-105 transition-all duration-300 rounded-xl"
-                >
-                  Enter Workspace
-                </button>
-              </Link>
-            </div>
+    <h1 className="animate-slide-up font-[var(--font-title)] text-[2rem] sm:text-[2.6rem] md:text-[3.2rem] lg:text-[3.6rem] font-extrabold leading-[1.15] text-white max-w-5xl mx-auto mb-6 drop-shadow-2xl">
+      The Ultimate Management Operating System
+    </h1>
 
-            {/* Stats */}
-            <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">Multi-Tenant</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Built for Multiple Organizations</p>
-              </div>
+    <h2 className="animate-slide-up font-[var(--font-title)] text-lg sm:text-xl md:text-2xl font-bold text-white max-w-3xl mx-auto mb-4 italic drop-shadow-lg">
+      "One Platform. Every Team. Every Operation"
+    </h2>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">AI-Powered</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Intelligent Voice & Workflow Automation</p>
-              </div>
+    <p className="animate-slide-up font-[var(--font-body)] text-base sm:text-[1.05rem] md:text-[1.15rem] text-white font-semibold max-w-3xl mx-auto leading-8 mb-10 drop-shadow-lg">
+      A universal management platform that enables organizations to coordinate
+      teams, manage operations, assign tasks, track resources, and stay
+      connected, while leveraging AI-powered voice capture, intelligent
+      analytics, workflow automation, automated annual reporting, and real-time
+      data visualization.
+    </p>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">24/7</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Operational Access</p>
-              </div>
+    {/* CTA Buttons */}
+    <div className="animate-slide-up flex flex-col sm:flex-row items-center justify-center gap-4">
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">100%</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Centralized Data</p>
-              </div>
+      <Link to="/register-org">
+        <button
+          type="button"
+          className="group flex items-center justify-center gap-2 px-8 py-4 font-bold text-lg text-white bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:bg-indigo-500 rounded-xl shadow-xl shadow-indigo-950/40 hover:shadow-2xl hover:scale-105 transition-all duration-300 border border-indigo-400/30"
+        >
+          Register Your Workspace
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">Real-Time</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Analytics & Insights</p>
-              </div>
+          <ArrowRight
+            size={20}
+            className="transition-transform duration-300 group-hover:translate-x-1"
+          />
+        </button>
+      </Link>
 
-              <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left">
-                <h3 className="text-2xl font-bold text-indigo-600">Automated</h3>
-                <p className="mt-2 text-sm text-gray-500 font-medium">Reports & Visualizations</p>
-              </div>
-            </div>
-          </div>
-        </section>
+      <Link to="/login/org">
+        <button
+          type="button"
+          className="group flex items-center justify-center px-8 py-4 font-bold text-lg text-white bg-white/10 backdrop-blur-md border border-white/40 hover:bg-white hover:text-gray-900 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 rounded-xl"
+        >
+          Enter Workspace
+        </button>
+      </Link>
+
+    </div>
+
+    {/* Stats */}
+    <div className="mt-16 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">Multi-Tenant</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Built for Multiple Organizations
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">AI-Powered</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Intelligent Voice & Workflow Automation
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">24/7</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Operational Access
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">100%</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Centralized Data
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">Real-Time</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Analytics & Insights
+        </p>
+      </div>
+
+      <div className="rounded-2xl border border-white/15 bg-white/10 backdrop-blur-md p-6 shadow-xl hover:bg-white/15 hover:-translate-y-1 transition-all duration-300 text-left">
+        <h3 className="text-2xl font-bold text-white">Automated</h3>
+        <p className="mt-2 text-sm text-white font-semibold">
+          Reports & Visualizations
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
 
         {/* ================= FEATURES SECTION ================= */}
         <section
@@ -257,7 +301,7 @@
           </div>
         </section>
 
-        {/* <Team /> */}
+        {/* <TpublicEventsSection /> */}
         <PublicEventsSection />
 
         {/* ================= PRICING SECTION ================= */}

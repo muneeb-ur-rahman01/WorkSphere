@@ -647,15 +647,35 @@ const EmployeeProfiles = () => {
               )}
             </button>
 
-            <button
-              type="button"
-              onClick={openNew}
-              disabled={unlinked.length === 0}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:border-slate-300 disabled:bg-slate-300 disabled:text-slate-500"
-            >
-              <Plus size={18} />
-              Add employee
-            </button>
+<button
+  type="button"
+  onClick={openNew}
+  disabled={unlinked.length === 0}
+  className="
+    inline-flex min-h-11 items-center justify-center gap-2
+    rounded-xl
+    border border-[#2C5DBF]
+    bg-[#2C5DBF]
+    px-5 py-2.5
+    text-sm font-bold text-white
+    shadow-sm
+    transition-all duration-200
+    hover:bg-[#234d9f]
+    hover:border-[#234d9f]
+    focus:outline-none
+    focus:ring-4 focus:ring-[#2C5DBF]/20
+    disabled:cursor-not-allowed
+    disabled:border-slate-300
+    disabled:bg-slate-300
+    disabled:text-slate-500
+  "
+>
+  <Plus size={18} className="shrink-0" />
+  <span className="text-white">
+    Add employee
+  </span>
+</button>
+
           </div>
         </div>
 

@@ -1854,7 +1854,7 @@ const LeaveCategories = ({
             }}
             className="
               inline-flex items-center gap-2
-              rounded-lg bg-blue-600
+              rounded-lg  bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600
               px-4 py-2.5
               text-sm font-semibold
               text-white

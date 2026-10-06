@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from 'react';
 import {
   CalendarDays,
@@ -1036,7 +1037,7 @@ const PerformanceTable = ({
                 onClick={() =>
                   openForm(null)
                 }
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-200"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 px-3.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               >
                 <Plus size={15} />
                 {addLabel}

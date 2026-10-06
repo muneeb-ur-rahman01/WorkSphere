@@ -52,3 +52,4 @@ where id in (
   union
   select org_id from events  where visibility_status = 'Approved'
 );
+

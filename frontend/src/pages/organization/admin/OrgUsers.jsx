@@ -125,7 +125,7 @@ return (
 
       <button
         onClick={() => setAddModalOpen(true)}
-        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-3 rounded-lg transition"
+        className="flex items-center gap-2  bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 text-white font-bold px-5 py-3 rounded-lg transition"
       >
         <UserPlus size={18} />
         Add Personnel

@@ -167,113 +167,161 @@ const AdminDashboard = () => {
           />
         ) : (
         <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+        
+{/* Stats Cards */}
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
 
-          {[
-            {
-              label: 'Active Personnel', value: activeStaff.length, icon: Users,
-              accent: 'from-indigo-500 to-indigo-600',
-              sub: personnelBreakdown
-            },
-            {
-              label: 'Pending Waitlist', value: pendingStaff.length, icon: Users,
-              accent: 'from-amber-500 to-orange-500',
-              sub: 'Staff requests waiting', subClass: 'text-amber-600 font-semibold'
-            },
-            {
-              label: 'Upcoming Camps', value: upcomingCamps, icon: Calendar,
-              accent: 'from-blue-500 to-cyan-500',
-              sub: 'Active camp deployments'
-            },
-            {
-              label: 'Upcoming Events', value: upcomingEvents, icon: CalendarDays,
-              accent: 'from-fuchsia-500 to-purple-500',
-              sub: 'Trainings, fundraisers & outreach'
-            },
-            {
-              label: 'Task Completion', value: `${completionRate}%`, icon: CheckSquare,
-              accent: 'from-emerald-500 to-green-600',
-              sub: `${completedTasksCount} of ${totalTasksCount} tasks completed`
-            },
-            {
-              label: 'Meetings', value: meetings.filter(m => m.orgId === currentUser.orgId).length, icon: Video,
-              accent: 'from-sky-500 to-blue-600',
-              sub: 'Scheduled meetings', href: '/org-admin/meetings'
-            },
-            {
-              label: 'Opportunities', value: opportunities.length, icon: Briefcase,
-              accent: 'from-teal-500 to-emerald-600',
-              sub: 'Open volunteering opportunities', href: '/org-admin/opportunities'
-            },
-            {
-              label: 'Projects', value: projects.length, icon: FolderKanban,
-              accent: 'from-indigo-500 to-violet-600',
-              sub: 'Total projects', href: '/org-admin/projects'
-            },
-            {
-              label: 'Campaigns', value: campaigns.length, icon: Megaphone,
-              accent: 'from-fuchsia-500 to-purple-500',
-              sub: 'Total campaigns', href: '/org-admin/campaigns'
-            },
-            {
-              label: 'Volunteers', value: volunteerRecords.length, icon: HandHeart,
-              accent: 'from-amber-500 to-orange-500',
-              sub: 'Registered volunteers', href: '/org-admin/volunteers'
-            },
-            {
-              label: 'Donors', value: donors.length, icon: HeartHandshake,
-              accent: 'from-rose-500 to-pink-500',
-              sub: 'Total donors', href: '/org-admin/donors'
-            },
-            {
-              label: 'Sponsors', value: sponsors.length, icon: Gift,
-              accent: 'from-yellow-500 to-amber-600',
-              sub: 'Total sponsors', href: '/org-admin/sponsors'
-            },
-            {
-              label: 'Partners', value: partners.length, icon: Handshake,
-              accent: 'from-cyan-500 to-teal-600',
-              sub: 'Total partners', href: '/org-admin/partners'
-            },
-            {
-              label: 'Beneficiaries', value: beneficiaries.length, icon: Heart,
-              accent: 'from-red-500 to-rose-600',
-              sub: 'Total beneficiaries', href: '/org-admin/beneficiaries'
-            },
-            {
-              label: 'Expenses', value: expenses.length, icon: Wallet,
-              accent: 'from-slate-500 to-gray-700',
-              sub: 'Total expense records', href: '/org-admin/expenses'
-            },
-            {
-              label: 'Documents', value: documents.length, icon: FileText,
-              accent: 'from-lime-500 to-green-600',
-              sub: 'Total documents', href: '/org-admin/documents'
-            }
-          ].map((card, idx) => {
-            const CardTag = card.href ? Link : 'div';
-            return (
-              <CardTag
-                key={idx}
-                {...(card.href ? { to: card.href } : {})}
-                className="bg-white rounded-2xl border border-gray-100 shadow-lg shadow-indigo-100/40 p-6 hover:-translate-y-1 hover:shadow-xl transition-all duration-300"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
-                    {card.label}
-                  </span>
-                  <div className={`bg-gradient-to-br ${card.accent} text-white rounded-xl p-2 shadow-md`}>
-                    <card.icon size={18} />
-                  </div>
-                </div>
-                <h2 className="text-4xl font-extrabold text-black mt-4">{card.value}</h2>
-                <p className={`text-sm mt-2 ${card.subClass || 'text-gray-600'}`}>{card.sub}</p>
-              </CardTag>
-            );
-          })}
+  {[
+    {
+      label: 'Active Personnel', value: activeStaff.length, icon: Users,
+      accent: 'from-indigo-500 to-indigo-600',
+      sub: personnelBreakdown
+    },
+    {
+      label: 'Pending Waitlist', value: pendingStaff.length, icon: Users,
+      accent: 'from-amber-500 to-orange-500',
+      sub: 'Staff requests waiting', subClass: 'text-amber-600 font-semibold'
+    },
+    {
+      label: 'Upcoming Camps', value: upcomingCamps, icon: Calendar,
+      accent: 'from-blue-500 to-cyan-500',
+      sub: 'Active camp deployments'
+    },
+    {
+      label: 'Upcoming Events', value: upcomingEvents, icon: CalendarDays,
+      accent: 'from-fuchsia-500 to-purple-500',
+      sub: 'Trainings, fundraisers & outreach'
+    },
+    {
+      label: 'Task Completion', value: `${completionRate}%`, icon: CheckSquare,
+      accent: 'from-emerald-500 to-green-600',
+      sub: `${completedTasksCount} of ${totalTasksCount} tasks completed`
+    },
+    {
+      label: 'Meetings',
+      value: meetings.filter(m => m.orgId === currentUser.orgId).length,
+      icon: Video,
+      accent: 'from-sky-500 to-blue-600',
+      sub: 'Scheduled meetings',
+      href: '/org-admin/meetings'
+    },
+    {
+      label: 'Opportunities',
+      value: opportunities.length,
+      icon: Briefcase,
+      accent: 'from-teal-500 to-emerald-600',
+      sub: 'Open volunteering opportunities',
+      href: '/org-admin/opportunities'
+    },
+    {
+      label: 'Projects',
+      value: projects.length,
+      icon: FolderKanban,
+      accent: 'from-indigo-500 to-violet-600',
+      sub: 'Total projects',
+      href: '/org-admin/projects'
+    },
+    {
+      label: 'Campaigns',
+      value: campaigns.length,
+      icon: Megaphone,
+      accent: 'from-fuchsia-500 to-purple-500',
+      sub: 'Total campaigns',
+      href: '/org-admin/campaigns'
+    },
+    {
+      label: 'Volunteers',
+      value: volunteerRecords.length,
+      icon: HandHeart,
+      accent: 'from-amber-500 to-orange-500',
+      sub: 'Registered volunteers',
+      href: '/org-admin/volunteers'
+    },
+    {
+      label: 'Donors',
+      value: donors.length,
+      icon: HeartHandshake,
+      accent: 'from-rose-500 to-pink-500',
+      sub: 'Total donors',
+      href: '/org-admin/donors'
+    },
+    {
+      label: 'Sponsors',
+      value: sponsors.length,
+      icon: Gift,
+      accent: 'from-yellow-500 to-amber-600',
+      sub: 'Total sponsors',
+      href: '/org-admin/sponsors'
+    },
+    {
+      label: 'Partners',
+      value: partners.length,
+      icon: Handshake,
+      accent: 'from-cyan-500 to-teal-600',
+      sub: 'Total partners',
+      href: '/org-admin/partners'
+    },
+    {
+      label: 'Beneficiaries',
+      value: beneficiaries.length,
+      icon: Heart,
+      accent: 'from-red-500 to-rose-600',
+      sub: 'Total beneficiaries',
+      href: '/org-admin/beneficiaries'
+    },
+    {
+      label: 'Expenses',
+      value: expenses.length,
+      icon: Wallet,
+      accent: 'from-slate-500 to-gray-700',
+      sub: 'Total expense records',
+      href: '/org-admin/expenses'
+    },
+    {
+      label: 'Documents',
+      value: documents.length,
+      icon: FileText,
+      accent: 'from-lime-500 to-green-600',
+      sub: 'Total documents',
+      href: '/org-admin/documents'
+    }
+  ].map((card, idx) => {
+    const CardTag = card.href ? Link : 'div';
 
+    return (
+      <CardTag
+        key={idx}
+        {...(card.href ? { to: card.href } : {})}
+        className="bg-white rounded-2xl border-2 border-[#2C5DBF] shadow-lg shadow-[#2C5DBF]/20 p-6 hover:-translate-y-1 hover:shadow-xl hover:shadow-[#2C5DBF]/30 transition-all duration-300"
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wide text-gray-500">
+            {card.label}
+          </span>
+
+          <div
+            className={`bg-gradient-to-br ${card.accent} text-white rounded-xl p-2 shadow-md`}
+          >
+            <card.icon size={18} />
+          </div>
         </div>
+
+        <h2 className="text-4xl font-extrabold text-black mt-4">
+          {card.value}
+        </h2>
+
+        <p
+          className={`text-sm mt-2 ${
+            card.subClass || 'text-gray-600'
+          }`}
+        >
+          {card.sub}
+        </p>
+      </CardTag>
+    );
+  })}
+
+</div>
 
         {/* Main Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

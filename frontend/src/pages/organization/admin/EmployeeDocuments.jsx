@@ -483,7 +483,7 @@ const UploadModal = ({
               type="submit"
               form="employee-document-form"
               disabled={busy}
-              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Upload size={15} />
 
@@ -859,7 +859,7 @@ const EmployeeDocuments = () => {
                       file: null,
                     });
                   }}
-                  className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-100"
+                  className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-4 focus:ring-indigo-100"
                 >
                   <Upload size={15} />
                   Upload document
@@ -952,7 +952,7 @@ const EmployeeDocuments = () => {
                               file: null,
                             });
                           }}
-                          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:from-indigo-700 hover:via-indigo-600 hover:to-purple-700"
                         >
                           <Upload size={14} />
                           Upload document
